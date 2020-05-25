@@ -2,55 +2,88 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  DOMWidgetModel, DOMWidgetView, ISerializers
+  WidgetModel, ISerializers
 } from '@jupyter-widgets/base';
+
+import * as Tone from 'tone';
 
 import {
   MODULE_NAME, MODULE_VERSION
 } from './version';
 
 // Import the CSS
-import '../css/widget.css'
+// import '../css/widget.css'
 
 
 export
-class ExampleModel extends DOMWidgetModel {
+class OscillatorModel extends WidgetModel {
   defaults() {
     return {...super.defaults(),
-      _model_name: ExampleModel.model_name,
-      _model_module: ExampleModel.model_module,
-      _model_module_version: ExampleModel.model_module_version,
-      _view_name: ExampleModel.view_name,
-      _view_module: ExampleModel.view_module,
-      _view_module_version: ExampleModel.view_module_version,
-      value : 'Hello World'
+      _model_name: OscillatorModel.model_name,
+      _model_module: OscillatorModel.model_module,
+      _model_module_version: OscillatorModel.model_module_version,
+      type: 'sine',
+      frequency: 440,
+      detune: 0,
+      volume: -16,
+      started: false
     };
   }
 
+  initialize(attributes: any, options: any) {
+    super.initialize(attributes, options);
+
+    this._osc = new Tone.Oscillator({
+      "type" : this.get('type'),
+      "frequency" : this.get('frequency'),
+      "volume" : this.get('volume')
+    }).toMaster();
+
+    this.on('change:frequency', this.changeFrequency, this);
+    this.on('change:detune', this.changeDetune, this);
+    this.on('change:volume', this.changeVolume, this);
+    this.on('change:type', this.changeType, this);
+    this.on('change:started', this.togglePlay, this);
+  }
+
   static serializers: ISerializers = {
-      ...DOMWidgetModel.serializers,
+      ...WidgetModel.serializers,
       // Add any extra serializers here
     }
 
-  static model_name = 'ExampleModel';
+  private changeFrequency() {
+    this._osc.frequency.value = this.get('frequency');
+  }
+
+  private changeDetune() {
+    this._osc.detune.value = this.get('detune');
+  }
+
+  private changeVolume() {
+    this._osc.volume.value = this.get('volume');
+  }
+
+  private changeType() {
+    this._osc.type = this.get('type');
+  }
+
+  private togglePlay () {
+    console.log(this._osc.state);
+    if (this.get('started')) {
+      this._osc.start(0);
+    }
+    else {
+      this._osc.stop(0);
+    }
+    console.log(this._osc.state);
+  }
+
+  static model_name = 'OscillatorModel';
   static model_module = MODULE_NAME;
   static model_module_version = MODULE_VERSION;
-  static view_name = 'ExampleView';   // Set to null if no view
-  static view_module = MODULE_NAME;   // Set to null if no view
+  static view_name = null;
+  static view_module = null;
   static view_module_version = MODULE_VERSION;
-}
 
-
-export
-class ExampleView extends DOMWidgetView {
-  render() {
-    this.el.classList.add('custom-widget');
-
-    this.value_changed();
-    this.model.on('change:value', this.value_changed, this);
-  }
-
-  value_changed() {
-    this.el.textContent = this.model.get('value');
-  }
+  private _osc!: Tone.Oscillator;
 }
