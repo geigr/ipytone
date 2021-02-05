@@ -5,24 +5,28 @@
 # Distributed under the terms of the Modified BSD License.
 
 from __future__ import print_function
-from glob import glob
+from setuptools import setup, find_packages
+import os
 from os.path import join as pjoin
+from distutils import log
 
-
-from setupbase import (
-    create_cmdclass, install_npm, ensure_targets,
-    find_packages, combine_commands, ensure_python,
-    get_version, HERE
+from jupyter_packaging import (
+    create_cmdclass,
+    install_npm,
+    ensure_targets,
+    combine_commands,
+    get_version,
 )
 
-from setuptools import setup
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+log.set_verbosity(log.DEBUG)
+log.info('setup.py entered')
+log.info('$PATH=%s' % os.environ['PATH'])
 
 # The name of the project
 name = 'ipytone'
-
-# Ensure a valid python version
-ensure_python('>=3.4')
 
 # Get our version
 version = get_version(pjoin(name, '_version.py'))
@@ -39,14 +43,14 @@ jstargets = [
 package_data_spec = {
     name: [
         'nbextension/static/*.*js*',
-        'labextension/*.tgz'
+        'labextension/**'
     ]
 }
 
 data_files_spec = [
     ('share/jupyter/nbextensions/ipytone',
         nb_path, '*.js*'),
-    ('share/jupyter/lab/extensions', lab_path, '*.tgz'),
+    ('share/jupyter/labextensions/ipytone', lab_path, '**'),
     ('etc/jupyter/nbconfig/notebook.d' , HERE, 'ipytone.json')
 ]
 
@@ -54,7 +58,7 @@ data_files_spec = [
 cmdclass = create_cmdclass('jsdeps', package_data_spec=package_data_spec,
     data_files_spec=data_files_spec)
 cmdclass['jsdeps'] = combine_commands(
-    install_npm(HERE, build_cmd='build:all'),
+    install_npm(HERE, build_cmd='build'),
     ensure_targets(jstargets),
 )
 
@@ -63,9 +67,9 @@ setup_args = dict(
     name            = name,
     description     = 'Interactive audio in Jupyter',
     version         = version,
-    scripts         = glob(pjoin('scripts', '*')),
     cmdclass        = cmdclass,
     packages        = find_packages(),
+    zip_safe        = False,
     author          = 'Benoit Bovy',
     author_email    = 'benbovy@gmail.com',
     url             = 'https://github.com/benbovy/ipytone',
@@ -86,7 +90,7 @@ setup_args = dict(
     ],
     include_package_data = True,
     install_requires = [
-        'ipywidgets>=7.0.0',
+        'ipywidgets>=7.6.0',
     ],
     extras_require = {
         'test': [
@@ -112,5 +116,4 @@ setup_args = dict(
     },
 )
 
-if __name__ == '__main__':
-    setup(**setup_args)
+setup(**setup_args)
