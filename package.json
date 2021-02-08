@@ -36,6 +36,7 @@
     "build:nbextension": "webpack",
     "build:labextension": "jupyter labextension build .",
     "build:labextension:dev": "jupyter labextension build --development True .",
+    "build:extensions": "yarn run build && yarn run build:labextension",
     "clean": "yarn run clean:lib && yarn run clean:nbextension && yarn run clean:labextension",
     "clean:lib": "rimraf lib",
     "clean:nbextension": "rimraf ipytone/nbextension/static/index.js",
