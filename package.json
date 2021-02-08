@@ -31,30 +31,28 @@
     "url": "https://github.com/benbovy/ipytone.git"
   },
   "scripts": {
-    "build": "jlpm run build:lib && jlpm run build:nbextension && jlpm run build:labextension",
-    "build:labextension": "jupyter labextension build .",
+    "build": "yarn run build:lib && yarn run build:nbextension",
     "build:lib": "tsc",
-    "build:nbextension": "webpack -p",
-    "clean": "npm run clean:lib && npm run clean:nbextension && npm run clean:labextension",
+    "build:nbextension": "webpack",
+    "build:labextension": "jupyter labextension build .",
+    "build:labextension:dev": "jupyter labextension build --development True .",
+    "clean": "yarn run clean:lib && yarn run clean:nbextension && yarn run clean:labextension",
     "clean:lib": "rimraf lib",
     "clean:nbextension": "rimraf ipytone/nbextension/static/index.js",
     "clean:labextension": "rimraf ipytone/labextension",
     "lint": "eslint . --ext .ts,.tsx --fix",
     "lint:check": "eslint . --ext .ts,.tsx",
-    "prepack": "npm run build:lib",
-    "test": "npm run test:firefox",
-    "test:chrome": "karma start --browsers=Chrome tests/karma.conf.js",
-    "test:debug": "karma start --browsers=Chrome --singleRun=false --debug=true tests/karma.conf.js",
-    "test:firefox": "karma start --browsers=Firefox tests/karma.conf.js",
-    "test:ie": "karma start --browsers=IE tests/karma.conf.js",
-    "watch": "npm-run-all -p watch:*",
+    "install:labextension:dev": "jupyter labextension develop --overwrite .",
+    "prepack": "yarn run build:lib",
+    "watch": "run-p watch:lib watch:nbextension",
     "watch:lib": "tsc -w",
-    "watch:nbextension": "webpack --watch"
+    "watch:nbextension": "webpack --watch",
+    "watch:labextension": "jupyter labextension watch ."
   },
   "dependencies": {
     "@jupyter-widgets/base": "^1.1 || ^2 || ^3 || ^4",
     "lodash": "^4.17.4",
-    "tone": "^14.5.28"
+    "tone": "^14.7.77"
   },
   "devDependencies": {
     "@jupyterlab/builder": "^3.0.0",
@@ -71,10 +69,10 @@
     "rimraf": "^2.6.2",
     "source-map-loader": "^0.2.4",
     "style-loader": "^1.0.0",
-    "ts-loader": "^5.2.1",
-    "typescript": "~3.1.2",
+    "ts-loader": "^8",
+    "typescript": "~4",
     "webpack": "^5",
-    "webpack-cli": "^3.1.2"
+    "webpack-cli": "^4"
   },
   "jupyterlab": {
     "extension": "lib/plugin",
