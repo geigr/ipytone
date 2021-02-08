@@ -4,46 +4,44 @@ Interactive audio in Jupyter, using [Tone.js](https://tonejs.github.io).
 
 Note: This is still at a proof-of-concept stage.
 
-## Development Installation
+## Requirements
+
+* JupyterLab >= 3.0
+
+## Contributing
+
+### Development install
+
+Development installation requires NodeJS and [yarn](https://yarnpkg.com/) be
+installed. You can easily install it with conda:
+
+``` bash
+conda install nodejs yarn -c conda-forge
+```
+
+Clone this repository, change directory to the ipytone directory and install the
+package in development mode:
 
 ```bash
-# First install the python package. This will also build the JS packages.
-pip install -e .
+python -m pip install -e .
+
+# if you use jupyterlab, you can also install the pre-built extension
+# in development mode and re-build the extension (see below):
+jupyter labextension develop . --overwrite
 ```
 
-When developing your extensions, you need to manually enable your extensions with the
-notebook / lab frontend. For lab, this is done by the command:
+### Re-build the extension
 
-```
-jupyter labextension install @jupyter-widgets/jupyterlab-manager --no-build
-jupyter labextension install .
-```
+After making changes to the typescript source code, you need to rebuild the extension:
 
-For classic notebook, you can run:
+``` bash
+yarn run build
 
-```
-jupyter nbextension install --sys-prefix --symlink --overwrite --py ipytone
-jupyter nbextension enable --sys-prefix --py ipytone
+# or if you use jupyterlab
+yarn run build:lib
+yarn run build:labextension:dev
 ```
 
-Note that the `--symlink` flag doesn't work on Windows, so you will here have to run
-the `install` command every time that you rebuild your extension. For certain installations
-you might also need another flag instead of `--sys-prefix`, but we won't cover the meaning
-of those flags here.
+You can then refresh the notebook or JupyterLab in the browser to test the changes.
 
-### How to see your changes
-
-#### Typescript:
-To continuously monitor the project for changes and automatically trigger a rebuild, start Jupyter in watch mode:
-```bash
-jupyter lab --watch
-```
-And in a separate session, begin watching the source directory for changes:
-```bash
-npm run watch
-```
-
-After a change wait for the build to finish and then refresh your browser and the changes should take effect.
-
-#### Python:
-If you make a change to the python code then you will need to restart the notebook kernel to have it take effect.
+If you change the Python source, you need to reload the Python kernel. 
