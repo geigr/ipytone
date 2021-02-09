@@ -2,10 +2,12 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  WidgetModel, ISerializers
+  WidgetModel
 } from '@jupyter-widgets/base';
 
-import * as Tone from 'tone';
+import {
+  Oscillator, ToneAudioNode, Destination, getDestination
+} from 'tone';
 
 import {
   MODULE_NAME, MODULE_VERSION
@@ -15,13 +17,93 @@ import {
 // import '../css/widget.css'
 
 
+abstract class _ToneWidgetModel extends WidgetModel {
+
+  defaults () {
+    return {...super.defaults(),
+      _model_module: _ToneWidgetModel.model_module,
+      _model_module_version: _ToneWidgetModel.model_module_version,
+    };
+  }
+
+  static model_module = MODULE_NAME;
+  static model_module_version = MODULE_VERSION;
+
+}
+
+
+abstract class AudioNodeModel extends _ToneWidgetModel {
+
+  defaults() {
+    return {...super.defaults(),
+      _model_name: AudioNodeModel.model_name,
+      inputs: [],
+      outputs: [],
+    };
+  }
+
+  initialize (attributes: any, options: any) {
+    super.initialize(attributes, options);
+
+    this.node = this.createNode();
+
+    // TODO: remove this
+    this.node.toDestination();
+
+    this.initEventListeners();
+  }
+
+  initEventListeners() : void {
+  }
+
+  node: ToneAudioNode;
+
+  abstract createNode() : ToneAudioNode;
+
+  static model_name = 'AudioNodeModel';
+}
+
+
 export
-class OscillatorModel extends WidgetModel {
+class DestinationModel extends AudioNodeModel {
+  defaults() {
+    return {...super.defaults(),
+      _model_name: DestinationModel.model_name,
+      mute: false,
+      volume: -16
+    };
+  }
+
+  createNode () {
+    return getDestination();
+  }
+
+  get mute () {
+    return this.get('mute');
+  }
+
+  get volume () {
+    return this.get('volume');
+  }
+
+  initEventListeners () : void {
+    super.initEventListeners();
+
+    this.on('change:mute', () => { this.node.mute = this.mute; });
+    this.on('change:volume', () => { this.node.volume.value = this.volume; });
+  }
+
+  node: typeof Destination;
+
+  static model_name = 'DestinationModel';
+}
+
+
+export
+class OscillatorModel extends AudioNodeModel {
   defaults() {
     return {...super.defaults(),
       _model_name: OscillatorModel.model_name,
-      _model_module: OscillatorModel.model_module,
-      _model_module_version: OscillatorModel.model_module_version,
       type: 'sine',
       frequency: 440,
       detune: 0,
@@ -30,60 +112,52 @@ class OscillatorModel extends WidgetModel {
     };
   }
 
-  initialize(attributes: any, options: any) {
-    super.initialize(attributes, options);
+  createNode () {
+    return new Oscillator({
+      "type" : this.type,
+      "frequency" : this.frequency,
+      "volume" : this.volume
+    });
+  }
 
-    this._osc = new Tone.Oscillator({
-      "type" : this.get('type'),
-      "frequency" : this.get('frequency'),
-      "volume" : this.get('volume')
-    }).toMaster();
+  get type () {
+    return this.get('type');
+  }
 
-    this.on('change:frequency', this.changeFrequency, this);
-    this.on('change:detune', this.changeDetune, this);
-    this.on('change:volume', this.changeVolume, this);
-    this.on('change:type', this.changeType, this);
+  get frequency () {
+    return this.get('frequency');
+  }
+
+  get detune () {
+    return this.get('detune');
+  }
+
+  get volume () {
+    return this.get('volume');
+  }
+
+  initEventListeners () : void {
+    super.initEventListeners();
+
+    this.on('change:frequency', () => { this.node.frequency.value = this.frequency; });
+    this.on('change:detune', () => { this.node.detune.value = this.detune; });
+    this.on('change:volume', () => { this.node.volume.value = this.volume; });
+    this.on('change:type', () => { this.node.type = this.type; });
     this.on('change:started', this.togglePlay, this);
   }
 
-  static serializers: ISerializers = {
-      ...WidgetModel.serializers,
-      // Add any extra serializers here
-    }
-
-  private changeFrequency() {
-    this._osc.frequency.value = this.get('frequency');
-  }
-
-  private changeDetune() {
-    this._osc.detune.value = this.get('detune');
-  }
-
-  private changeVolume() {
-    this._osc.volume.value = this.get('volume');
-  }
-
-  private changeType() {
-    this._osc.type = this.get('type');
-  }
+  node: Oscillator;
 
   private togglePlay () {
-    console.log(this._osc.state);
+    console.log(this.node.state);
     if (this.get('started')) {
-      this._osc.start(0);
+      this.node.start(0);
     }
     else {
-      this._osc.stop(0);
+      this.node.stop(0);
     }
-    console.log(this._osc.state);
+    console.log(this.node.state);
   }
 
   static model_name = 'OscillatorModel';
-  static model_module = MODULE_NAME;
-  static model_module_version = MODULE_VERSION;
-  static view_name = null;
-  static view_module = null;
-  static view_module_version = MODULE_VERSION;
-
-  private _osc!: Tone.Oscillator;
 }
