@@ -87,3 +87,40 @@ class OscillatorModel extends WidgetModel {
 
   private _osc!: Tone.Oscillator;
 }
+
+
+
+export
+class TimeModel extends WidgetModel {
+  defaults() {
+    return {...super.defaults(),
+      _model_name: TimeModel.model_name,
+      _model_module: TimeModel.model_module,
+      _model_module_version: TimeModel.model_module_version,
+      time: 0
+    };
+  }
+
+  initialize(attributes: any, options: any) {
+    super.initialize(attributes, options);
+
+    Tone.Transport.scheduleRepeat((time) => {
+        this.set('time', time);
+        this.save_changes();
+    }, "4n");
+
+    Tone.Transport.start();
+  }
+
+  static serializers: ISerializers = {
+      ...WidgetModel.serializers,
+      // Add any extra serializers here
+    }
+
+  static model_name = 'TimeModel';
+  static model_module = MODULE_NAME;
+  static model_module_version = MODULE_VERSION;
+  static view_name = null;
+  static view_module = null;
+  static view_module_version = MODULE_VERSION;
+}

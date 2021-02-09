@@ -5,7 +5,7 @@
 # Distributed under the terms of the Modified BSD License.
 
 from ipywidgets import Widget
-from traitlets import Unicode, Float, Int, Bool, validate, TraitError
+from traitlets import Unicode, Float, Int, Bool, validate, observe, TraitError
 from ._frontend import module_name, module_version
 
 
@@ -27,3 +27,23 @@ class Oscillator(Widget):
         if proposal['value'] not in ["sine", "square", "sawtooth", "triangle"]:
             raise TraitError("Invalid oscillator type")
         return proposal['value']
+
+
+class Time(Widget):
+    """The time in the browser."""
+   
+    _model_name = Unicode('TimeModel').tag(sync=True)
+    _model_module = Unicode(module_name).tag(sync=True)
+    _model_module_version = Unicode(module_version).tag(sync=True)
+
+    time = Float(0, help="The time in the browser").tag(sync=True)
+
+    def __init__(self, output=None, **kwargs):
+        self.output = output
+        super().__init__(**kwargs)
+
+    @observe('time')
+    def _observe_time(self, change):
+        if self.output is not None:
+            with self.output:
+                print(change['new'])
