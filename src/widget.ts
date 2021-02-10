@@ -5,9 +5,7 @@ import {
   WidgetModel
 } from '@jupyter-widgets/base';
 
-import {
-  Oscillator, ToneAudioNode, Destination, getDestination
-} from 'tone';
+import * as tone from 'tone';
 
 import {
   MODULE_NAME, MODULE_VERSION
@@ -37,8 +35,8 @@ abstract class AudioNodeModel extends _ToneWidgetModel {
   defaults() {
     return {...super.defaults(),
       _model_name: AudioNodeModel.model_name,
-      inputs: [],
-      outputs: [],
+      _in_nodes: [],
+      _out_nodes: []
     };
   }
 
@@ -47,18 +45,33 @@ abstract class AudioNodeModel extends _ToneWidgetModel {
 
     this.node = this.createNode();
 
-    // TODO: remove this
-    this.node.toDestination();
-
     this.initEventListeners();
   }
 
-  initEventListeners() : void {
+  initEventListeners () : void {
+    this.on('change:_out_nodes', this.connectOutput, this);
   }
 
-  node: ToneAudioNode;
+  connectOutput () : void {
+    console.log(this.get('_out_nodes'));
 
-  abstract createNode() : ToneAudioNode;
+    const outputNodes: tone.ToneAudioNode[] = this.get('_out_nodes').map((audioNodeModel: AudioNodeModel) => {
+      return audioNodeModel.node;
+    });
+
+    console.log('before');
+    console.log(this.node.output);
+    console.log(outputNodes);
+    this.node.fan(...outputNodes);
+    console.log('after');
+    console.log(this.node.output);
+
+    // TODO: update _input of output nodes to update the input on the server side.
+  }
+
+  node: tone.ToneAudioNode;
+
+  abstract createNode() : tone.ToneAudioNode;
 
   static model_name = 'AudioNodeModel';
 }
@@ -75,7 +88,7 @@ class DestinationModel extends AudioNodeModel {
   }
 
   createNode () {
-    return getDestination();
+    return tone.getDestination();
   }
 
   get mute () {
@@ -93,7 +106,7 @@ class DestinationModel extends AudioNodeModel {
     this.on('change:volume', () => { this.node.volume.value = this.volume; });
   }
 
-  node: typeof Destination;
+  node: typeof tone.Destination;
 
   static model_name = 'DestinationModel';
 }
@@ -113,7 +126,7 @@ class OscillatorModel extends AudioNodeModel {
   }
 
   createNode () {
-    return new Oscillator({
+    return new tone.Oscillator({
       "type" : this.type,
       "frequency" : this.frequency,
       "volume" : this.volume
@@ -146,7 +159,7 @@ class OscillatorModel extends AudioNodeModel {
     this.on('change:started', this.togglePlay, this);
   }
 
-  node: Oscillator;
+  node: tone.Oscillator;
 
   private togglePlay () {
     console.log(this.node.state);

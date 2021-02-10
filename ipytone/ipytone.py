@@ -5,7 +5,7 @@
 # Distributed under the terms of the Modified BSD License.
 
 from ipywidgets import widget_serialization, Widget
-from traitlets import Instance, Union, Unicode, List, Float, Int, Bool, validate, TraitError
+from traitlets import Instance, Unicode, List, Float, Int, Bool, validate, TraitError
 
 from ._frontend import module_name, module_version
 
@@ -20,12 +20,34 @@ class AudioNode(_ToneWidgetBase):
 
     _model_name = Unicode('AudioNodeModel').tag(sync=True)
 
-    inputs = List(Instance(Widget)).tag(sync=True, **widget_serialization)
-    outputs = List(Instance(Widget)).tag(sync=True, **widget_serialization)
+    _in_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
+    _out_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
+
+    def connect(self, destination):
+        """Connect the output of this audio node to another ``destination`` audio node."""
+        if not isinstance(destination, AudioNode):
+            raise ValueError(f"destination must be an AudioNode object, got {type(destination)}")
+        if destination is self:
+            raise ValueError("cannot connect an audio node to itself")
+
+        if destination not in self._out_nodes:
+            self._out_nodes = self._out_nodes + [destination]
+
+    def to_destination(self):
+        """Convenience method to directly connect the output of this audio node
+        to the master node.
+
+        """
+        self.connect(get_destination())
+
+    @property
+    def output(self):
+        """Get all audio nodes connected to the output of this node."""
+        return self._out_nodes
 
 
 class Destination(AudioNode):
-    """Audio master output node."""
+    """Audio master node."""
 
     _singleton = None
 
@@ -44,7 +66,7 @@ _DESTINATION = Destination()
 
 
 def get_destination():
-    """Returns ipytone's audio master output node."""
+    """Returns ipytone's audio master node."""
     return _DESTINATION
 
 
@@ -53,21 +75,11 @@ class Oscillator(AudioNode):
    
     _model_name = Unicode('OscillatorModel').tag(sync=True)
 
-    type = Unicode("sine").tag(sync=True)
-    frequency = Float(440).tag(sync=True)
-    detune = Int(0).tag(sync=True)
-    volume = Float(-16).tag(sync=True)
-    started = Bool(False).tag(sync=True)
-
-    def __init__(self, type='sine', frequency=440, detune=0, volume=-16, started=False, **kwargs):
-        super(Oscillator, self).__init__(
-            type=type,
-            frequency=frequency,
-            detune=detune,
-            volume=volume,
-            started=started,
-            **kwargs
-        )
+    type = Unicode("sine", help="Oscillator type").tag(sync=True)
+    frequency = Float(440, help="Oscillator frequency").tag(sync=True)
+    detune = Int(0, help="Oscillator frequency detune").tag(sync=True)
+    volume = Float(-16, help="Oscillator gain").tag(sync=True)
+    started = Bool(False, help="Start/stop oscillator").tag(sync=True)
 
     @validate('type')
     def _validate_oscillator_type(self, proposal):
