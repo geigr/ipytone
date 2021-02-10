@@ -23,15 +23,46 @@ class AudioNode(_ToneWidgetBase):
     _in_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
     _out_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
 
-    def connect(self, destination):
-        """Connect the output of this audio node to another ``destination`` audio node."""
-        if not isinstance(destination, AudioNode):
-            raise ValueError(f"destination must be an AudioNode object, got {type(destination)}")
-        if destination is self:
+    def _normalize_destination(self, destination):
+        if not isinstance(destination, list):
+            destination = [destination]
+
+        if not all([isinstance(d, AudioNode) for d in destination]):
+            raise ValueError(f"destination must be an AudioNode object(s)")
+        if self in destination:
             raise ValueError("cannot connect an audio node to itself")
 
+        return list(set(self._out_nodes) | set(destination))
+
+    def connect(self, destination):
+        """Connect the output of this audio node to another ``destination`` audio node."""
+
         if destination not in self._out_nodes:
-            self._out_nodes = self._out_nodes + [destination]
+            self._out_nodes = self._normalize_destination(destination)
+
+    def disconnect(self, destination):
+        """Disconnect the ouput of this audio node from a connected destination."""
+
+        if destination not in self._out_nodes:
+            raise ValueError("f{cannot disconnect destination {destination} that is not connected}")
+
+        out_nodes = list(self._out_nodes)
+        out_nodes.remove(destination)
+
+        self._out_nodes = out_nodes
+
+    def fan(self, *destinations):
+        """Connect the output of this audio node to the ``destinations`` audio nodes in parallel."""
+
+        self._out_nodes = self._normalize_destination(destinations)
+
+    def chain(self, *nodes):
+        """Connect the output of this audio node to the other audio nodes in series."""
+
+        chain_nodes = [self] + list(nodes)
+
+        for i in range(1, len(chain_nodes) + 1):
+            chain_nodes[i].connect(chain_nodes[i + 1])
 
     def to_destination(self):
         """Convenience method to directly connect the output of this audio node
@@ -44,6 +75,11 @@ class AudioNode(_ToneWidgetBase):
     def output(self):
         """Get all audio nodes connected to the output of this node."""
         return self._out_nodes
+
+    @property
+    def input(self):
+        """Get all audio nodes connected to the input of this node."""
+        return self._in_nodes
 
 
 class Destination(AudioNode):
