@@ -24,7 +24,7 @@ class AudioNode(_ToneWidgetBase):
     _out_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
 
     def _normalize_destination(self, destination):
-        if not isinstance(destination, list):
+        if isinstance(destination, AudioNode):
             destination = [destination]
 
         if not all([isinstance(d, AudioNode) for d in destination]):
@@ -39,22 +39,26 @@ class AudioNode(_ToneWidgetBase):
 
         if destination not in self._out_nodes:
             self._out_nodes = self._normalize_destination(destination)
+            destination._in_nodes = destination._in_nodes + [self]
 
     def disconnect(self, destination):
         """Disconnect the ouput of this audio node from a connected destination."""
 
-        if destination not in self._out_nodes:
-            raise ValueError("f{cannot disconnect destination {destination} that is not connected}")
+        new_out_nodes = list(self._out_nodes)
+        new_out_nodes.remove(destination)
+        self._out_nodes = new_out_nodes
 
-        out_nodes = list(self._out_nodes)
-        out_nodes.remove(destination)
-
-        self._out_nodes = out_nodes
+        new_in_nodes = list(destination._in_nodes)
+        new_in_nodes.remove(self)
+        destination._in_nodes = new_in_nodes
 
     def fan(self, *destinations):
         """Connect the output of this audio node to the ``destinations`` audio nodes in parallel."""
 
         self._out_nodes = self._normalize_destination(destinations)
+
+        for node in destinations:
+            node._in_nodes = node._in_nodes + [self]
 
     def chain(self, *nodes):
         """Connect the output of this audio node to the other audio nodes in series."""
@@ -74,12 +78,12 @@ class AudioNode(_ToneWidgetBase):
     @property
     def output(self):
         """Get all audio nodes connected to the output of this node."""
-        return self._out_nodes
+        return list(self._out_nodes)
 
     @property
     def input(self):
         """Get all audio nodes connected to the input of this node."""
-        return self._in_nodes
+        return list(self._in_nodes)
 
 
 class Destination(AudioNode):

@@ -14,7 +14,6 @@ import {
 // Import the CSS
 // import '../css/widget.css'
 
-
 abstract class _ToneWidgetModel extends WidgetModel {
 
   defaults () {
@@ -57,7 +56,6 @@ abstract class AudioNodeModel extends _ToneWidgetModel {
   }
 
   private updateConnections () : void {
-
     // connect new nodes (if any)
     const nodesAdded = this.get('_out_nodes').filter( (other: AudioNodeModel) => {
       return !this.previous('_out_nodes').includes(other);
@@ -73,8 +71,6 @@ abstract class AudioNodeModel extends _ToneWidgetModel {
     this.getToneAudioNodes(nodesRemoved).forEach( (node) => {
       this.node.disconnect(node);
     });
-
-    // TODO: update _input of output nodes to update the input on the server side.
   }
 
   node: tone.ToneAudioNode;
@@ -83,7 +79,8 @@ abstract class AudioNodeModel extends _ToneWidgetModel {
 
   static serializers: ISerializers = {
     ..._ToneWidgetModel.serializers,
-    _out_nodes: { deserialize: (unpack_models as any) },
+    _in_nodes: { deserialize: (unpack_models as any) },
+    _out_nodes: { deserialize: (unpack_models as any) }
   }
 
   static model_name = 'AudioNodeModel';
