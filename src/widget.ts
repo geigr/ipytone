@@ -2,7 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  WidgetModel
+  WidgetModel, ISerializers, unpack_models
 } from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
@@ -53,18 +53,12 @@ abstract class AudioNodeModel extends _ToneWidgetModel {
   }
 
   connectOutput () : void {
-    console.log(this.get('_out_nodes'));
 
     const outputNodes: tone.ToneAudioNode[] = this.get('_out_nodes').map((audioNodeModel: AudioNodeModel) => {
       return audioNodeModel.node;
     });
 
-    console.log('before');
-    console.log(this.node.output);
-    console.log(outputNodes);
     this.node.fan(...outputNodes);
-    console.log('after');
-    console.log(this.node.output);
 
     // TODO: update _input of output nodes to update the input on the server side.
   }
@@ -72,6 +66,11 @@ abstract class AudioNodeModel extends _ToneWidgetModel {
   node: tone.ToneAudioNode;
 
   abstract createNode() : tone.ToneAudioNode;
+
+  static serializers: ISerializers = {
+    ..._ToneWidgetModel.serializers,
+    _out_nodes: { deserialize: (unpack_models as any) },
+  }
 
   static model_name = 'AudioNodeModel';
 }
