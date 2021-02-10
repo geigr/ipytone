@@ -49,23 +49,37 @@ abstract class AudioNodeModel extends _ToneWidgetModel {
   }
 
   initEventListeners () : void {
-    this.on('change:_out_nodes', this.connectOutput, this);
+    this.on('change:_out_nodes', this.updateConnections, this);
   }
 
-  connectOutput () : void {
+  private getToneAudioNodes (models: AudioNodeModel[]) : tone.ToneAudioNode[] {
+    return models.map((model: AudioNodeModel) => { return model.node; });
+  }
 
-    const outputNodes: tone.ToneAudioNode[] = this.get('_out_nodes').map((audioNodeModel: AudioNodeModel) => {
-      return audioNodeModel.node;
+  private updateConnections () : void {
+
+    // connect new nodes (if any)
+    const nodesAdded = this.get('_out_nodes').filter( (other: AudioNodeModel) => {
+      return !this.previous('_out_nodes').includes(other);
     });
 
-    this.node.fan(...outputNodes);
+    this.node.fan(...this.getToneAudioNodes(nodesAdded));
+
+    // disconnect nodes that have been removed (if any)
+    const nodesRemoved = this.previous('_out_nodes').filter( (other: AudioNodeModel) => {
+      return !this.get('_out_nodes').includes(other);
+    });
+
+    this.getToneAudioNodes(nodesRemoved).forEach( (node) => {
+      this.node.disconnect(node);
+    });
 
     // TODO: update _input of output nodes to update the input on the server side.
   }
 
   node: tone.ToneAudioNode;
 
-  abstract createNode() : tone.ToneAudioNode;
+  abstract createNode () : tone.ToneAudioNode;
 
   static serializers: ISerializers = {
     ..._ToneWidgetModel.serializers,
