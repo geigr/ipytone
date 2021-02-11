@@ -120,5 +120,10 @@ def test_oscillator():
     assert osc.detune == 0
     assert osc.volume == -16
 
+    # just test that the following types are valid
+    for wave in ['sine', 'square', 'sawtooth', 'triangle']:
+        for pcount in range(2):
+            osc.type = wave + str(pcount)
+
     with pytest.raises(TraitError, match="Invalid oscillator type"):
         osc.type = "not a good oscillator wave"

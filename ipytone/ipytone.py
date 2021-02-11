@@ -3,6 +3,7 @@
 
 # Copyright (c) Benoit Bovy.
 # Distributed under the terms of the Modified BSD License.
+import re
 
 from ipywidgets import widget_serialization, Widget
 from traitlets import Enum, Instance, Unicode, List, Float, Int, Bool, validate, TraitError
@@ -160,6 +161,10 @@ class Oscillator(Source):
 
     @validate('type')
     def _validate_oscillator_type(self, proposal):
-        if proposal['value'] not in ["sine", "square", "sawtooth", "triangle"]:
-            raise TraitError("Invalid oscillator type")
+        wave = proposal['value']
+        wave_re = r"(sine|square|sawtooth|triangle)[\d]*"
+
+        if re.fullmatch(wave_re, wave) is None:
+            raise TraitError(f"Invalid oscillator type: {wave}")
+
         return proposal['value']
