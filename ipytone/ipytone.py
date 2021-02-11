@@ -28,7 +28,7 @@ class AudioNode(ToneWidgetBase):
             destination = [destination]
 
         if not all([isinstance(d, AudioNode) for d in destination]):
-            raise ValueError(f"destination must be an AudioNode object(s)")
+            raise ValueError(f"destination(s) must be AudioNode object(s)")
         if self in destination:
             raise ValueError("cannot connect an audio node to itself")
 
@@ -65,7 +65,7 @@ class AudioNode(ToneWidgetBase):
 
         chain_nodes = [self] + list(nodes)
 
-        for i in range(1, len(chain_nodes) + 1):
+        for i in range(len(chain_nodes) - 1):
             chain_nodes[i].connect(chain_nodes[i + 1])
 
     def to_destination(self):
