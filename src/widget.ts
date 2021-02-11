@@ -114,7 +114,6 @@ abstract class SourceModel extends AudioNodeModel {
   }
 
   private startStopNode (): void {
-    console.log(this.get('state'));
     if (this.get('state') === 'started') {
       this.node.start(0);
     }
