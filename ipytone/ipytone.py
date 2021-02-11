@@ -41,6 +41,8 @@ class AudioNode(ToneWidgetBase):
             self._out_nodes = self._normalize_destination(destination)
             destination._in_nodes = destination._in_nodes + [self]
 
+        return self
+
     def disconnect(self, destination):
         """Disconnect the ouput of this audio node from a connected destination."""
 
@@ -52,6 +54,8 @@ class AudioNode(ToneWidgetBase):
         new_in_nodes.remove(self)
         destination._in_nodes = new_in_nodes
 
+        return self
+
     def fan(self, *destinations):
         """Connect the output of this audio node to the ``destinations`` audio nodes in parallel."""
 
@@ -59,6 +63,8 @@ class AudioNode(ToneWidgetBase):
 
         for node in destinations:
             node._in_nodes = node._in_nodes + [self]
+
+        return self
 
     def chain(self, *nodes):
         """Connect the output of this audio node to the other audio nodes in series."""
@@ -68,12 +74,16 @@ class AudioNode(ToneWidgetBase):
         for i in range(len(chain_nodes) - 1):
             chain_nodes[i].connect(chain_nodes[i + 1])
 
+        return self
+
     def to_destination(self):
         """Convenience method to directly connect the output of this audio node
         to the master node.
 
         """
         self.connect(get_destination())
+
+        return self
 
     @property
     def output(self):
@@ -102,11 +112,15 @@ class Source(AudioNode):
         """
         self.state = 'started'
 
+        return self
+
     def stop(self):
         """Stop the audio source."""
 
         if self.state == 'started':
             self.state = 'stopped'
+
+        return self
 
 
 class Destination(AudioNode):
