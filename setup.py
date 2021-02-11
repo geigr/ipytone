@@ -89,6 +89,8 @@ setup_args = dict(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Framework :: Jupyter',
     ],
     include_package_data = True,
@@ -97,7 +99,7 @@ setup_args = dict(
     ],
     extras_require = {
         'test': [
-            'pytest>=3.6',
+            'pytest>=4.6',
             'pytest-cov',
             'nbval',
         ],
