@@ -11,15 +11,13 @@ import {
   MODULE_NAME, MODULE_VERSION
 } from './version';
 
-// Import the CSS
-// import '../css/widget.css'
 
-abstract class _ToneWidgetModel extends WidgetModel {
+abstract class ToneWidgetModel extends WidgetModel {
 
-  defaults () {
+  defaults(): any {
     return {...super.defaults(),
-      _model_module: _ToneWidgetModel.model_module,
-      _model_module_version: _ToneWidgetModel.model_module_version,
+      _model_module: ToneWidgetModel.model_module,
+      _model_module_version: ToneWidgetModel.model_module_version,
     };
   }
 
@@ -29,9 +27,9 @@ abstract class _ToneWidgetModel extends WidgetModel {
 }
 
 
-abstract class AudioNodeModel extends _ToneWidgetModel {
+abstract class AudioNodeModel extends ToneWidgetModel {
 
-  defaults() {
+  defaults(): any {
     return {...super.defaults(),
       _model_name: AudioNodeModel.model_name,
       _in_nodes: [],
@@ -39,7 +37,7 @@ abstract class AudioNodeModel extends _ToneWidgetModel {
     };
   }
 
-  initialize (attributes: any, options: any) {
+  initialize (attributes: Backbone.ObjectHash, options: any): void {
     super.initialize(attributes, options);
 
     this.node = this.createNode();
@@ -47,15 +45,15 @@ abstract class AudioNodeModel extends _ToneWidgetModel {
     this.initEventListeners();
   }
 
-  initEventListeners () : void {
+  initEventListeners (): void {
     this.on('change:_out_nodes', this.updateConnections, this);
   }
 
-  private getToneAudioNodes (models: AudioNodeModel[]) : tone.ToneAudioNode[] {
+  private getToneAudioNodes (models: AudioNodeModel[]): tone.ToneAudioNode[] {
     return models.map((model: AudioNodeModel) => { return model.node; });
   }
 
-  private updateConnections () : void {
+  private updateConnections (): void {
     // connect new nodes (if any)
     const nodesAdded = this.get('_out_nodes').filter( (other: AudioNodeModel) => {
       return !this.previous('_out_nodes').includes(other);
@@ -75,10 +73,10 @@ abstract class AudioNodeModel extends _ToneWidgetModel {
 
   node: tone.ToneAudioNode;
 
-  abstract createNode () : tone.ToneAudioNode;
+  abstract createNode (): tone.ToneAudioNode;
 
   static serializers: ISerializers = {
-    ..._ToneWidgetModel.serializers,
+    ...ToneWidgetModel.serializers,
     _in_nodes: { deserialize: (unpack_models as any) },
     _out_nodes: { deserialize: (unpack_models as any) }
   }
@@ -89,7 +87,7 @@ abstract class AudioNodeModel extends _ToneWidgetModel {
 
 export
 class DestinationModel extends AudioNodeModel {
-  defaults() {
+  defaults(): any {
     return {...super.defaults(),
       _model_name: DestinationModel.model_name,
       mute: false,
@@ -97,19 +95,19 @@ class DestinationModel extends AudioNodeModel {
     };
   }
 
-  createNode () {
+  createNode (): tone.ToneAudioNode {
     return tone.getDestination();
   }
 
-  get mute () {
+  get mute (): boolean {
     return this.get('mute');
   }
 
-  get volume () {
+  get volume (): number {
     return this.get('volume');
   }
 
-  initEventListeners () : void {
+  initEventListeners (): void {
     super.initEventListeners();
 
     this.on('change:mute', () => { this.node.mute = this.mute; });
@@ -124,7 +122,7 @@ class DestinationModel extends AudioNodeModel {
 
 export
 class OscillatorModel extends AudioNodeModel {
-  defaults() {
+  defaults(): any {
     return {...super.defaults(),
       _model_name: OscillatorModel.model_name,
       type: 'sine',
@@ -135,31 +133,31 @@ class OscillatorModel extends AudioNodeModel {
     };
   }
 
-  createNode () {
+  createNode (): tone.Oscillator {
     return new tone.Oscillator({
-      "type" : this.type,
-      "frequency" : this.frequency,
-      "volume" : this.volume
+      "type" : this.get('type'),
+      "frequency" : this.get('frequency'),
+      "volume" : this.get('volume')
     });
   }
 
-  get type () {
+  get type (): tone.ToneOscillatorType {
     return this.get('type');
   }
 
-  get frequency () {
+  get frequency (): number {
     return this.get('frequency');
   }
 
-  get detune () {
+  get detune (): number {
     return this.get('detune');
   }
 
-  get volume () {
+  get volume (): number {
     return this.get('volume');
   }
 
-  initEventListeners () : void {
+  initEventListeners (): void {
     super.initEventListeners();
 
     this.on('change:frequency', () => { this.node.frequency.value = this.frequency; });
@@ -171,7 +169,7 @@ class OscillatorModel extends AudioNodeModel {
 
   node: tone.Oscillator;
 
-  private togglePlay () {
+  private togglePlay (): void {
     console.log(this.node.state);
     if (this.get('started')) {
       this.node.start(0);
