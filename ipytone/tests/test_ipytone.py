@@ -8,7 +8,7 @@ import pytest
 from traitlets.traitlets import TraitError
 
 from ipytone import get_destination, Oscillator
-from ipytone.ipytone import AudioNode, Destination
+from ipytone.ipytone import AudioNode, Destination, Source
 
 
 def test_audio_node_creation():
@@ -76,6 +76,20 @@ def test_audio_node_chain():
     assert node2.output == [node3]
     assert node2.input == [node1]
     assert node3.input == [node2]
+
+
+def test_source():
+    node = Source()
+
+    assert node.mute is False
+    assert node.state == 'stopped'
+    assert node.volume == -16
+
+    node.start()
+    assert node.state == 'started'
+
+    node.stop()
+    assert node.state == 'stopped'
 
 
 def test_destination():

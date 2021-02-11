@@ -7,6 +7,8 @@ import {
 
 import * as tone from 'tone';
 
+// import * as source from 'tone/Tone/source/Source';
+
 import {
   MODULE_NAME, MODULE_VERSION
 } from './version';
@@ -85,6 +87,50 @@ abstract class AudioNodeModel extends ToneWidgetModel {
 }
 
 
+abstract class SourceModel extends AudioNodeModel {
+  defaults(): any {
+    return {...super.defaults(),
+      _model_name: SourceModel.model_name,
+      mute: false,
+      state: 'stopped',
+      volume: -16
+    };
+  }
+
+  get mute (): boolean {
+    return this.get('mute');
+  }
+
+  get volume (): number {
+    return this.get('volume');
+  }
+
+  initEventListeners (): void {
+    super.initEventListeners();
+
+    this.on('change:mute', () => { this.node.mute = this.mute; });
+    this.on('change:state', this.startStopNode, this);
+    this.on('change:volume', () => { this.node.volume.value = this.volume; });
+  }
+
+  private startStopNode (): void {
+    console.log(this.get('state'));
+    if (this.get('state') === 'started') {
+      this.node.start(0);
+    }
+    else {
+      this.node.stop(0);
+    }
+  }
+
+  // FIXME: typescript error: property not assignable to the same property in base type
+  // node: source.Source<source.SourceOptions>;
+  node: any;
+
+  static model_name = 'SourceModel';
+}
+
+
 export
 class DestinationModel extends AudioNodeModel {
   defaults(): any {
@@ -121,15 +167,15 @@ class DestinationModel extends AudioNodeModel {
 
 
 export
-class OscillatorModel extends AudioNodeModel {
+class OscillatorModel extends SourceModel {
+
   defaults(): any {
     return {...super.defaults(),
       _model_name: OscillatorModel.model_name,
       type: 'sine',
       frequency: 440,
       detune: 0,
-      volume: -16,
-      started: false
+      volume: -16
     };
   }
 
@@ -164,21 +210,9 @@ class OscillatorModel extends AudioNodeModel {
     this.on('change:detune', () => { this.node.detune.value = this.detune; });
     this.on('change:volume', () => { this.node.volume.value = this.volume; });
     this.on('change:type', () => { this.node.type = this.type; });
-    this.on('change:started', this.togglePlay, this);
   }
 
   node: tone.Oscillator;
-
-  private togglePlay (): void {
-    console.log(this.node.state);
-    if (this.get('started')) {
-      this.node.start(0);
-    }
-    else {
-      this.node.stop(0);
-    }
-    console.log(this.node.state);
-  }
 
   static model_name = 'OscillatorModel';
 }

@@ -5,17 +5,17 @@
 # Distributed under the terms of the Modified BSD License.
 
 from ipywidgets import widget_serialization, Widget
-from traitlets import Instance, Unicode, List, Float, Int, Bool, validate, TraitError
+from traitlets import Enum, Instance, Unicode, List, Float, Int, Bool, validate, TraitError
 
 from ._frontend import module_name, module_version
 
 
-class _ToneWidgetBase(Widget):
+class ToneWidgetBase(Widget):
     _model_module = Unicode(module_name).tag(sync=True)
     _model_module_version = Unicode(module_version).tag(sync=True)
 
 
-class AudioNode(_ToneWidgetBase):
+class AudioNode(ToneWidgetBase):
     """An audio node widget."""
 
     _model_name = Unicode('AudioNodeModel').tag(sync=True)
@@ -86,6 +86,29 @@ class AudioNode(_ToneWidgetBase):
         return list(self._in_nodes)
 
 
+class Source(AudioNode):
+    """Audio source node."""
+
+    _model_name = Unicode('SourceModel').tag(sync=True)
+
+    mute = Bool(False).tag(sync=True)
+    state = Enum(['started', 'stopped'], allow_none=False, default_value='stopped').tag(sync=True)
+    volume = Float(-16).tag(sync=True)
+
+    def start(self):
+        """Start the audio source.
+
+        If it's already started, this will stop and restart the source.
+        """
+        self.state = 'started'
+
+    def stop(self):
+        """Stop the audio source."""
+
+        if self.state == 'started':
+            self.state = 'stopped'
+
+
 class Destination(AudioNode):
     """Audio master node."""
 
@@ -110,7 +133,7 @@ def get_destination():
     return _DESTINATION
 
 
-class Oscillator(AudioNode):
+class Oscillator(Source):
     """A simple Oscillator."""
    
     _model_name = Unicode('OscillatorModel').tag(sync=True)
