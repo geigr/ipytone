@@ -28,6 +28,6 @@ jobs:
         auto-activate-base: false
         channels: conda-forge
     - name: Install ipytone
-      run: python -m pip install . -v
+      run: pip install . -v
     - name: Run Python tests
       run: pytest .
