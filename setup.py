@@ -22,101 +22,76 @@ from jupyter_packaging import (
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # The name of the project
-name = 'ipytone'
+name = "ipytone"
 
 # Get our version
-version = get_version(pjoin(name, '_version.py'))
+version = get_version(pjoin(name, "_version.py"))
 
-nb_path = pjoin(HERE, name, 'nbextension', 'static')
-lab_path = pjoin(HERE, name, 'labextension')
+nb_path = pjoin(HERE, name, "nbextension", "static")
+lab_path = pjoin(HERE, name, "labextension")
 
 # Representative files that should exist after a successful build
 jstargets = [
-    pjoin(nb_path, 'index.js'),
-    pjoin(lab_path, 'package.json'),
+    pjoin(nb_path, "index.js"),
+    pjoin(lab_path, "package.json"),
 ]
 
-package_data_spec = {
-    name: [
-        'nbextension/static/*.*js*',
-        'labextension/**'
-    ]
-}
+package_data_spec = {name: ["nbextension/static/*.*js*", "labextension/**"]}
 
 data_files_spec = [
-    ('share/jupyter/nbextensions/ipytone',
-        nb_path, '*.js*'),
-    ('share/jupyter/labextensions/ipytone', lab_path, '**'),
-    ('etc/jupyter/nbconfig/notebook.d' , HERE, 'ipytone.json')
+    ("share/jupyter/nbextensions/ipytone", nb_path, "*.js*"),
+    ("share/jupyter/labextensions/ipytone", lab_path, "**"),
+    ("etc/jupyter/nbconfig/notebook.d", HERE, "ipytone.json"),
 ]
 
 
-cmdclass = create_cmdclass('jsdeps', package_data_spec=package_data_spec,
-    data_files_spec=data_files_spec)
+cmdclass = create_cmdclass(
+    "jsdeps", package_data_spec=package_data_spec, data_files_spec=data_files_spec
+)
 
 js_command = combine_commands(
-    install_npm(HERE, npm=["yarn"], build_cmd='build:extensions'),
+    install_npm(HERE, npm=["yarn"], build_cmd="build:extensions"),
     ensure_targets(jstargets),
 )
 
-is_repo = os.path.exists(os.path.join(HERE, '.git'))
+is_repo = os.path.exists(os.path.join(HERE, ".git"))
 if is_repo:
-    cmdclass['jsdeps'] = js_command
+    cmdclass["jsdeps"] = js_command
 else:
-    cmdclass['jsdeps'] = skip_if_exists(jstargets, js_command)
+    cmdclass["jsdeps"] = skip_if_exists(jstargets, js_command)
 
 
 setup_args = dict(
-    name            = name,
-    description     = 'Interactive audio in Jupyter',
-    version         = version,
-    cmdclass        = cmdclass,
-    packages        = find_packages(),
-    zip_safe        = False,
-    author          = 'Benoit Bovy',
-    author_email    = 'benbovy@gmail.com',
-    url             = 'https://github.com/benbovy/ipytone',
-    license         = 'BSD',
-    platforms       = "Linux, Mac OS X, Windows",
-    keywords        = ['Jupyter', 'Widgets', 'IPython'],
-    classifiers     = [
-        'Intended Audience :: Developers',
-        'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Framework :: Jupyter',
+    name=name,
+    description="Interactive audio in Jupyter",
+    version=version,
+    cmdclass=cmdclass,
+    packages=find_packages(),
+    zip_safe=False,
+    author="Benoit Bovy",
+    author_email="benbovy@gmail.com",
+    url="https://github.com/benbovy/ipytone",
+    license="BSD",
+    platforms="Linux, Mac OS X, Windows",
+    keywords=["Jupyter", "Widgets", "IPython"],
+    classifiers=[
+        "License :: OSI Approved :: BSD License",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Framework :: Jupyter",
     ],
-    include_package_data = True,
-    install_requires = [
-        'ipywidgets>=7.6.0',
+    include_package_data=True,
+    python_requires=">=3.6",
+    install_requires=[
+        "ipywidgets>=7.6.0",
     ],
-    extras_require = {
-        'test': [
-            'pytest>=3.6',
-            'pytest-cov',
-            'nbval',
-        ],
-        'examples': [
-            # Any requirements for the examples to run
-        ],
-        'docs': [
-            'sphinx>=1.5',
-            'recommonmark',
-            'sphinx_rtd_theme',
-            'nbsphinx>=0.2.13,<0.4.0',
-            'jupyter_sphinx',
-            'nbsphinx-link',
-            'pytest_check_links',
-            'pypandoc',
+    extras_require={
+        "test": [
+            "pytest>=4.6",
+            "pytest-cov",
         ],
     },
-    entry_points = {
-    },
+    entry_points={},
 )
 
 setup(**setup_args)

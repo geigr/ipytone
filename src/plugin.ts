@@ -1,23 +1,15 @@
 // Copyright (c) Benoit Bovy
 // Distributed under the terms of the Modified BSD License.
 
-import {
-  Application, IPlugin
-} from '@lumino/application';
+import { Application, IPlugin } from '@lumino/application';
 
-import {
-  Widget
-} from '@lumino/widgets';
+import { Widget } from '@lumino/widgets';
 
-import {
-  IJupyterWidgetRegistry
- } from '@jupyter-widgets/base';
+import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
 
 import * as widgetExports from './widget';
 
-import {
-  MODULE_NAME, MODULE_VERSION
-} from './version';
+import { MODULE_NAME, MODULE_VERSION } from './version';
 
 const EXTENSION_ID = 'ipytone:plugin';
 

@@ -41,9 +41,13 @@
     "clean:lib": "rimraf lib",
     "clean:nbextension": "rimraf ipytone/nbextension/static/index.js",
     "clean:labextension": "rimraf ipytone/labextension",
-    "lint": "eslint . --ext .ts,.tsx --fix",
-    "lint:check": "eslint . --ext .ts,.tsx",
+    "eslint": "eslint . --ext .ts,.tsx --fix",
+    "eslint:check": "eslint . --ext .ts,.tsx",
     "install:labextension:dev": "jupyter labextension develop --overwrite .",
+    "lint": "yarn && yarn run prettier && yarn run eslint",
+    "lint:check": "yarn run prettier:check && yarn run eslint:check",
+    "prettier": "prettier --ignore-path .gitignore --write \"**/*{.ts,.tsx,.js,.jsx,.css,.json}\"",
+    "prettier:check": "prettier --ignore-path .gitignore --check \"**/*{.ts,.tsx,.js,.jsx,.css,.json}\"",
     "prepack": "yarn run build:lib",
     "watch": "run-p watch:lib watch:nbextension",
     "watch:lib": "tsc -w",
@@ -61,6 +65,12 @@
     "@lumino/widgets": "^1.6.0",
     "@types/node": "^10.11.6",
     "@types/webpack-env": "^1.13.6",
+    "@typescript-eslint/eslint-plugin": "^3.6.0",
+    "@typescript-eslint/parser": "^3.6.0",
+    "eslint": "^7.4.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-prettier": "^3.3.1",
+    "prettier": "^2.0.5",
     "acorn": "^6.2.0",
     "css-loader": "^3.2.0",
     "expect.js": "^0.3.1",
@@ -84,5 +94,10 @@
         "singleton": true
       }
     }
+  },
+  "engines": {
+    "node": ">=10.15.3",
+    "npm": "please-use-yarn",
+    "yarn": ">=1.15.0"
   }
 }

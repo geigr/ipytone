@@ -19,9 +19,9 @@ class ToneWidgetBase(Widget):
 class AudioNode(ToneWidgetBase):
     """An audio node widget."""
 
-    _model_name = Unicode('AudioNodeModel').tag(sync=True)
+    _model_name = Unicode("AudioNodeModel").tag(sync=True)
 
-    name = Unicode('').tag(sync=True)
+    name = Unicode("").tag(sync=True)
 
     _in_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
     _out_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
@@ -102,16 +102,16 @@ class AudioNode(ToneWidgetBase):
 
     def _repr_keys(self):
         if self.name:
-            yield 'name'
+            yield "name"
 
 
 class Source(AudioNode):
     """Audio source node."""
 
-    _model_name = Unicode('SourceModel').tag(sync=True)
+    _model_name = Unicode("SourceModel").tag(sync=True)
 
     mute = Bool(False).tag(sync=True)
-    state = Enum(['started', 'stopped'], allow_none=False, default_value='stopped').tag(sync=True)
+    state = Enum(["started", "stopped"], allow_none=False, default_value="stopped").tag(sync=True)
     volume = Float(-16).tag(sync=True)
 
     def start(self):
@@ -119,15 +119,15 @@ class Source(AudioNode):
 
         If it's already started, this will stop and restart the source.
         """
-        self.state = 'started'
+        self.state = "started"
 
         return self
 
     def stop(self):
         """Stop the audio source."""
 
-        if self.state == 'started':
-            self.state = 'stopped'
+        if self.state == "started":
+            self.state = "stopped"
 
         return self
 
@@ -137,9 +137,9 @@ class Destination(AudioNode):
 
     _singleton = None
 
-    _model_name = Unicode('DestinationModel').tag(sync=True)
+    _model_name = Unicode("DestinationModel").tag(sync=True)
 
-    name = Unicode('main output').tag(sync=True)
+    name = Unicode("main output").tag(sync=True)
 
     mute = Bool(False).tag(sync=True)
     volume = Float(-16).tag(sync=True)
@@ -160,8 +160,8 @@ def get_destination():
 
 class Oscillator(Source):
     """A simple Oscillator."""
-   
-    _model_name = Unicode('OscillatorModel').tag(sync=True)
+
+    _model_name = Unicode("OscillatorModel").tag(sync=True)
 
     type = Unicode("sine", help="Oscillator type").tag(sync=True)
     frequency = Float(440, help="Oscillator frequency").tag(sync=True)
@@ -169,12 +169,12 @@ class Oscillator(Source):
     volume = Float(-16, help="Oscillator gain").tag(sync=True)
     started = Bool(False, help="Start/stop oscillator").tag(sync=True)
 
-    @validate('type')
+    @validate("type")
     def _validate_oscillator_type(self, proposal):
-        wave = proposal['value']
+        wave = proposal["value"]
         wave_re = r"(sine|square|sawtooth|triangle)[\d]*"
 
         if re.fullmatch(wave_re, wave) is None:
             raise TraitError(f"Invalid oscillator type: {wave}")
 
-        return proposal['value']
+        return proposal["value"]
