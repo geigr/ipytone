@@ -1,5 +1,5 @@
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/benbovy/ipytone/master?urlpath=lab%2Ftree%2Fexamples)
-[![Tests](https://github.com/benbovy/ipytone/workflows/test/badge.svg)](https://github.com/benbovy/ipytone/actions)
+[![Tests](https://github.com/benbovy/ipytone/workflows/Test/badge.svg)](https://github.com/benbovy/ipytone/actions)
 
 # ipytone
 
