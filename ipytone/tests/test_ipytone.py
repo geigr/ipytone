@@ -12,7 +12,7 @@ from ipytone.ipytone import AudioNode, Destination, Source
 
 
 def test_audio_node_creation():
-    node = AudioNode(name='test')
+    node = AudioNode(name="test")
 
     assert node.input == []
     assert node.output == []
@@ -92,15 +92,15 @@ def test_source():
     node = Source()
 
     assert node.mute is False
-    assert node.state == 'stopped'
+    assert node.state == "stopped"
     assert node.volume == -16
 
     n = node.start()
-    assert node.state == 'started'
+    assert node.state == "started"
     assert n is node
 
     n = node.stop()
-    assert node.state == 'stopped'
+    assert node.state == "stopped"
     assert n is node
 
 
@@ -126,7 +126,7 @@ def test_oscillator():
     assert osc.volume == -16
 
     # just test that the following types are valid
-    for wave in ['sine', 'square', 'sawtooth', 'triangle']:
+    for wave in ["sine", "square", "sawtooth", "triangle"]:
         for pcount in range(2):
             osc.type = wave + str(pcount)
 

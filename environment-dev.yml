@@ -1,0 +1,13 @@
+name: ipytone-dev
+channels:
+  - conda-forge
+dependencies:
+  - black
+  - flake8
+  - ipywidgets>=7.6
+  - isort
+  - jupyter-packaging
+  - jupyterlab=3
+  - pip
+  - pytest
+  - yarn
