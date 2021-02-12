@@ -96,7 +96,6 @@ setup_args = dict(
         "test": [
             "pytest>=4.6",
             "pytest-cov",
-            "nbval",
         ],
         "examples": [
             # Any requirements for the examples to run
