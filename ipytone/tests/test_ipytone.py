@@ -12,10 +12,11 @@ from ipytone.ipytone import AudioNode, Destination, Source
 
 
 def test_audio_node_creation():
-    node = AudioNode()
+    node = AudioNode(name='test')
 
     assert node.input == []
     assert node.output == []
+    assert repr(node) == "AudioNode(name='test')"
 
 
 def test_audio_node_connect():

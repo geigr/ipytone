@@ -21,6 +21,8 @@ class AudioNode(ToneWidgetBase):
 
     _model_name = Unicode('AudioNodeModel').tag(sync=True)
 
+    name = Unicode('').tag(sync=True)
+
     _in_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
     _out_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
 
@@ -98,6 +100,10 @@ class AudioNode(ToneWidgetBase):
         """Get all audio nodes connected to the input of this node."""
         return list(self._in_nodes)
 
+    def _repr_keys(self):
+        if self.name:
+            yield 'name'
+
 
 class Source(AudioNode):
     """Audio source node."""
@@ -132,6 +138,8 @@ class Destination(AudioNode):
     _singleton = None
 
     _model_name = Unicode('DestinationModel').tag(sync=True)
+
+    name = Unicode('main output').tag(sync=True)
 
     mute = Bool(False).tag(sync=True)
     volume = Float(-16).tag(sync=True)

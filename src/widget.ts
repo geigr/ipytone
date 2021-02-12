@@ -34,6 +34,7 @@ abstract class AudioNodeModel extends ToneWidgetModel {
   defaults(): any {
     return {...super.defaults(),
       _model_name: AudioNodeModel.model_name,
+      name: '',
       _in_nodes: [],
       _out_nodes: []
     };
