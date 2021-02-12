@@ -33,5 +33,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install file://$PWD#egg=ipytone[test]
     - name: Run Python tests
-      run: pip install pytest
-      run: pytest ipytone
+      run: |
+        pip install pytest
+        pytest ipytone
