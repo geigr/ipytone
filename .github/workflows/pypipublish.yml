@@ -14,10 +14,11 @@ jobs:
         with:
           python-version: 3.8
           auto-activate-base: true
+          channels: conda-forge
       - name: Install dependencies
         shell: bash -l {0}
         run: |
-          conda install pip twine setuptools wheel jupyterlab=3 jupyter-packaging python-build nodejs yarn
+          conda install pip twine setuptools wheel jupyterlab=3 jupyter-packaging python-build nodejs yarn -c conda-forge
       - name: Build and publish
         shell: bash -l {0}
         env:
