@@ -17,13 +17,12 @@ jobs:
       - name: Install dependencies
         shell: bash -l {0}
         run: |
-          conda install pip twine setuptools
-          python -m pip install -q build
+          conda install pip twine setuptools wheel jupyterlab=3 jupyter-packaging python-build nodejs yarn
       - name: Build and publish
         shell: bash -l {0}
         env:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
-          python -m build .
+          python -m build . --no-isolation
           twine upload dist/ipytone-*
