@@ -4,7 +4,7 @@
 # Copyright (c) Benoit Bovy.
 # Distributed under the terms of the Modified BSD License.
 
-from .ipytone import Oscillator
+from .ipytone import get_destination, Oscillator
 from ._version import __version__, version_info
 
 
