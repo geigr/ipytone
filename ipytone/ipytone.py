@@ -29,7 +29,9 @@ class AudioNode(ToneWidgetBase):
             destination = [destination]
 
         if not all([isinstance(d, AudioNode) for d in destination]):
-            raise ValueError(f"destination(s) must be AudioNode object(s)")
+            raise ValueError("destination(s) must be AudioNode object(s)")
+        if any([isinstance(d, Source) for d in destination]):
+            raise ValueError("cannot connect to source audio node(s)")
         if self in destination:
             raise ValueError("cannot connect an audio node to itself")
 

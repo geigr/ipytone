@@ -38,9 +38,13 @@ def test_audio_node_connect():
 @pytest.mark.parametrize("func", [AudioNode.connect, AudioNode.fan])
 def test_audio_node_connect_error(func):
     node1 = AudioNode()
+    src = Source()
 
     with pytest.raises(ValueError, match="cannot connect an audio node to itself"):
         func(node1, node1)
+
+    with pytest.raises(ValueError, match="cannot connect to source.*"):
+        func(node1, src)
 
     with pytest.raises(ValueError, match=".*must be AudioNode.*"):
         func(node1, "not an audio node")
