@@ -9,7 +9,25 @@ Note: This is still at a proof-of-concept stage.
 
 ## Requirements
 
-* JupyterLab >= 3.0
+* JupyterLab >= 3.0 or Jupyter notebook.
+
+## Install
+
+You can install ipytone either with [pip](#with-pip) or [conda](#with-conda).
+
+### With pip
+
+```sh
+pip install ipytone
+# Skip the next step if using JupyterLab or Classic notebook version 5.3 and above
+jupyter nbextension enable --py --sys-prefix ipytone
+```
+
+### With conda
+
+```sh
+conda install -c conda-forge ipytone
+```
 
 ## Contributing
 
