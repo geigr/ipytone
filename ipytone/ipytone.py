@@ -110,9 +110,9 @@ class Source(AudioNode):
 
     _model_name = Unicode("SourceModel").tag(sync=True)
 
-    mute = Bool(False).tag(sync=True)
+    mute = Bool(False, help="Mute source").tag(sync=True)
     state = Enum(["started", "stopped"], allow_none=False, default_value="stopped").tag(sync=True)
-    volume = Float(-16).tag(sync=True)
+    volume = Float(-16, help="Source gain").tag(sync=True)
 
     def start(self):
         """Start the audio source.
@@ -166,8 +166,6 @@ class Oscillator(Source):
     type = Unicode("sine", help="Oscillator type").tag(sync=True)
     frequency = Float(440, help="Oscillator frequency").tag(sync=True)
     detune = Int(0, help="Oscillator frequency detune").tag(sync=True)
-    volume = Float(-16, help="Oscillator gain").tag(sync=True)
-    started = Bool(False, help="Start/stop oscillator").tag(sync=True)
 
     @validate("type")
     def _validate_oscillator_type(self, proposal):
@@ -178,3 +176,15 @@ class Oscillator(Source):
             raise TraitError(f"Invalid oscillator type: {wave}")
 
         return proposal["value"]
+
+
+class Noise(Source):
+    """A simple Oscillator."""
+
+    _model_name = Unicode("NoiseModel").tag(sync=True)
+
+    type = Enum(
+        ["pink", "white", "brown"], allow_none=False, default_value="white", help="Noise type"
+    ).tag(sync=True)
+    fade_in = Float(0, help="Fade in time").tag(sync=True)
+    fade_out = Float(0, help="Fade out time").tag(sync=True)
