@@ -7,7 +7,7 @@
 import pytest
 from traitlets.traitlets import TraitError
 
-from ipytone import get_destination, Oscillator
+from ipytone import get_destination, Oscillator, Noise
 from ipytone.ipytone import AudioNode, Destination, Source
 
 
@@ -123,7 +123,6 @@ def test_oscillator():
     assert osc.type == "sine"
     assert osc.frequency == 440
     assert osc.detune == 0
-    assert osc.volume == -16
 
     # just test that the following types are valid
     for wave in ["sine", "square", "sawtooth", "triangle"]:
@@ -132,3 +131,18 @@ def test_oscillator():
 
     with pytest.raises(TraitError, match="Invalid oscillator type"):
         osc.type = "not a good oscillator wave"
+
+
+def test_noise():
+    noise = Noise()
+
+    assert noise.type == "white"
+    assert noise.fade_in == 0
+    assert noise.fade_out == 0
+
+    # just test that the following types are valid
+    for typ in ["pink", "white", "brown"]:
+        noise.type = typ
+
+    with pytest.raises(TraitError):
+        noise.type = "not a valid noise type"

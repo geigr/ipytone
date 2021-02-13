@@ -182,7 +182,6 @@ export class OscillatorModel extends SourceModel {
       type: 'sine',
       frequency: 440,
       detune: 0,
-      volume: -16,
     };
   }
 
@@ -191,6 +190,7 @@ export class OscillatorModel extends SourceModel {
       type: this.get('type'),
       frequency: this.get('frequency'),
       volume: this.get('volume'),
+      detune: this.get('detune'),
     });
   }
 
@@ -206,10 +206,6 @@ export class OscillatorModel extends SourceModel {
     return this.get('detune');
   }
 
-  get volume(): number {
-    return this.get('volume');
-  }
-
   initEventListeners(): void {
     super.initEventListeners();
 
@@ -219,9 +215,6 @@ export class OscillatorModel extends SourceModel {
     this.on('change:detune', () => {
       this.node.detune.value = this.detune;
     });
-    this.on('change:volume', () => {
-      this.node.volume.value = this.volume;
-    });
     this.on('change:type', () => {
       this.node.type = this.type;
     });
@@ -230,4 +223,55 @@ export class OscillatorModel extends SourceModel {
   node: tone.Oscillator;
 
   static model_name = 'OscillatorModel';
+}
+
+export class NoiseModel extends SourceModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: NoiseModel.model_name,
+      type: 'white',
+      fade_in: 0,
+      fade_out: 0,
+    };
+  }
+
+  createNode(): tone.Noise {
+    return new tone.Noise({
+      type: this.get('type'),
+      volume: this.get('volume'),
+      fadeIn: this.get('fade_in'),
+      fadeOut: this.get('fade_out'),
+    });
+  }
+
+  get type(): tone.NoiseType {
+    return this.get('type');
+  }
+
+  get fadeIn(): number {
+    return this.get('fade_in');
+  }
+
+  get fadeOut(): number {
+    return this.get('fade_out');
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:type', () => {
+      this.node.type = this.type;
+    });
+    this.on('change:fade_in', () => {
+      this.node.fadeIn = this.fadeIn;
+    });
+    this.on('change:fade_out', () => {
+      this.node.fadeOut = this.fadeOut;
+    });
+  }
+
+  node: tone.Noise;
+
+  static model_name = 'NoiseModel';
 }
