@@ -8,7 +8,7 @@ import pytest
 from traitlets.traitlets import TraitError
 
 from ipytone import get_destination, Oscillator, Noise
-from ipytone.ipytone import AudioNode, Destination, Source
+from ipytone.ipytone import AudioNode, Destination, Signal, Source
 
 
 def test_audio_node_creation():
@@ -86,6 +86,23 @@ def test_audio_node_chain():
     assert node2.input == [node1]
     assert node3.input == [node2]
     assert n is node1
+
+
+def test_signal():
+    sig = Signal()
+
+    assert sig.units == "number"
+    assert sig.min_value == sig.max_value == None
+
+    sig.value = 2
+    assert sig.value == 2
+
+    sig2 = Signal(value=440, units="frequency", min_value=100, max_value=1e3)
+    assert sig2.value == 440
+    assert sig2.units == "frequency"
+    assert sig2.min_value == 100
+    assert sig2.max_value == 1e3
+    assert repr(sig2) == "Signal(value=440.0, units='frequency')"
 
 
 def test_source():

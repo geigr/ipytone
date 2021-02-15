@@ -134,8 +134,8 @@ class Signal(AudioNode):
 
     units = Enum(_UNITS, default_value="number", allow_none=False).tag(sync=True)
     value = Union((Float(), Int(), Unicode())).tag(sync=True)
-    min_value = Union((Float(), Int(), Unicode()), allow_none=True).tag(sync=True)
-    max_value = Union((Float(), Int(), Unicode()), allow_none=True).tag(sync=True)
+    min_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
+    max_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
 
     def _repr_keys(self):
         for key in super()._repr_keys():

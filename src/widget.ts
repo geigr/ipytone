@@ -97,8 +97,8 @@ export class SignalModel extends AudioNodeModel {
       _model_name: SignalModel.model_name,
       _unit_name: 'number',
       value: null,
-      min_value: null,
-      max_value: null,
+      min_value: undefined,
+      max_value: undefined,
     };
   }
 
@@ -106,13 +106,25 @@ export class SignalModel extends AudioNodeModel {
     return new tone.Signal({
       value: this.get('value'),
       units: this.get('units'),
-      //minValue: this.get('min_value'),
-      //maxValue: this.get('max_value'),
+      minValue: this.normalizeMinMax(this.get('min_value')),
+      maxValue: this.normalizeMinMax(this.get('max_value')),
     });
+  }
+
+  private normalizeMinMax(value: number | null) : number | undefined {
+    return (value === null ? undefined : value);
   }
 
   get value(): any {
     return this.get('value');
+  }
+
+  get minValue(): number {
+    return this.node.minValue;
+  }
+
+  get maxValue(): number {
+    return this.node.maxValue;
   }
 
   initEventListeners(): void {
