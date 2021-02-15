@@ -90,6 +90,44 @@ abstract class AudioNodeModel extends ToneWidgetModel {
   static model_name = 'AudioNodeModel';
 }
 
+export class SignalModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: SignalModel.model_name,
+      _unit_name: 'number',
+      value: null,
+      min_value: null,
+      max_value: null,
+    };
+  }
+
+  createNode(): tone.Signal {
+    return new tone.Signal({
+      value: this.get('value'),
+      units: this.get('units'),
+      //minValue: this.get('min_value'),
+      //maxValue: this.get('max_value'),
+    });
+  }
+
+  get value(): any {
+    return this.get('value');
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:value', () => {
+      this.node.value = this.value;
+    });
+  }
+
+  node: tone.Signal;
+
+  model_name: 'SignalModel';
+}
+
 abstract class SourceModel extends AudioNodeModel {
   defaults(): any {
     return {
@@ -180,45 +218,49 @@ export class OscillatorModel extends SourceModel {
       ...super.defaults(),
       _model_name: OscillatorModel.model_name,
       type: 'sine',
-      frequency: 440,
-      detune: 0,
+      frequency: null,
+      detune: null,
     };
   }
 
   createNode(): tone.Oscillator {
-    return new tone.Oscillator({
+    const osc = new tone.Oscillator({
       type: this.get('type'),
-      frequency: this.get('frequency'),
       volume: this.get('volume'),
-      detune: this.get('detune'),
     });
+
+    // need to bind signals explicitly
+    this.frequency.node.connect(osc.frequency);
+    this.detune.node.connect(osc.detune);
+
+    return osc;
   }
 
   get type(): tone.ToneOscillatorType {
     return this.get('type');
   }
 
-  get frequency(): number {
+  get frequency(): SignalModel {
     return this.get('frequency');
   }
 
-  get detune(): number {
+  get detune(): SignalModel {
     return this.get('detune');
   }
 
   initEventListeners(): void {
     super.initEventListeners();
 
-    this.on('change:frequency', () => {
-      this.node.frequency.value = this.frequency;
-    });
-    this.on('change:detune', () => {
-      this.node.detune.value = this.detune;
-    });
     this.on('change:type', () => {
       this.node.type = this.type;
     });
   }
+
+  static serializers: ISerializers = {
+    ...SourceModel.serializers,
+    frequency: { deserialize: unpack_models as any },
+    detune: { deserialize: unpack_models as any },
+  };
 
   node: tone.Oscillator;
 

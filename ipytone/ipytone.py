@@ -6,7 +6,7 @@
 import re
 
 from ipywidgets import widget_serialization, Widget
-from traitlets import Enum, Instance, Unicode, List, Float, Int, Bool, validate, TraitError
+from traitlets import Enum, Instance, Unicode, List, Float, Int, Bool, validate, TraitError, Union
 
 from ._frontend import module_name, module_version
 
@@ -105,6 +105,45 @@ class AudioNode(ToneWidgetBase):
             yield "name"
 
 
+_UNITS = [
+    "bpm",
+    "cents",
+    "decibels",
+    "degrees",
+    "frequency",
+    "gain",
+    "hertz",
+    "number",
+    "positive",
+    "radians",
+    "samples",
+    "ticks",
+    "time",
+    "transport_time",
+]
+
+
+class Signal(AudioNode):
+    """A node that defines a value that can be modulated or calculated
+    at the audio sample-level accuracy.
+
+    """
+
+    _model_name = Unicode("SignalModel").tag(sync=True)
+    _unit_name = Unicode("number").tag(sync=True)
+
+    units = Enum(_UNITS, default_value="number", allow_none=False).tag(sync=True)
+    value = Union((Float(), Int(), Unicode())).tag(sync=True)
+    min_value = Union((Float(), Int(), Unicode()), allow_none=True).tag(sync=True)
+    max_value = Union((Float(), Int(), Unicode()), allow_none=True).tag(sync=True)
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        for key in ["value", "units"]:
+            yield key
+
+
 class Source(AudioNode):
     """Audio source node."""
 
@@ -159,13 +198,36 @@ def get_destination():
 
 
 class Oscillator(Source):
-    """A simple Oscillator."""
+    """A simple Oscillator.
+
+    Parameters
+    ----------
+    type : str, optional
+        Oscillator wave type, i.e., either 'sine', 'square', 'sawtooth' or 'triangle'
+        (default: 'sine'). Harmonic partials may be added, e.g., 'sine2', 'square8', etc.
+    frequency : int or str or :class:`Signal`, optional
+        Oscillator frequency, either in Hertz, as a note (e.g., 'A4') or as a Signal object
+        (default, 440 Hertz).
+    detune : int or :class:`Signal`, optional
+        Oscillator frequency detune, in cents (or as a Signal object). Default: 0.
+
+    """
 
     _model_name = Unicode("OscillatorModel").tag(sync=True)
 
     type = Unicode("sine", help="Oscillator type").tag(sync=True)
-    frequency = Float(440, help="Oscillator frequency").tag(sync=True)
-    detune = Int(0, help="Oscillator frequency detune").tag(sync=True)
+    frequency = Instance(Signal, help="Oscillator frequency").tag(sync=True, **widget_serialization)
+    detune = Instance(Signal, help="Oscillator frequency detune").tag(
+        sync=True, **widget_serialization
+    )
+
+    def __init__(self, type="sine", frequency=440, detune=0, **kwargs):
+        if not isinstance(frequency, Signal):
+            frequency = Signal(value=frequency, units="frequency")
+        if not isinstance(detune, Signal):
+            detune = Signal(value=detune, units="cents")
+
+        super().__init__(type=type, frequency=frequency, detune=detune, **kwargs)
 
     @validate("type")
     def _validate_oscillator_type(self, proposal):
