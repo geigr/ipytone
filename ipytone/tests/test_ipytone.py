@@ -102,6 +102,8 @@ def test_signal():
     assert sig2.units == "frequency"
     assert sig2.min_value == 100
     assert sig2.max_value == 1e3
+    assert sig2.overridden is False
+    assert repr(sig2) == "Signal(value=440.0, units='frequency')"
 
 
 def test_source():

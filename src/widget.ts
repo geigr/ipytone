@@ -77,6 +77,13 @@ abstract class AudioNodeModel extends ToneWidgetModel {
     this.getToneAudioNodes(nodesRemoved).forEach((node) => {
       this.node.disconnect(node);
     });
+
+    // update overriden attribute of signal nodes
+    nodesAdded.concat(nodesRemoved).forEach((model: AudioNodeModel) => {
+      if (model instanceof SignalModel) {
+        model.updateOverridden();
+      }
+    });
   }
 
   node: tone.ToneAudioNode;
@@ -101,7 +108,14 @@ export class SignalModel<T extends UnitName> extends AudioNodeModel {
       _units: 'number',
       _min_value: undefined,
       _max_value: undefined,
+      overridden: false,
     };
+  }
+
+  initialize(attributes: Backbone.ObjectHash, options: any): void {
+    super.initialize(attributes, options);
+
+    this.updateOverridden();
   }
 
   createNode(): tone.Signal {
@@ -111,6 +125,13 @@ export class SignalModel<T extends UnitName> extends AudioNodeModel {
       minValue: this.normalizeMinMax(this.get('_min_value')),
       maxValue: this.normalizeMinMax(this.get('_max_value')),
     });
+  }
+
+  updateOverridden(): void {
+    this.set('overridden', this.node.overridden);
+    // if overridden, value is reset to 0
+    this.set('value', this.node.value);
+    this.save_changes();
   }
 
   private normalizeMinMax(value: number | null): number | undefined {

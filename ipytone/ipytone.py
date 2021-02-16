@@ -127,14 +127,37 @@ class Signal(AudioNode):
     """A node that defines a value that can be modulated or calculated
     at the audio sample-level accuracy.
 
+    Signal objects support basic arithmetic operators such as ``+``, ``-``,
+    ``*``, ``**``, ``abs``, ``neg`` as well as the ``>`` comparison operator.
+
+    Like any other node, a signal can be connected to/from other nodes. When a signal
+    receives an incoming signal, it's value is ignored (reset to 0) and the incoming
+    signal passes through the node (``overridden=True``).
+
+    Parameters
+    ----------
+    value : integer or float or str, optional
+        Initial value of the signal (default: 0)
+    units : str
+        Signal value units, e.g., 'time', 'number', 'frequency', 'bpm', etc.
+    min_value : integer or float, optional
+        Signal value lower limit (default: no limit).
+    max_value : integer or float, optional
+        Signal value upper limit (default: no limit).
+    **kwargs
+        Arguments passed to :class:`AudioNode`
+
     """
 
     _model_name = Unicode("SignalModel").tag(sync=True)
 
     _units = Enum(_UNITS, default_value="number", allow_none=False).tag(sync=True)
-    value = Union((Float(), Int(), Unicode())).tag(sync=True)
+    value = Union((Float(), Int(), Unicode()), help="Signal current value").tag(sync=True)
     _min_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
     _max_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
+    overridden = Bool(
+        read_only=True, help="If True, the signal value is overridden by an incoming signal"
+    ).tag(sync=True)
 
     def __init__(self, value=0, units="number", min_value=None, max_value=None, **kwargs):
         kwargs.update(
@@ -144,14 +167,17 @@ class Signal(AudioNode):
 
     @property
     def units(self):
+        """Signal value units."""
         return self._units
 
     @property
     def min_value(self):
+        """Signal value lower limit."""
         return self._min_value
 
     @property
     def max_value(self):
+        """Signal value upper limit."""
         return self._max_value
 
     def __mul__(self, other):
