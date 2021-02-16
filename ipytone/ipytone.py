@@ -182,13 +182,19 @@ class Signal(AudioNode):
 
     def __mul__(self, other):
         if not isinstance(other, Signal):
-            other = Signal(value=other)
+            mult = Multiply(factor=other)
+        else:
+            mult = Multiply()
+            other.connect(mult.factor)
 
-        mult = Multiply(other)
         self.connect(mult)
 
         return mult
 
+    def __rmul__(self, other):
+        mult = Multiply(factor=Signal(other))
+        self.connect(mult)
+        return mult
 
     def _repr_keys(self):
         for key in super()._repr_keys():
@@ -201,6 +207,16 @@ class Signal(AudioNode):
 
 
 class Multiply(Signal):
+    """A signal resulting from the product of two signals or a signal and a constant factor.
+
+    Parameters
+    ----------
+    factor : integer or float or :class:`Signal`, optional
+        Multiplication factor, either a constant value or a signal (default: 1).
+    **kwargs
+        Arguments passed to :class:`AudioNode`.
+
+    """
 
     _model_name = Unicode("MultiplyModel").tag(sync=True)
 
@@ -208,9 +224,9 @@ class Multiply(Signal):
         sync=True, **widget_serialization
     )
 
-    def __init__(self, factor, **kwargs):
+    def __init__(self, factor=1, **kwargs):
         if not isinstance(factor, Signal):
-            factor = Signal(value=factor, **kwargs)
+            factor = Signal(value=factor)
 
         kwargs.update({"_factor": factor})
         super().__init__(**kwargs)
@@ -218,6 +234,11 @@ class Multiply(Signal):
     @property
     def factor(self):
         return self._factor
+
+    def _repr_keys(self):
+        if "name" in super()._repr_keys():
+            yield "name"
+        yield "factor"
 
 
 class Source(AudioNode):

@@ -8,7 +8,7 @@ import pytest
 from traitlets.traitlets import TraitError
 
 from ipytone import get_destination, Oscillator, Noise
-from ipytone.ipytone import AudioNode, Destination, Signal, Source
+from ipytone.ipytone import AudioNode, Destination, Multiply, Signal, Source
 
 
 def test_audio_node_creation():
@@ -104,6 +104,34 @@ def test_signal():
     assert sig2.max_value == 1e3
     assert sig2.overridden is False
     assert repr(sig2) == "Signal(value=440.0, units='frequency')"
+
+
+def test_signal_multiply():
+    mult = Multiply(name="test mult")
+    assert mult.factor.value == 1
+    assert repr(mult) == "Multiply(name='test mult', factor=Signal(value=1.0, units='number'))"
+
+
+def test_signal_multiply_operator():
+    # test __mul__ with number
+    sig = Signal(value=1)
+    mult = sig * 2
+    assert isinstance(mult, Multiply)
+    assert sig in mult.input
+    assert mult.factor.value == 2
+
+    # test __mul__ with signal
+    sig2 = Signal(value=2)
+    mult2 = sig * sig2
+    assert isinstance(mult2, Multiply)
+    assert sig in mult2.input
+    assert sig2 in mult2.factor.input
+
+    # test __rmul__
+    mult3 = 3 * sig
+    assert isinstance(mult3, Multiply)
+    assert sig in mult3.input
+    assert mult3.factor.value == 3
 
 
 def test_source():
