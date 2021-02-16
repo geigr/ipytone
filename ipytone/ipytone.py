@@ -212,6 +212,17 @@ class Signal(AudioNode):
         self.connect(add)
         return add
 
+    def __sub__(self, other):
+        if not isinstance(other, Signal):
+            sub = Subtract(subtrahend=other)
+        else:
+            sub = Subtract()
+            other.connect(sub.subtrahend)
+
+        self.connect(sub)
+
+        return sub
+
     def _repr_keys(self):
         for key in super()._repr_keys():
             yield key
@@ -291,6 +302,42 @@ class Add(Signal):
         if "name" in super()._repr_keys():
             yield "name"
         yield "addend"
+
+
+class Subtract(Signal):
+    """A signal that outputs the difference between the incoming signal and another signal
+    or a constant value.
+
+    Parameters
+    ----------
+    subtrahend : integer or float or :class:`Signal`, optional
+        Either a constant value or a signal to substract to the incoming signal
+        (default: 0).
+    **kwargs
+        Arguments passed to :class:`AudioNode`.
+
+    """
+
+    _model_name = Unicode("SubtractModel").tag(sync=True)
+
+    _subtrahend = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+
+    def __init__(self, subtrahend=0, **kwargs):
+        if not isinstance(subtrahend, Signal):
+            subtrahend = Signal(value=subtrahend)
+
+        kwargs.update({"_subtrahend": subtrahend})
+        super().__init__(**kwargs)
+
+    @property
+    def subtrahend(self):
+        """The value which is substracted from the input signal."""
+        return self._subtrahend
+
+    def _repr_keys(self):
+        if "name" in super()._repr_keys():
+            yield "name"
+        yield "subtrahend"
 
 
 class Source(AudioNode):

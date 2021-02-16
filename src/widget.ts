@@ -221,6 +221,35 @@ export class AddModel extends SignalModel<'number'> {
   static model_name = 'AddModel';
 }
 
+export class SubtractModel extends SignalModel<'number'> {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: SubtractModel.model_name,
+      _subtrahend: undefined,
+    };
+  }
+
+  createNode(): tone.Subtract {
+    const sub = new tone.Subtract();
+    this.subtrahend.node.connect(sub.subtrahend);
+    return sub;
+  }
+
+  get subtrahend(): SignalModel<'number'> {
+    return this.get('_subtrahend');
+  }
+
+  static serializers: ISerializers = {
+    ...SignalModel.serializers,
+    _subtrahend: { deserialize: unpack_models as any },
+  };
+
+  node: tone.Subtract;
+
+  static model_name = 'SubtractModel';
+}
+
 abstract class SourceModel extends AudioNodeModel {
   defaults(): any {
     return {

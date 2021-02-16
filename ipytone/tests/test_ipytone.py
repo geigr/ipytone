@@ -8,7 +8,7 @@ import pytest
 from traitlets.traitlets import TraitError
 
 from ipytone import get_destination, Oscillator, Noise
-from ipytone.ipytone import Add, AudioNode, Destination, Multiply, Signal, Source
+from ipytone.ipytone import Add, AudioNode, Destination, Multiply, Signal, Source, Subtract
 
 
 def test_audio_node_creation():
@@ -160,6 +160,28 @@ def test_signal_add_operator():
     assert isinstance(add3, Add)
     assert sig in add3.input
     assert add3.addend.value == 3
+
+
+def test_signal_subtract():
+    sub = Subtract(name="test sub")
+    assert sub.subtrahend.value == 0
+    assert repr(sub) == "Subtract(name='test sub', subtrahend=Signal(value=0.0, units='number'))"
+
+
+def test_signal_subtract_operator():
+    # test __sub__ with number
+    sig = Signal(value=1)
+    sub = sig - 1
+    assert isinstance(sub, Subtract)
+    assert sig in sub.input
+    assert sub.subtrahend.value == 1
+
+    # test __sub__ with signal
+    sig2 = Signal(value=2)
+    sub2 = sig - sig2
+    assert isinstance(sub2, Subtract)
+    assert sig in sub2.input
+    assert sig2 in sub2.subtrahend.input
 
 
 def test_source():
