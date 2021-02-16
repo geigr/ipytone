@@ -154,6 +154,35 @@ class Signal(AudioNode):
     def max_value(self):
         return self._max_value
 
+    def __mul__(self, other):
+        if not isinstance(other, Signal):
+            other = Signal(value=other)
+
+        mult = Multiply(other)
+        self.connect(mult)
+
+        return mult
+
+
+class Multiply(Signal):
+
+    _model_name = Unicode("MultiplyModel").tag(sync=True)
+
+    _factor = Instance(Signal, help="Signal multiply factor", allow_none=True).tag(
+        sync=True, **widget_serialization
+    )
+
+    def __init__(self, factor, **kwargs):
+        if not isinstance(factor, Signal):
+            factor = Signal(value=factor, **kwargs)
+
+        kwargs.update({"_factor": factor})
+        super().__init__(**kwargs)
+
+    @property
+    def factor(self):
+        return self._factor
+
 
 class Source(AudioNode):
     """Audio source node."""
