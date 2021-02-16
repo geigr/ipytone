@@ -9,6 +9,8 @@ import {
 
 import * as tone from 'tone';
 
+import { UnitName } from 'tone/Tone/core/type/Units';
+
 // import * as source from 'tone/Tone/source/Source';
 
 import { MODULE_NAME, MODULE_VERSION } from './version';
@@ -90,33 +92,33 @@ abstract class AudioNodeModel extends ToneWidgetModel {
   static model_name = 'AudioNodeModel';
 }
 
-export class SignalModel extends AudioNodeModel {
+export class SignalModel<T extends UnitName> extends AudioNodeModel {
   defaults(): any {
     return {
       ...super.defaults(),
       _model_name: SignalModel.model_name,
-      _unit_name: 'number',
       value: null,
-      min_value: undefined,
-      max_value: undefined,
+      _units: 'number',
+      _min_value: undefined,
+      _max_value: undefined,
     };
   }
 
   createNode(): tone.Signal {
     return new tone.Signal({
       value: this.get('value'),
-      units: this.get('units'),
-      minValue: this.normalizeMinMax(this.get('min_value')),
-      maxValue: this.normalizeMinMax(this.get('max_value')),
+      units: this.get('_units'),
+      minValue: this.normalizeMinMax(this.get('_min_value')),
+      maxValue: this.normalizeMinMax(this.get('_max_value')),
     });
   }
 
-  private normalizeMinMax(value: number | null) : number | undefined {
-    return (value === null ? undefined : value);
+  private normalizeMinMax(value: number | null): number | undefined {
+    return value === null ? undefined : value;
   }
 
   get value(): any {
-    return this.get('value');
+    return this.node.value;
   }
 
   get minValue(): number {
@@ -131,13 +133,15 @@ export class SignalModel extends AudioNodeModel {
     super.initEventListeners();
 
     this.on('change:value', () => {
-      this.node.value = this.value;
+      this.node.value = this.get('value');
     });
   }
 
-  node: tone.Signal;
+  node: tone.Signal<T>;
 
-  model_name: 'SignalModel';
+  static model_name = 'SignalModel';
+}
+
 }
 
 abstract class SourceModel extends AudioNodeModel {
@@ -230,8 +234,8 @@ export class OscillatorModel extends SourceModel {
       ...super.defaults(),
       _model_name: OscillatorModel.model_name,
       type: 'sine',
-      frequency: null,
-      detune: null,
+      _frequency: null,
+      _detune: null,
     };
   }
 
@@ -252,12 +256,12 @@ export class OscillatorModel extends SourceModel {
     return this.get('type');
   }
 
-  get frequency(): SignalModel {
-    return this.get('frequency');
+  get frequency(): SignalModel<'frequency'> {
+    return this.get('_frequency');
   }
 
-  get detune(): SignalModel {
-    return this.get('detune');
+  get detune(): SignalModel<'cents'> {
+    return this.get('_detune');
   }
 
   initEventListeners(): void {
@@ -270,8 +274,8 @@ export class OscillatorModel extends SourceModel {
 
   static serializers: ISerializers = {
     ...SourceModel.serializers,
-    frequency: { deserialize: unpack_models as any },
-    detune: { deserialize: unpack_models as any },
+    _frequency: { deserialize: unpack_models as any },
+    _detune: { deserialize: unpack_models as any },
   };
 
   node: tone.Oscillator;

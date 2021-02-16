@@ -130,18 +130,29 @@ class Signal(AudioNode):
     """
 
     _model_name = Unicode("SignalModel").tag(sync=True)
-    _unit_name = Unicode("number").tag(sync=True)
 
-    units = Enum(_UNITS, default_value="number", allow_none=False).tag(sync=True)
+    _units = Enum(_UNITS, default_value="number", allow_none=False).tag(sync=True)
     value = Union((Float(), Int(), Unicode())).tag(sync=True)
-    min_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
-    max_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
+    _min_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
+    _max_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
 
-    def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
-        for key in ["value", "units"]:
-            yield key
+    def __init__(self, value=0, units="number", min_value=None, max_value=None, **kwargs):
+        kwargs.update(
+            {"value": value, "_units": units, "_min_value": min_value, "_max_value": max_value}
+        )
+        super().__init__(**kwargs)
+
+    @property
+    def units(self):
+        return self._units
+
+    @property
+    def min_value(self):
+        return self._min_value
+
+    @property
+    def max_value(self):
+        return self._max_value
 
 
 class Source(AudioNode):
@@ -216,21 +227,22 @@ class Oscillator(Source):
     _model_name = Unicode("OscillatorModel").tag(sync=True)
 
     type = Unicode("sine", help="Oscillator type").tag(sync=True)
-    frequency = Instance(Signal, help="Oscillator frequency").tag(sync=True, **widget_serialization)
-    detune = Instance(Signal, help="Oscillator frequency detune").tag(
-        sync=True, **widget_serialization
-    )
+    _frequency = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+    _detune = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
 
     def __init__(self, type="sine", frequency=440, detune=0, **kwargs):
+
         if not isinstance(frequency, Signal):
             frequency = Signal(value=frequency, units="frequency")
+
         if not isinstance(detune, Signal):
             detune = Signal(value=detune, units="cents")
 
-        super().__init__(type=type, frequency=frequency, detune=detune, **kwargs)
+        kwargs.update({"type": type, "_frequency": frequency, "_detune": detune})
+        super().__init__(**kwargs)
 
     @validate("type")
-    def _validate_oscillator_type(self, proposal):
+    def _validate_type(self, proposal):
         wave = proposal["value"]
         wave_re = r"(sine|square|sawtooth|triangle)[\d]*"
 
@@ -238,6 +250,16 @@ class Oscillator(Source):
             raise TraitError(f"Invalid oscillator type: {wave}")
 
         return proposal["value"]
+
+    @property
+    def frequency(self) -> Signal:
+        """Oscillator frequency."""
+        return self._frequency
+
+    @property
+    def detune(self) -> Signal:
+        """Oscillator detune."""
+        return self._detune
 
 
 class Noise(Source):

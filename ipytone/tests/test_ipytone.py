@@ -92,7 +92,7 @@ def test_signal():
     sig = Signal()
 
     assert sig.units == "number"
-    assert sig.min_value == sig.max_value == None
+    assert sig.min_value is sig.max_value is None
 
     sig.value = 2
     assert sig.value == 2
