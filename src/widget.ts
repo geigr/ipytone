@@ -192,6 +192,35 @@ export class MultiplyModel extends SignalModel<'number'> {
   static model_name = 'MultiplyModel';
 }
 
+export class AddModel extends SignalModel<'number'> {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: AddModel.model_name,
+      _addend: undefined,
+    };
+  }
+
+  createNode(): tone.Add {
+    const add = new tone.Add();
+    this.addend.node.connect(add.addend);
+    return add;
+  }
+
+  get addend(): SignalModel<'number'> {
+    return this.get('_addend');
+  }
+
+  static serializers: ISerializers = {
+    ...SignalModel.serializers,
+    _addend: { deserialize: unpack_models as any },
+  };
+
+  node: tone.Add;
+
+  static model_name = 'AddModel';
+}
+
 abstract class SourceModel extends AudioNodeModel {
   defaults(): any {
     return {

@@ -196,6 +196,22 @@ class Signal(AudioNode):
         self.connect(mult)
         return mult
 
+    def __add__(self, other):
+        if not isinstance(other, Signal):
+            add = Add(addend=other)
+        else:
+            add = Add()
+            other.connect(add.addend)
+
+        self.connect(add)
+
+        return add
+
+    def __radd__(self, other):
+        add = Add(addend=Signal(other))
+        self.connect(add)
+        return add
+
     def _repr_keys(self):
         for key in super()._repr_keys():
             yield key
@@ -207,7 +223,8 @@ class Signal(AudioNode):
 
 
 class Multiply(Signal):
-    """A signal resulting from the product of two signals or a signal and a constant factor.
+    """A signal that outputs the product of the incoming signal by another signal
+    or a constant factor.
 
     Parameters
     ----------
@@ -220,9 +237,7 @@ class Multiply(Signal):
 
     _model_name = Unicode("MultiplyModel").tag(sync=True)
 
-    _factor = Instance(Signal, help="Signal multiply factor", allow_none=True).tag(
-        sync=True, **widget_serialization
-    )
+    _factor = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
 
     def __init__(self, factor=1, **kwargs):
         if not isinstance(factor, Signal):
@@ -232,13 +247,50 @@ class Multiply(Signal):
         super().__init__(**kwargs)
 
     @property
-    def factor(self):
+    def factor(self) -> Signal:
+        """Signal multiplication factor."""
         return self._factor
 
     def _repr_keys(self):
         if "name" in super()._repr_keys():
             yield "name"
         yield "factor"
+
+
+class Add(Signal):
+    """A signal that outputs the sum of the incoming signal and another signal
+    or a constant value.
+
+    Parameters
+    ----------
+    addend : integer or float or :class:`Signal`, optional
+        Either a constant value or a signal to be added to the incoming signal
+        (default: 0).
+    **kwargs
+        Arguments passed to :class:`AudioNode`.
+
+    """
+
+    _model_name = Unicode("AddModel").tag(sync=True)
+
+    _addend = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+
+    def __init__(self, addend=0, **kwargs):
+        if not isinstance(addend, Signal):
+            addend = Signal(value=addend)
+
+        kwargs.update({"_addend": addend})
+        super().__init__(**kwargs)
+
+    @property
+    def addend(self):
+        """The value which is added to the input signal."""
+        return self._addend
+
+    def _repr_keys(self):
+        if "name" in super()._repr_keys():
+            yield "name"
+        yield "addend"
 
 
 class Source(AudioNode):
