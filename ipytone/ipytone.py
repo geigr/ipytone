@@ -190,6 +190,16 @@ class Signal(AudioNode):
         return mult
 
 
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        if self.overridden:
+            yield "overridden"
+        else:
+            yield "value"
+            yield "units"
+
+
 class Multiply(Signal):
 
     _model_name = Unicode("MultiplyModel").tag(sync=True)
