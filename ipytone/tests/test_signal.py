@@ -40,12 +40,6 @@ def test_signal_multiply_operator():
     assert sig in mult2.input
     assert sig2 in mult2.factor.input
 
-    # test __rmul__
-    mult3 = 3 * sig
-    assert isinstance(mult3, Multiply)
-    assert sig in mult3.input
-    assert mult3.factor.value == 3
-
 
 def test_signal_add():
     add = Add(name="test add")
@@ -67,12 +61,6 @@ def test_signal_add_operator():
     assert isinstance(add2, Add)
     assert sig in add2.input
     assert sig2 in add2.addend.input
-
-    # test __radd__
-    add3 = 3 + sig
-    assert isinstance(add3, Add)
-    assert sig in add3.input
-    assert add3.addend.value == 3
 
 
 def test_signal_subtract():

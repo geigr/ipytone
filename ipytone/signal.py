@@ -90,11 +90,6 @@ class Signal(AudioNode):
 
         return mult
 
-    def __rmul__(self, other):
-        mult = Multiply(factor=Signal(other))
-        self.connect(mult)
-        return mult
-
     def __add__(self, other):
         if not isinstance(other, Signal):
             add = Add(addend=other)
@@ -104,11 +99,6 @@ class Signal(AudioNode):
 
         self.connect(add)
 
-        return add
-
-    def __radd__(self, other):
-        add = Add(addend=Signal(other))
-        self.connect(add)
         return add
 
     def __sub__(self, other):
