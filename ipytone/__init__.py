@@ -5,7 +5,7 @@
 # Distributed under the terms of the Modified BSD License.
 
 from .core import get_destination
-from .signal import Add, Multiply, Signal, Subtract
+from .signal import Add, GreaterThan, Multiply, Signal, Subtract
 from .source import Oscillator, Noise
 from ._version import __version__, version_info
 

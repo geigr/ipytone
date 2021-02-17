@@ -58,6 +58,8 @@ class Signal(AudioNode):
         read_only=True, help="If True, the signal value is overridden by an incoming signal"
     ).tag(sync=True)
 
+    _side_signal_prop_name = None
+
     def __init__(self, value=0, units="number", min_value=None, max_value=None, **kwargs):
         kwargs.update(
             {"value": value, "_units": units, "_min_value": min_value, "_max_value": max_value}
@@ -79,44 +81,36 @@ class Signal(AudioNode):
         """Signal value upper limit."""
         return self._max_value
 
-    def __mul__(self, other):
+    def _create_op_signal(self, other, signal_cls, signal_attr_name):
         if not isinstance(other, Signal):
-            mult = Multiply(factor=other)
+            op_signal = signal_cls(**{signal_attr_name: other})
         else:
-            mult = Multiply()
-            other.connect(mult.factor)
+            op_signal = signal_cls()
+            other.connect(getattr(op_signal, signal_attr_name))
 
-        self.connect(mult)
+        self.connect(op_signal)
 
-        return mult
+        return op_signal
+
+    def __mul__(self, other):
+        return self._create_op_signal(other, Multiply, "factor")
 
     def __add__(self, other):
-        if not isinstance(other, Signal):
-            add = Add(addend=other)
-        else:
-            add = Add()
-            other.connect(add.addend)
-
-        self.connect(add)
-
-        return add
+        return self._create_op_signal(other, Add, "addend")
 
     def __sub__(self, other):
-        if not isinstance(other, Signal):
-            sub = Subtract(subtrahend=other)
-        else:
-            sub = Subtract()
-            other.connect(sub.subtrahend)
+        return self._create_op_signal(other, Subtract, "subtrahend")
 
-        self.connect(sub)
-
-        return sub
+    def __gt__(self, other):
+        return self._create_op_signal(other, GreaterThan, "comparator")
 
     def _repr_keys(self):
         for key in super()._repr_keys():
             yield key
         if self.overridden:
             yield "overridden"
+        elif self._side_signal_prop_name is not None:
+            yield self._side_signal_prop_name
         else:
             yield "value"
             yield "units"
@@ -136,8 +130,8 @@ class Multiply(Signal):
     """
 
     _model_name = Unicode("MultiplyModel").tag(sync=True)
-
     _factor = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+    _side_signal_prop_name = "factor"
 
     def __init__(self, factor=1, **kwargs):
         if not isinstance(factor, Signal):
@@ -148,13 +142,8 @@ class Multiply(Signal):
 
     @property
     def factor(self) -> Signal:
-        """Signal multiplication factor."""
+        """The signal used as multiplication factor."""
         return self._factor
-
-    def _repr_keys(self):
-        if "name" in super()._repr_keys():
-            yield "name"
-        yield "factor"
 
 
 class Add(Signal):
@@ -172,8 +161,8 @@ class Add(Signal):
     """
 
     _model_name = Unicode("AddModel").tag(sync=True)
-
     _addend = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+    _side_signal_prop_name = "addend"
 
     def __init__(self, addend=0, **kwargs):
         if not isinstance(addend, Signal):
@@ -184,13 +173,8 @@ class Add(Signal):
 
     @property
     def addend(self):
-        """The value which is added to the input signal."""
+        """The signal which is added to the input signal."""
         return self._addend
-
-    def _repr_keys(self):
-        if "name" in super()._repr_keys():
-            yield "name"
-        yield "addend"
 
 
 class Subtract(Signal):
@@ -208,8 +192,8 @@ class Subtract(Signal):
     """
 
     _model_name = Unicode("SubtractModel").tag(sync=True)
-
     _subtrahend = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+    _side_signal_prop_name = "subtrahend"
 
     def __init__(self, subtrahend=0, **kwargs):
         if not isinstance(subtrahend, Signal):
@@ -220,10 +204,36 @@ class Subtract(Signal):
 
     @property
     def subtrahend(self):
-        """The value which is substracted from the input signal."""
+        """The signal which is substracted from the input signal."""
         return self._subtrahend
 
-    def _repr_keys(self):
-        if "name" in super()._repr_keys():
-            yield "name"
-        yield "subtrahend"
+
+class GreaterThan(Signal):
+    """A signal that outputs 1 the signal is greater than the value (or another signal),
+    otherwise outputs 0.
+
+    Parameters
+    ----------
+    comparator : integer or float or :class:`Signal`, optional
+        Either a constant value or a signal to compare to the incoming signal
+        (default: 0).
+    **kwargs
+        Arguments passed to :class:`AudioNode`.
+
+    """
+
+    _model_name = Unicode("SubtractModel").tag(sync=True)
+    _comparator = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+    _side_signal_prop_name = "comparator"
+
+    def __init__(self, comparator=0, **kwargs):
+        if not isinstance(comparator, Signal):
+            comparator = Signal(value=comparator)
+
+        kwargs.update({"_comparator": comparator})
+        super().__init__(**kwargs)
+
+    @property
+    def comparator(self):
+        """The signal to compare to the incoming signal against."""
+        return self._comparator

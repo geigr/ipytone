@@ -161,3 +161,32 @@ export class SubtractModel extends SignalModel<'number'> {
 
   static model_name = 'SubtractModel';
 }
+
+export class GreaterThanModel extends SignalModel<'number'> {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: GreaterThanModel.model_name,
+      _comparator: undefined,
+    };
+  }
+
+  createNode(): tone.GreaterThan {
+    const comp = new tone.GreaterThan();
+    this.comparator.node.connect(comp.comparator);
+    return comp;
+  }
+
+  get comparator(): SignalModel<'number'> {
+    return this.get('_comparator');
+  }
+
+  static serializers: ISerializers = {
+    ...SignalModel.serializers,
+    _comparator: { deserialize: unpack_models as any },
+  };
+
+  node: tone.GreaterThan;
+
+  static model_name = 'GreaterThanModel';
+}

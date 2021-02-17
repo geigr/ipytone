@@ -1,4 +1,8 @@
-from ipytone import Add, Multiply, Signal, Subtract
+import operator
+
+import pytest
+
+from ipytone import Add, GreaterThan, Multiply, Signal, Subtract
 
 
 def test_signal():
@@ -19,67 +23,43 @@ def test_signal():
     assert repr(sig2) == "Signal(value=440.0, units='frequency')"
 
 
-def test_signal_multiply():
-    mult = Multiply(name="test mult")
-    assert mult.factor.value == 1
-    assert repr(mult) == "Multiply(name='test mult', factor=Signal(value=1.0, units='number'))"
+@pytest.mark.parametrize(
+    "cls,cls_str,prop_name,default_value",
+    [
+        (Multiply, "Multiply", "factor", 1),
+        (Add, "Add", "addend", 0),
+        (Subtract, "Subtract", "subtrahend", 0),
+        (GreaterThan, "GreaterThan", "comparator", 0),
+    ],
+)
+def test_signal_subclass(cls, cls_str, prop_name, default_value):
+    op_signal = cls(name="op")
+    assert getattr(op_signal, prop_name).value == default_value
+
+    op_repr = f"{cls_str}(name='op', {prop_name}=Signal(value={default_value:.1f}, units='number'))"
+    assert repr(op_signal) == op_repr
 
 
-def test_signal_multiply_operator():
-    # test __mul__ with number
+@pytest.mark.parametrize(
+    "op,op_cls,op_prop_name,value",
+    [
+        (operator.mul, Multiply, "factor", 2),
+        (operator.add, Add, "addend", 1),
+        (operator.sub, Subtract, "subtrahend", 1),
+        (operator.gt, GreaterThan, "comparator", 1),
+    ],
+)
+def test_signal_operator(op, op_cls, op_prop_name, value):
+    # test operator with number
     sig = Signal(value=1)
-    mult = sig * 2
-    assert isinstance(mult, Multiply)
-    assert sig in mult.input
-    assert mult.factor.value == 2
+    op_sig = op(sig, value)
+    assert isinstance(op_sig, op_cls)
+    assert sig in op_sig.input
+    assert getattr(op_sig, op_prop_name).value == value
 
-    # test __mul__ with signal
+    # test operator with another signal
     sig2 = Signal(value=2)
-    mult2 = sig * sig2
-    assert isinstance(mult2, Multiply)
-    assert sig in mult2.input
-    assert sig2 in mult2.factor.input
-
-
-def test_signal_add():
-    add = Add(name="test add")
-    assert add.addend.value == 0
-    assert repr(add) == "Add(name='test add', addend=Signal(value=0.0, units='number'))"
-
-
-def test_signal_add_operator():
-    # test __add__ with number
-    sig = Signal(value=1)
-    add = sig + 1
-    assert isinstance(add, Add)
-    assert sig in add.input
-    assert add.addend.value == 1
-
-    # test __add__ with signal
-    sig2 = Signal(value=2)
-    add2 = sig + sig2
-    assert isinstance(add2, Add)
-    assert sig in add2.input
-    assert sig2 in add2.addend.input
-
-
-def test_signal_subtract():
-    sub = Subtract(name="test sub")
-    assert sub.subtrahend.value == 0
-    assert repr(sub) == "Subtract(name='test sub', subtrahend=Signal(value=0.0, units='number'))"
-
-
-def test_signal_subtract_operator():
-    # test __sub__ with number
-    sig = Signal(value=1)
-    sub = sig - 1
-    assert isinstance(sub, Subtract)
-    assert sig in sub.input
-    assert sub.subtrahend.value == 1
-
-    # test __sub__ with signal
-    sig2 = Signal(value=2)
-    sub2 = sig - sig2
-    assert isinstance(sub2, Subtract)
-    assert sig in sub2.input
-    assert sig2 in sub2.subtrahend.input
+    op_sig2 = op(sig, sig2)
+    assert isinstance(op_sig2, op_cls)
+    assert sig in op_sig2.input
+    assert sig2 in getattr(op_sig2, op_prop_name).input
