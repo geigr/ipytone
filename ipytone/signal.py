@@ -30,7 +30,7 @@ class Signal(AudioNode):
     ``*``, ``**``, ``abs``, ``neg`` as well as the ``>`` comparison operator.
 
     Like any other node, a signal can be connected to/from other nodes. When a signal
-    receives an incoming signal, it's value is ignored (reset to 0) and the incoming
+    receives an incoming signal, its value is ignored (reset to 0) and the incoming
     signal passes through the node (``overridden=True``).
 
     Parameters
@@ -125,7 +125,7 @@ class Multiply(Signal):
     factor : integer or float or :class:`Signal`, optional
         Multiplication factor, either a constant value or a signal (default: 1).
     **kwargs
-        Arguments passed to :class:`AudioNode`.
+        Arguments passed to :class:`Signal`.
 
     """
 
@@ -156,7 +156,7 @@ class Add(Signal):
         Either a constant value or a signal to be added to the incoming signal
         (default: 0).
     **kwargs
-        Arguments passed to :class:`AudioNode`.
+        Arguments passed to :class:`Signal`.
 
     """
 
@@ -187,7 +187,7 @@ class Subtract(Signal):
         Either a constant value or a signal to substract to the incoming signal
         (default: 0).
     **kwargs
-        Arguments passed to :class:`AudioNode`.
+        Arguments passed to :class:`Signal`.
 
     """
 
@@ -218,7 +218,7 @@ class GreaterThan(Signal):
         Either a constant value or a signal to compare to the incoming signal
         (default: 0).
     **kwargs
-        Arguments passed to :class:`AudioNode`.
+        Arguments passed to :class:`Signal`.
 
     """
 
