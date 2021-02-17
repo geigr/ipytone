@@ -2,6 +2,23 @@ import pytest
 from traitlets import TraitError
 
 from ipytone import Noise, Oscillator
+from ipytone.source import Source
+
+
+def test_source():
+    node = Source()
+
+    assert node.mute is False
+    assert node.state == "stopped"
+    assert node.volume == -16
+
+    n = node.start()
+    assert node.state == "started"
+    assert n is node
+
+    n = node.stop()
+    assert node.state == "stopped"
+    assert n is node
 
 
 def test_oscillator():

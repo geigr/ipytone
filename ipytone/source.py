@@ -1,10 +1,37 @@
 import re
 
 from ipywidgets import widget_serialization
-from traitlets import Enum, Instance, Unicode, Float, validate, TraitError
+from traitlets import Bool, Enum, Instance, Unicode, Float, validate, TraitError
 
+from .base import AudioNode
 from .signal import Signal
-from .core import Source
+
+
+class Source(AudioNode):
+    """Audio source node."""
+
+    _model_name = Unicode("SourceModel").tag(sync=True)
+
+    mute = Bool(False, help="Mute source").tag(sync=True)
+    state = Enum(["started", "stopped"], allow_none=False, default_value="stopped").tag(sync=True)
+    volume = Float(-16, help="Source gain").tag(sync=True)
+
+    def start(self):
+        """Start the audio source.
+
+        If it's already started, this will stop and restart the source.
+        """
+        self.state = "started"
+
+        return self
+
+    def stop(self):
+        """Stop the audio source."""
+
+        if self.state == "started":
+            self.state = "stopped"
+
+        return self
 
 
 class Oscillator(Source):
