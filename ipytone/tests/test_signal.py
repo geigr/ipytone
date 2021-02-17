@@ -1,6 +1,7 @@
 import operator
 
 import pytest
+from traitlets import Bool
 
 from ipytone import Abs, Add, GreaterThan, Multiply, Negate, Pow, Signal, Subtract
 
@@ -21,6 +22,19 @@ def test_signal():
     assert sig2.max_value == 1e3
     assert sig2.overridden is False
     assert repr(sig2) == "Signal(value=440.0, units='frequency')"
+
+
+def test_signal_overriden():
+    # overridden is read-only in Signal -> subclass it
+    # TODO: mocking would be better
+    class Signal_(Signal):
+        overridden = Bool(False)
+
+    sig = Signal_()
+
+    with pytest.warns(UserWarning, match=".*overridden.*"):
+        sig.overridden = True
+        sig.value = 2
 
 
 @pytest.mark.parametrize(

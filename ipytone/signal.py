@@ -1,5 +1,8 @@
+import warnings
+
 from ipywidgets import widget_serialization
 from traitlets import Enum, Instance, Unicode, Float, Int, Bool, Union
+from traitlets.traitlets import validate
 
 from .core import AudioNode
 
@@ -122,6 +125,17 @@ class Signal(SignalOperator):
     def max_value(self):
         """Signal value upper limit."""
         return self._max_value
+
+    @validate("value")
+    def _validate_value(self, proposal):
+        if self.overridden:
+            warnings.warn(
+                "Signal value overridden by a connected signal, setting its value "
+                "may have not effect.",
+                UserWarning,
+            )
+
+        return proposal["value"]
 
     def _repr_keys(self):
         for key in super()._repr_keys():
