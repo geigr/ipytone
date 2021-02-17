@@ -6,7 +6,18 @@ import { UnitName } from 'tone/Tone/core/type/Units';
 
 import { AudioNodeModel } from './widget_base';
 
-export class SignalModel<T extends UnitName> extends AudioNodeModel {
+abstract class SignalOperatorModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: SignalOperatorModel.model_name,
+    };
+  }
+
+  static model_name = 'SignalOperatorModel';
+}
+
+export class SignalModel<T extends UnitName> extends SignalOperatorModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -189,4 +200,64 @@ export class GreaterThanModel extends SignalModel<'number'> {
   node: tone.GreaterThan;
 
   static model_name = 'GreaterThanModel';
+}
+
+export class AbsModel extends SignalOperatorModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: AbsModel.model_name,
+    };
+  }
+
+  createNode(): tone.Abs {
+    return new tone.Abs();
+  }
+
+  node: tone.Abs;
+
+  static model_name = 'AbsModel';
+}
+
+export class NegateModel extends SignalOperatorModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: NegateModel.model_name,
+    };
+  }
+
+  createNode(): tone.Negate {
+    return new tone.Negate();
+  }
+
+  node: tone.Negate;
+
+  static model_name = 'NegateModel';
+}
+
+export class PowModel extends SignalOperatorModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: PowModel.model_name,
+      value: 1,
+    };
+  }
+
+  createNode(): tone.Pow {
+    return new tone.Pow(this.get('value'));
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:value', () => {
+      this.node.value = this.get('value');
+    });
+  }
+
+  node: tone.Pow;
+
+  static model_name = 'PowModel';
 }

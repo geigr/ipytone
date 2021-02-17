@@ -22,7 +22,49 @@ _UNITS = [
 ]
 
 
-class Signal(AudioNode):
+class SignalOperator(AudioNode):
+
+    _model_name = "SignalOperatorModel"
+
+    def _create_op_signal(self, other, signal_cls, signal_attr_name):
+        if isinstance(other, SignalOperator):
+            op_signal = signal_cls()
+            other.connect(getattr(op_signal, signal_attr_name))
+        else:
+            op_signal = signal_cls(other)
+
+        self.connect(op_signal)
+
+        return op_signal
+
+    def _create_simple_op_signal(self, signal_cls, **kwargs):
+        op_signal = signal_cls(**kwargs)
+        self.connect(op_signal)
+        return op_signal
+
+    def __mul__(self, other):
+        return self._create_op_signal(other, Multiply, "factor")
+
+    def __add__(self, other):
+        return self._create_op_signal(other, Add, "addend")
+
+    def __sub__(self, other):
+        return self._create_op_signal(other, Subtract, "subtrahend")
+
+    def __gt__(self, other):
+        return self._create_op_signal(other, GreaterThan, "comparator")
+
+    def __abs__(self):
+        return self._create_simple_op_signal(Abs)
+
+    def __neg__(self):
+        return self._create_simple_op_signal(Negate)
+
+    def __pow__(self, value):
+        return self._create_simple_op_signal(Pow, value=value)
+
+
+class Signal(SignalOperator):
     """A node that defines a value that can be modulated or calculated
     at the audio sample-level accuracy.
 
@@ -81,29 +123,6 @@ class Signal(AudioNode):
         """Signal value upper limit."""
         return self._max_value
 
-    def _create_op_signal(self, other, signal_cls, signal_attr_name):
-        if not isinstance(other, Signal):
-            op_signal = signal_cls(**{signal_attr_name: other})
-        else:
-            op_signal = signal_cls()
-            other.connect(getattr(op_signal, signal_attr_name))
-
-        self.connect(op_signal)
-
-        return op_signal
-
-    def __mul__(self, other):
-        return self._create_op_signal(other, Multiply, "factor")
-
-    def __add__(self, other):
-        return self._create_op_signal(other, Add, "addend")
-
-    def __sub__(self, other):
-        return self._create_op_signal(other, Subtract, "subtrahend")
-
-    def __gt__(self, other):
-        return self._create_op_signal(other, GreaterThan, "comparator")
-
     def _repr_keys(self):
         for key in super()._repr_keys():
             yield key
@@ -114,6 +133,15 @@ class Signal(AudioNode):
         else:
             yield "value"
             yield "units"
+
+
+def _as_signal(value) -> SignalOperator:
+    # TODO: this will change when ipytone will support Tone.Param
+
+    if isinstance(value, SignalOperator):
+        return value
+    else:
+        return Signal(value=value)
 
 
 class Multiply(Signal):
@@ -130,14 +158,11 @@ class Multiply(Signal):
     """
 
     _model_name = Unicode("MultiplyModel").tag(sync=True)
-    _factor = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+    _factor = Instance(SignalOperator, allow_none=True).tag(sync=True, **widget_serialization)
     _side_signal_prop_name = "factor"
 
     def __init__(self, factor=1, **kwargs):
-        if not isinstance(factor, Signal):
-            factor = Signal(value=factor)
-
-        kwargs.update({"_factor": factor})
+        kwargs.update({"_factor": _as_signal(factor)})
         super().__init__(**kwargs)
 
     @property
@@ -161,14 +186,11 @@ class Add(Signal):
     """
 
     _model_name = Unicode("AddModel").tag(sync=True)
-    _addend = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+    _addend = Instance(SignalOperator, allow_none=True).tag(sync=True, **widget_serialization)
     _side_signal_prop_name = "addend"
 
     def __init__(self, addend=0, **kwargs):
-        if not isinstance(addend, Signal):
-            addend = Signal(value=addend)
-
-        kwargs.update({"_addend": addend})
+        kwargs.update({"_addend": _as_signal(addend)})
         super().__init__(**kwargs)
 
     @property
@@ -192,14 +214,11 @@ class Subtract(Signal):
     """
 
     _model_name = Unicode("SubtractModel").tag(sync=True)
-    _subtrahend = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+    _subtrahend = Instance(SignalOperator, allow_none=True).tag(sync=True, **widget_serialization)
     _side_signal_prop_name = "subtrahend"
 
     def __init__(self, subtrahend=0, **kwargs):
-        if not isinstance(subtrahend, Signal):
-            subtrahend = Signal(value=subtrahend)
-
-        kwargs.update({"_subtrahend": subtrahend})
+        kwargs.update({"_subtrahend": _as_signal(subtrahend)})
         super().__init__(**kwargs)
 
     @property
@@ -223,17 +242,44 @@ class GreaterThan(Signal):
     """
 
     _model_name = Unicode("SubtractModel").tag(sync=True)
-    _comparator = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+    _comparator = Instance(SignalOperator, allow_none=True).tag(sync=True, **widget_serialization)
     _side_signal_prop_name = "comparator"
 
     def __init__(self, comparator=0, **kwargs):
-        if not isinstance(comparator, Signal):
-            comparator = Signal(value=comparator)
-
-        kwargs.update({"_comparator": comparator})
+        kwargs.update({"_comparator": _as_signal(comparator)})
         super().__init__(**kwargs)
 
     @property
     def comparator(self):
         """The signal to compare to the incoming signal against."""
         return self._comparator
+
+
+class Abs(SignalOperator):
+    """A node that outputs the absolute value of an incoming signal.
+
+    The incoming signal must be audio range [-1, 1].
+
+    """
+
+    _model_name = Unicode("AbsModel").tag(sync=True)
+
+
+class Negate(SignalOperator):
+    """A node that outputs the opposite value of an incoming signal.
+
+    The incoming signal must be audio range [-1, 1].
+    """
+
+    _model_name = Unicode("NegateModel").tag(sync=True)
+
+
+class Pow(SignalOperator):
+    """A node that applies an exponent to the incoming signal.
+
+    The incoming signal must be audio range [-1, 1].
+    """
+
+    _model_name = Unicode("PowModel").tag(sync=True)
+
+    value = Union((Float(), Int()), help="exponent value").tag(sync=True)

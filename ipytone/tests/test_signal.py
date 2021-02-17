@@ -2,7 +2,7 @@ import operator
 
 import pytest
 
-from ipytone import Add, GreaterThan, Multiply, Signal, Subtract
+from ipytone import Abs, Add, GreaterThan, Multiply, Negate, Pow, Signal, Subtract
 
 
 def test_signal():
@@ -41,25 +41,58 @@ def test_signal_subclass(cls, cls_str, prop_name, default_value):
 
 
 @pytest.mark.parametrize(
-    "op,op_cls,op_prop_name,value",
+    "op,op_cls,op_prop_name,value,test_other_signal",
     [
-        (operator.mul, Multiply, "factor", 2),
-        (operator.add, Add, "addend", 1),
-        (operator.sub, Subtract, "subtrahend", 1),
-        (operator.gt, GreaterThan, "comparator", 1),
+        (operator.mul, Multiply, "factor", 2, True),
+        (operator.add, Add, "addend", 1, True),
+        (operator.sub, Subtract, "subtrahend", 1, True),
+        (operator.gt, GreaterThan, "comparator", 1, True),
+        (operator.pow, Pow, "value", 1, False),
     ],
 )
-def test_signal_operator(op, op_cls, op_prop_name, value):
+def test_signal_operator(op, op_cls, op_prop_name, value, test_other_signal):
     # test operator with number
     sig = Signal(value=1)
     op_sig = op(sig, value)
     assert isinstance(op_sig, op_cls)
     assert sig in op_sig.input
-    assert getattr(op_sig, op_prop_name).value == value
+
+    try:
+        assert getattr(op_sig, op_prop_name).value == value
+    except AttributeError:
+        # attribute is a simple value (not a signal)
+        assert getattr(op_sig, op_prop_name) == value
 
     # test operator with another signal
-    sig2 = Signal(value=2)
-    op_sig2 = op(sig, sig2)
-    assert isinstance(op_sig2, op_cls)
-    assert sig in op_sig2.input
-    assert sig2 in getattr(op_sig2, op_prop_name).input
+    if test_other_signal:
+        sig2 = Signal(value=2)
+        op_sig2 = op(sig, sig2)
+        assert isinstance(op_sig2, op_cls)
+        assert sig in op_sig2.input
+        assert sig2 in getattr(op_sig2, op_prop_name).input
+
+
+@pytest.mark.parametrize("op,op_cls", [(operator.abs, Abs), (operator.neg, Negate)])
+def test_simple_signal_operator(op, op_cls):
+    sig = Signal(value=1)
+    op_sig = op(sig)
+    assert isinstance(op_sig, op_cls)
+    assert sig in op_sig.input
+
+
+def test_complex_signal_expression():
+    sig = Signal(value=400)
+    mod = Signal(value=-0.5)
+
+    res = sig + abs(mod) * 100
+
+    assert isinstance(res, Add)
+    assert sig in res.input
+
+    mult = res.addend.input[0]
+    assert isinstance(mult, Multiply)
+    assert mult.factor.value == 100
+
+    abs_ = mult.input[0]
+    assert isinstance(abs_, Abs)
+    assert mod in abs_.input
