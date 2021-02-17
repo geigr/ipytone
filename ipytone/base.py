@@ -1,12 +1,5 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# Copyright (c) Benoit Bovy.
-# Distributed under the terms of the Modified BSD License.
-import re
-
 from ipywidgets import widget_serialization, Widget
-from traitlets import Enum, Instance, Unicode, List, Float, Int, Bool, validate, TraitError
+from traitlets import Instance, Unicode, List
 
 from ._frontend import module_name, module_version
 
@@ -27,6 +20,8 @@ class AudioNode(ToneWidgetBase):
     _out_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
 
     def _normalize_destination(self, destination):
+        from .source import Source
+
         if isinstance(destination, AudioNode):
             destination = [destination]
 
@@ -86,6 +81,8 @@ class AudioNode(ToneWidgetBase):
         to the master node.
 
         """
+        from .core import get_destination
+
         self.connect(get_destination())
 
         return self
@@ -103,88 +100,3 @@ class AudioNode(ToneWidgetBase):
     def _repr_keys(self):
         if self.name:
             yield "name"
-
-
-class Source(AudioNode):
-    """Audio source node."""
-
-    _model_name = Unicode("SourceModel").tag(sync=True)
-
-    mute = Bool(False, help="Mute source").tag(sync=True)
-    state = Enum(["started", "stopped"], allow_none=False, default_value="stopped").tag(sync=True)
-    volume = Float(-16, help="Source gain").tag(sync=True)
-
-    def start(self):
-        """Start the audio source.
-
-        If it's already started, this will stop and restart the source.
-        """
-        self.state = "started"
-
-        return self
-
-    def stop(self):
-        """Stop the audio source."""
-
-        if self.state == "started":
-            self.state = "stopped"
-
-        return self
-
-
-class Destination(AudioNode):
-    """Audio master node."""
-
-    _singleton = None
-
-    _model_name = Unicode("DestinationModel").tag(sync=True)
-
-    name = Unicode("main output").tag(sync=True)
-
-    mute = Bool(False).tag(sync=True)
-    volume = Float(-16).tag(sync=True)
-
-    def __new__(cls):
-        if Destination._singleton is None:
-            Destination._singleton = super(Destination, cls).__new__(cls)
-        return Destination._singleton
-
-
-_DESTINATION = Destination()
-
-
-def get_destination():
-    """Returns ipytone's audio master node."""
-    return _DESTINATION
-
-
-class Oscillator(Source):
-    """A simple Oscillator."""
-
-    _model_name = Unicode("OscillatorModel").tag(sync=True)
-
-    type = Unicode("sine", help="Oscillator type").tag(sync=True)
-    frequency = Float(440, help="Oscillator frequency").tag(sync=True)
-    detune = Int(0, help="Oscillator frequency detune").tag(sync=True)
-
-    @validate("type")
-    def _validate_oscillator_type(self, proposal):
-        wave = proposal["value"]
-        wave_re = r"(sine|square|sawtooth|triangle)[\d]*"
-
-        if re.fullmatch(wave_re, wave) is None:
-            raise TraitError(f"Invalid oscillator type: {wave}")
-
-        return proposal["value"]
-
-
-class Noise(Source):
-    """A simple Oscillator."""
-
-    _model_name = Unicode("NoiseModel").tag(sync=True)
-
-    type = Enum(
-        ["pink", "white", "brown"], allow_none=False, default_value="white", help="Noise type"
-    ).tag(sync=True)
-    fade_in = Float(0, help="Fade in time").tag(sync=True)
-    fade_out = Float(0, help="Fade out time").tag(sync=True)

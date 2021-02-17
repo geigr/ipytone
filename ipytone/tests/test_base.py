@@ -1,14 +1,8 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# Copyright (c) Benoit Bovy.
-# Distributed under the terms of the Modified BSD License.
-
 import pytest
-from traitlets.traitlets import TraitError
 
-from ipytone import get_destination, Oscillator, Noise
-from ipytone.ipytone import AudioNode, Destination, Source
+from ipytone.base import AudioNode
+from ipytone.core import get_destination
+from ipytone.source import Source
 
 
 def test_audio_node_creation():
@@ -86,63 +80,3 @@ def test_audio_node_chain():
     assert node2.input == [node1]
     assert node3.input == [node2]
     assert n is node1
-
-
-def test_source():
-    node = Source()
-
-    assert node.mute is False
-    assert node.state == "stopped"
-    assert node.volume == -16
-
-    n = node.start()
-    assert node.state == "started"
-    assert n is node
-
-    n = node.stop()
-    assert node.state == "stopped"
-    assert n is node
-
-
-def test_destination():
-    dest = get_destination()
-
-    assert dest.mute is False
-    assert dest.volume == -16
-
-    # test singleton
-    dest1 = Destination()
-    dest2 = Destination()
-
-    assert dest1 == dest2 == get_destination()
-
-
-def test_oscillator():
-    osc = Oscillator()
-
-    assert osc.type == "sine"
-    assert osc.frequency == 440
-    assert osc.detune == 0
-
-    # just test that the following types are valid
-    for wave in ["sine", "square", "sawtooth", "triangle"]:
-        for pcount in range(2):
-            osc.type = wave + str(pcount)
-
-    with pytest.raises(TraitError, match="Invalid oscillator type"):
-        osc.type = "not a good oscillator wave"
-
-
-def test_noise():
-    noise = Noise()
-
-    assert noise.type == "white"
-    assert noise.fade_in == 0
-    assert noise.fade_out == 0
-
-    # just test that the following types are valid
-    for typ in ["pink", "white", "brown"]:
-        noise.type = typ
-
-    with pytest.raises(TraitError):
-        noise.type = "not a valid noise type"

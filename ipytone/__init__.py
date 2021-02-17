@@ -4,7 +4,9 @@
 # Copyright (c) Benoit Bovy.
 # Distributed under the terms of the Modified BSD License.
 
-from .ipytone import get_destination, Oscillator, Noise
+from .core import get_destination
+from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Signal, Subtract
+from .source import Oscillator, Noise
 from ._version import __version__, version_info
 
 
