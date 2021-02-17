@@ -1,5 +1,5 @@
-from ipywidgets import widget_serialization, Widget
-from traitlets import Instance, Unicode, List
+from ipywidgets import Widget, widget_serialization
+from traitlets import Instance, List, Unicode
 
 from ._frontend import module_name, module_version
 

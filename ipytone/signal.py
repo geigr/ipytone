@@ -1,11 +1,10 @@
 import warnings
 
 from ipywidgets import widget_serialization
-from traitlets import Enum, Instance, Unicode, Float, Int, Bool, Union
+from traitlets import Bool, Enum, Float, Instance, Int, Unicode, Union
 from traitlets.traitlets import validate
 
 from .core import AudioNode
-
 
 _UNITS = [
     "bpm",
