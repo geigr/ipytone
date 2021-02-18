@@ -1,5 +1,5 @@
 from ipywidgets import Widget, widget_serialization
-from traitlets import Instance, List, Unicode
+from traitlets import Instance, Int, List, Unicode
 
 from ._frontend import module_name, module_version
 
@@ -19,15 +19,25 @@ class AudioNode(ToneWidgetBase):
     _in_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
     _out_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
 
-    def _normalize_destination(self, destination):
-        from .source import Source
+    number_of_inputs = Int(
+        read_only=True,
+        default_value=1,
+        help="The number of inputs feeding into the AudioNode"
+    ).tag(sync=True)
 
+    number_of_outputs = Int(
+        read_only=True,
+        default_value=1,
+        help="The number of outputs of the AudioNode"
+    ).tag(sync=True)
+
+    def _normalize_destination(self, destination):
         if isinstance(destination, AudioNode):
             destination = [destination]
 
         if not all([isinstance(d, AudioNode) for d in destination]):
             raise ValueError("destination(s) must be AudioNode object(s)")
-        if any([isinstance(d, Source) for d in destination]):
+        if any([not d.number_of_inputs for d in destination]):
             raise ValueError("cannot connect to source audio node(s)")
         if self in destination:
             raise ValueError("cannot connect an audio node to itself")

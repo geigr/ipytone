@@ -1,7 +1,7 @@
 import re
 
 from ipywidgets import widget_serialization
-from traitlets import Bool, Enum, Float, Instance, TraitError, Unicode, validate
+from traitlets import Bool, Enum, Float, Instance, Int, TraitError, Unicode, validate
 
 from .base import AudioNode
 from .signal import Signal
@@ -11,6 +11,12 @@ class Source(AudioNode):
     """Audio source node."""
 
     _model_name = Unicode("SourceModel").tag(sync=True)
+
+    number_of_inputs = Int(
+        read_only=True,
+        default_value=0,
+        help="An audio source node has no input"
+    ).tag(sync=True)
 
     mute = Bool(False, help="Mute source").tag(sync=True)
     state = Enum(["started", "stopped"], allow_none=False, default_value="stopped").tag(sync=True)

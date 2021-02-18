@@ -30,7 +30,10 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
     };
   }
 
-  initialize(attributes: Backbone.ObjectHash, options: any): void {
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
     super.initialize(attributes, options);
 
     this.updateOverridden();

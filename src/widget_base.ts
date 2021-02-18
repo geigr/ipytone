@@ -29,13 +29,22 @@ export abstract class AudioNodeModel extends ToneWidgetModel {
       name: '',
       _in_nodes: [],
       _out_nodes: [],
+      number_of_inputs: 1,
+      number_of_outputs: 1,
     };
   }
 
-  initialize(attributes: Backbone.ObjectHash, options: any): void {
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
     super.initialize(attributes, options);
 
     this.node = this.createNode();
+
+    this.set('number_of_inputs', this.node.numberOfInputs);
+    this.set('number_of_outputs', this.node.numberOfOutputs);
+    this.save_changes();
 
     this.initEventListeners();
   }
