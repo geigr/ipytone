@@ -1,7 +1,7 @@
 import re
 
 from ipywidgets import widget_serialization
-from traitlets import Bool, Enum, Instance, Unicode, Float, validate, TraitError
+from traitlets import Bool, Enum, Float, Instance, TraitError, Unicode, validate
 
 from .base import AudioNode
 from .signal import Signal

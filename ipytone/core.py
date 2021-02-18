@@ -1,4 +1,4 @@
-from traitlets import Unicode, Float, Bool
+from traitlets import Bool, Float, Unicode
 
 from .base import AudioNode
 

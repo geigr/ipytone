@@ -29,6 +29,10 @@ jobs:
       run: |
         pip install black
         black --check .
+    - name: Check imports with isort
+      run: |
+        pip install isort
+        isort -c .
 
   js:
     name: JavaScript
