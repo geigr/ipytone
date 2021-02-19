@@ -1,5 +1,5 @@
 from ipywidgets import Widget, widget_serialization
-from traitlets import Instance, Int, List, Unicode
+from traitlets import Bool, Instance, Int, List, Unicode
 
 from ._frontend import module_name, module_version
 
@@ -16,6 +16,7 @@ class AudioNode(ToneWidgetBase):
 
     name = Unicode("").tag(sync=True)
 
+    _create_node = Bool(True).tag(sync=True)
     _in_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
     _out_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
 

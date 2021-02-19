@@ -1,7 +1,7 @@
 import re
 
 from ipywidgets import widget_serialization
-from traitlets import Bool, Enum, Float, Instance, Int, TraitError, Unicode, validate
+from traitlets import Bool, Enum, Float, Instance, Int, TraitError, Unicode, validate, Union
 
 from .base import AudioNode
 from .signal import Signal
@@ -59,18 +59,14 @@ class Oscillator(Source):
     _model_name = Unicode("OscillatorModel").tag(sync=True)
 
     type = Unicode("sine", help="Oscillator type").tag(sync=True)
-    _frequency = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
-    _detune = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+    _init_frequency_value = Union([Int(), Float(), Unicode()]).tag(sync=True)
+    _init_detune_value = Float().tag(sync=True)
+    frequency = Instance(Signal, read_only=True, allow_none=True).tag(sync=True, **widget_serialization);
+    detune = Instance(Signal, read_only=True, allow_none=True).tag(sync=True, **widget_serialization);
 
     def __init__(self, type="sine", frequency=440, detune=0, **kwargs):
 
-        if not isinstance(frequency, Signal):
-            frequency = Signal(value=frequency, units="frequency")
-
-        if not isinstance(detune, Signal):
-            detune = Signal(value=detune, units="cents")
-
-        kwargs.update({"type": type, "_frequency": frequency, "_detune": detune})
+        kwargs.update({"type": type, "_init_frequency_value": frequency, "_init_detune_value": detune})
         super().__init__(**kwargs)
 
     @validate("type")
@@ -82,16 +78,6 @@ class Oscillator(Source):
             raise TraitError(f"Invalid oscillator type: {wave}")
 
         return proposal["value"]
-
-    @property
-    def frequency(self) -> Signal:
-        """Oscillator frequency."""
-        return self._frequency
-
-    @property
-    def detune(self) -> Signal:
-        """Oscillator detune."""
-        return self._detune
 
 
 class Noise(Source):

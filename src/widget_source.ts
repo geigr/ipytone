@@ -53,28 +53,34 @@ abstract class SourceModel extends AudioNodeModel {
 
   static model_name = 'SourceModel';
 }
+
 export class OscillatorModel extends SourceModel {
   defaults(): any {
     return {
       ...super.defaults(),
       _model_name: OscillatorModel.model_name,
       type: 'sine',
-      _frequency: null,
-      _detune: null,
+      _init_frequency_value: 440,
+      _init_detune_value: 0,
+      frequency: null,
+      detune: null,
     };
   }
 
   createNode(): tone.Oscillator {
-    const osc = new tone.Oscillator({
+    return new tone.Oscillator({
       type: this.get('type'),
-      volume: this.get('volume'),
+      frequency: this.get('_init_frequency_value'),
+      detune: this.get('_init_detune_value'),
     });
+  }
 
-    // need to bind signals explicitly
-    this.frequency.node.connect(osc.frequency);
-    this.detune.node.connect(osc.detune);
-
-    return osc;
+  createModels(): Promise<AudioNodeModel>[] {
+    return [
+      ...super.createModels(),
+      this.newModel(SignalModel.model_name, 'frequency', this.node.frequency),
+      this.newModel(SignalModel.model_name, 'detune', this.node.detune),
+    ];
   }
 
   get type(): tone.ToneOscillatorType {
@@ -82,11 +88,11 @@ export class OscillatorModel extends SourceModel {
   }
 
   get frequency(): SignalModel<'frequency'> {
-    return this.get('_frequency');
+    return this.get('frequency');
   }
 
   get detune(): SignalModel<'cents'> {
-    return this.get('_detune');
+    return this.get('detune');
   }
 
   initEventListeners(): void {
@@ -99,8 +105,8 @@ export class OscillatorModel extends SourceModel {
 
   static serializers: ISerializers = {
     ...SourceModel.serializers,
-    _frequency: { deserialize: unpack_models as any },
-    _detune: { deserialize: unpack_models as any },
+    frequency: { deserialize: unpack_models as any },
+    detune: { deserialize: unpack_models as any },
   };
 
   node: tone.Oscillator;

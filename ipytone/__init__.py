@@ -4,10 +4,17 @@
 # Copyright (c) Benoit Bovy.
 # Distributed under the terms of the Modified BSD License.
 
+from ipywidgets import Widget
+
 from ._version import __version__, version_info
 from .core import get_destination
 from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Signal, Subtract
 from .source import Noise, Oscillator
+
+
+# TODO: remove (see https://github.com/jupyter-widgets/ipywidgets/issues/3139)
+_registry = Widget.widget_types
+_registry.register("ipytone", __version__, "SignalModel", "", "", "", Signal)
 
 
 def _jupyter_labextension_paths():
