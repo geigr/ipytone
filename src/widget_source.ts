@@ -1,5 +1,3 @@
-import { ISerializers, unpack_models } from '@jupyter-widgets/base';
-
 import * as tone from 'tone';
 
 // import * as source from 'tone/Tone/source/Source';
@@ -102,12 +100,6 @@ export class OscillatorModel extends SourceModel {
       this.node.type = this.type;
     });
   }
-
-  static serializers: ISerializers = {
-    ...SourceModel.serializers,
-    frequency: { deserialize: unpack_models as any },
-    detune: { deserialize: unpack_models as any },
-  };
 
   node: tone.Oscillator;
 
