@@ -25,10 +25,8 @@ def test_oscillator():
     osc = Oscillator()
 
     assert osc.type == "sine"
-    assert osc.frequency.value == 440
-    assert osc.frequency.units == "frequency"
-    assert osc.detune.value == 0
-    assert osc.detune.units == "cents"
+    assert osc._init_frequency_value == 440
+    assert osc._init_detune_value == 0
 
     # just test that the following types are valid
     for wave in ["sine", "square", "sawtooth", "triangle"]:

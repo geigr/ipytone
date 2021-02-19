@@ -21,15 +21,11 @@ class AudioNode(ToneWidgetBase):
     _out_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
 
     number_of_inputs = Int(
-        read_only=True,
-        default_value=1,
-        help="The number of inputs feeding into the AudioNode"
+        read_only=True, default_value=1, help="The number of inputs feeding into the AudioNode"
     ).tag(sync=True)
 
     number_of_outputs = Int(
-        read_only=True,
-        default_value=1,
-        help="The number of outputs of the AudioNode"
+        read_only=True, default_value=1, help="The number of outputs of the AudioNode"
     ).tag(sync=True)
 
     def _normalize_destination(self, destination):
