@@ -4,7 +4,8 @@ from ipywidgets import widget_serialization
 from traitlets import Bool, Enum, Float, Instance, Int, Unicode, Union
 from traitlets.traitlets import validate
 
-from .core import AudioNode
+from .base import AudioNode
+from .core import InternalAudioNode, InternalNode
 
 _UNITS = [
     "bpm",
@@ -105,9 +106,19 @@ class Signal(SignalOperator):
     _side_signal_prop_name = None
 
     def __init__(self, value=0, units="number", min_value=None, max_value=None, **kwargs):
-        kwargs.update(
-            {"value": value, "_units": units, "_min_value": min_value, "_max_value": max_value}
-        )
+        in_node = InternalNode(tone_class="Param", _n_outputs=0)
+        out_node = InternalAudioNode(tone_class="ToneConstantSource")
+
+        kw = {
+            "_input": in_node,
+            "_output": out_node,
+            "value": value,
+            "_units": units,
+            "_min_value": min_value,
+            "_max_value": max_value,
+        }
+
+        kwargs.update(kw)
         super().__init__(**kwargs)
 
     @property
@@ -175,7 +186,8 @@ class Multiply(Signal):
     _side_signal_prop_name = "factor"
 
     def __init__(self, factor=1, **kwargs):
-        kwargs.update({"_factor": _as_signal(factor)})
+        node = InternalAudioNode(tone_class="Gain")
+        kwargs.update({"_factor": _as_signal(factor), "_input": node, "_output": node})
         super().__init__(**kwargs)
 
     @property
@@ -203,7 +215,8 @@ class Add(Signal):
     _side_signal_prop_name = "addend"
 
     def __init__(self, addend=0, **kwargs):
-        kwargs.update({"_addend": _as_signal(addend)})
+        node = InternalAudioNode(tone_class="Gain")
+        kwargs.update({"_addend": _as_signal(addend), "_input": node, "_output": node})
         super().__init__(**kwargs)
 
     @property
@@ -231,7 +244,8 @@ class Subtract(Signal):
     _side_signal_prop_name = "subtrahend"
 
     def __init__(self, subtrahend=0, **kwargs):
-        kwargs.update({"_subtrahend": _as_signal(subtrahend)})
+        node = InternalAudioNode(tone_class="Gain")
+        kwargs.update({"_subtrahend": _as_signal(subtrahend), "_input": node, "_output": node})
         super().__init__(**kwargs)
 
     @property
@@ -259,7 +273,11 @@ class GreaterThan(Signal):
     _side_signal_prop_name = "comparator"
 
     def __init__(self, comparator=0, **kwargs):
-        kwargs.update({"_comparator": _as_signal(comparator)})
+        in_node = InternalAudioNode(tone_class="Substract")
+        out_node = InternalAudioNode(tone_class="GreaterThanZero")
+
+        kw = {"_comparator": _as_signal(comparator), "_input": in_node, "output": out_node}
+        kwargs.update(kw)
         super().__init__(**kwargs)
 
     @property
@@ -277,6 +295,11 @@ class Abs(SignalOperator):
 
     _model_name = Unicode("AbsModel").tag(sync=True)
 
+    def __init__(self, *args, **kwargs):
+        node = InternalAudioNode(tone_class="WaveShaper")
+        kwargs.update({"_input": node, "_output": node})
+        super().__init__(*args, **kwargs)
+
 
 class Negate(SignalOperator):
     """A node that outputs the opposite value of an incoming signal.
@@ -285,6 +308,11 @@ class Negate(SignalOperator):
     """
 
     _model_name = Unicode("NegateModel").tag(sync=True)
+
+    def __init__(self, *args, **kwargs):
+        node = InternalAudioNode(tone_class="Multiply")
+        kwargs.update({"_input": node, "_output": node})
+        super().__init__(*args, **kwargs)
 
 
 class Pow(SignalOperator):
@@ -296,3 +324,8 @@ class Pow(SignalOperator):
     _model_name = Unicode("PowModel").tag(sync=True)
 
     value = Union((Float(), Int()), help="exponent value").tag(sync=True)
+
+    def __init__(self, *args, **kwargs):
+        node = InternalAudioNode(tone_class="WaveShaper")
+        kwargs.update({"_input": node, "_output": node})
+        super().__init__(*args, **kwargs)

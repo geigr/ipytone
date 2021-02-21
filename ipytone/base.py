@@ -1,5 +1,5 @@
 from ipywidgets import Widget, widget_serialization
-from traitlets import Instance, List, Unicode
+from traitlets import Bool, Instance, List, Unicode
 
 from ._frontend import module_name, module_version
 
@@ -16,23 +16,44 @@ class AudioNode(ToneWidgetBase):
 
     name = Unicode("").tag(sync=True)
 
+    _is_internal = False
+    _input = Instance(ToneWidgetBase, allow_none=True).tag(sync=True, **widget_serialization)
+    _output = Instance(ToneWidgetBase, allow_none=True).tag(sync=True, **widget_serialization)
+
+    _create_node = Bool(True).tag(sync=True)
     _in_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
     _out_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
 
     def _normalize_destination(self, destination):
-        from .source import Source
-
         if isinstance(destination, AudioNode):
             destination = [destination]
 
         if not all([isinstance(d, AudioNode) for d in destination]):
             raise ValueError("destination(s) must be AudioNode object(s)")
-        if any([isinstance(d, Source) for d in destination]):
+        if any([not d.number_of_inputs for d in destination]):
             raise ValueError("cannot connect to source audio node(s)")
         if self in destination:
             raise ValueError("cannot connect an audio node to itself")
 
         return list(set(self._out_nodes) | set(destination))
+
+    @property
+    def number_of_inputs(self):
+        if self._is_internal:
+            return self._n_inputs
+        elif self._input is None:
+            return 0
+        else:
+            return self._input.number_of_inputs
+
+    @property
+    def number_of_outputs(self):
+        if self._is_internal:
+            return self._n_outputs
+        elif self._output is None:
+            return 0
+        else:
+            return self._output.number_of_outputs
 
     def connect(self, destination):
         """Connect the output of this audio node to another ``destination`` audio node."""
@@ -88,14 +109,24 @@ class AudioNode(ToneWidgetBase):
         return self
 
     @property
-    def output(self):
-        """Get all audio nodes connected to the output of this node."""
-        return list(self._out_nodes)
+    def input(self):
+        """Returns the input node, or None if this node is a source."""
+        if not self._is_internal:
+            return self._input
+        elif self._n_inputs:
+            return "internal"
+        else:
+            return None
 
     @property
-    def input(self):
-        """Get all audio nodes connected to the input of this node."""
-        return list(self._in_nodes)
+    def output(self):
+        """Returns the output node, or None if this node is a sink."""
+        if not self._is_internal:
+            return self._output
+        elif self._n_outputs:
+            return "internal"
+        else:
+            return None
 
     def _repr_keys(self):
         if self.name:

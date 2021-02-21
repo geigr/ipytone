@@ -67,12 +67,14 @@ export class OscillatorModel extends SourceModel {
   createNode(): tone.Oscillator {
     const osc = new tone.Oscillator({
       type: this.get('type'),
+      frequency: this.get('_frequency').get('value'),
+      detune: this.get('_detune').get('value'),
       volume: this.get('volume'),
     });
 
-    // need to bind signals explicitly
-    this.frequency.node.connect(osc.frequency);
-    this.detune.node.connect(osc.detune);
+    // assign sub-nodes
+    this.frequency.node = osc.frequency;
+    this.detune.node = osc.detune;
 
     return osc;
   }

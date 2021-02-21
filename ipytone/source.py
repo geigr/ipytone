@@ -4,6 +4,7 @@ from ipywidgets import widget_serialization
 from traitlets import Bool, Enum, Float, Instance, TraitError, Unicode, validate
 
 from .base import AudioNode
+from .core import InternalAudioNode
 from .signal import Signal
 
 
@@ -15,6 +16,11 @@ class Source(AudioNode):
     mute = Bool(False, help="Mute source").tag(sync=True)
     state = Enum(["started", "stopped"], allow_none=False, default_value="stopped").tag(sync=True)
     volume = Float(-16, help="Source gain").tag(sync=True)
+
+    def __init__(self, *args, **kwargs):
+        out_node = InternalAudioNode(tone_class="Volume")
+        kwargs.update({"_output": out_node})
+        super().__init__(*args, **kwargs)
 
     def start(self):
         """Start the audio source.
@@ -42,11 +48,11 @@ class Oscillator(Source):
     type : str, optional
         Oscillator wave type, i.e., either 'sine', 'square', 'sawtooth' or 'triangle'
         (default: 'sine'). Harmonic partials may be added, e.g., 'sine2', 'square8', etc.
-    frequency : int or str or :class:`Signal`, optional
-        Oscillator frequency, either in Hertz, as a note (e.g., 'A4') or as a Signal object
+    frequency : int or float or str, optional
+        Oscillator frequency, either in Hertz or as a note (e.g., 'A4')
         (default, 440 Hertz).
-    detune : int or :class:`Signal`, optional
-        Oscillator frequency detune, in cents (or as a Signal object). Default: 0.
+    detune : int or float, optional
+        Oscillator frequency detune, in cents (default: 0).
 
     """
 
@@ -57,12 +63,8 @@ class Oscillator(Source):
     _detune = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
 
     def __init__(self, type="sine", frequency=440, detune=0, **kwargs):
-
-        if not isinstance(frequency, Signal):
-            frequency = Signal(value=frequency, units="frequency")
-
-        if not isinstance(detune, Signal):
-            detune = Signal(value=detune, units="cents")
+        frequency = Signal(value=frequency, units="frequency", _create_node=False)
+        detune = Signal(value=detune, units="cents", _create_node=False)
 
         kwargs.update({"type": type, "_frequency": frequency, "_detune": detune})
         super().__init__(**kwargs)

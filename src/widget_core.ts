@@ -1,6 +1,39 @@
 import * as tone from 'tone';
 
-import { AudioNodeModel } from './widget_base';
+import { AudioNodeModel, ToneWidgetModel } from './widget_base';
+
+export class InternalNodeModel extends ToneWidgetModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: InternalNodeModel.model_name,
+      _n_inputs: 1,
+      _n_outputs: 1,
+      _tone_class: 'ToneWithContext',
+    };
+  }
+
+  static model_name = 'InternalNodeModel';
+}
+
+export class InternalAudioNodeModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: InternalAudioNodeModel.model_name,
+      _n_inputs: 1,
+      _n_outputs: 1,
+      _tone_class: 'ToneAudioNode',
+      _create_node: false,
+    };
+  }
+
+  createNode(): tone.ToneAudioNode {
+    throw new Error('Not implemented');
+  }
+
+  static model_name = 'InternalAudioNodeModel';
+}
 
 export class DestinationModel extends AudioNodeModel {
   defaults(): any {
