@@ -65,18 +65,17 @@ export class OscillatorModel extends SourceModel {
   }
 
   createNode(): tone.Oscillator {
-    const osc = new tone.Oscillator({
+    return new tone.Oscillator({
       type: this.get('type'),
       frequency: this.get('_frequency').get('value'),
       detune: this.get('_detune').get('value'),
       volume: this.get('volume'),
     });
+  }
 
-    // assign sub-nodes
-    this.frequency.node = osc.frequency;
-    this.detune.node = osc.detune;
-
-    return osc;
+  setSubNodes(): void {
+    this.frequency.setNode(this.node.frequency);
+    this.detune.setNode(this.node.detune);
   }
 
   get type(): tone.ToneOscillatorType {

@@ -57,12 +57,8 @@ export abstract class AudioNodeModel extends ToneWidgetModel {
 
     if (this.get('_create_node')) {
       this.node = this.createNode();
-      if (this.input !== null) {
-        this.input.node = this.node.input;
-      }
-      if (this.output !== null) {
-        this.output.node = this.node.output;
-      }
+      this.setInputOutputNodes();
+      this.setSubNodes();
     }
 
     this.initEventListeners();
@@ -123,6 +119,11 @@ export abstract class AudioNodeModel extends ToneWidgetModel {
 
   setNode(node: tone.ToneAudioNode): void {
     this.node = node;
+    this.setInputOutputNodes();
+    this.setSubNodes();
+  }
+
+  private setInputOutputNodes(): void {
     if (this.input !== null) {
       this.input.node = this.node.input;
     }
