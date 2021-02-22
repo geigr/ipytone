@@ -161,14 +161,14 @@ def get_destination():
     return _DESTINATION
 
 
+_Connection = List(Tuple(Instance(AudioNode), Union((Instance(AudioNode), Instance(Param)))))
+
+
 class AudioGraph(ToneWidgetBase):
     """An audio graph representing all nodes and their connections in the main audio context."""
 
     _model_name = Unicode("AudioGraphModel").tag(sync=True)
-
-    _connections = List(Tuple(Instance(AudioNode), Instance(AudioNode))).tag(
-        sync=True, **widget_serialization
-    )
+    _connections = _Connection.tag(sync=True, **widget_serialization)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -178,9 +178,11 @@ class AudioGraph(ToneWidgetBase):
     def connect(self, src_node, dest_node, sync=True):
         """Connect a source node output to a destination node input."""
 
-        if not (isinstance(src_node, AudioNode) and isinstance(dest_node, AudioNode)):
-            raise ValueError("Source and destination nodes must be AudioNode objects")
-        if not dest_node.number_of_inputs:
+        if not isinstance(src_node, AudioNode):
+            raise ValueError("src_node must be an AudioNode object")
+        if not isinstance(dest_node, (AudioNode, Param)):
+            raise ValueError("dest_node must be an AudioNode or Param object")
+        if isinstance(dest_node, AudioNode) and not dest_node.number_of_inputs:
             raise ValueError(f"Cannot connect to audio source {dest_node}")
         if not src_node.number_of_outputs:
             raise ValueError(f"Cannot connect from audio sink {src_node}")

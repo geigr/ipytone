@@ -1,7 +1,6 @@
 import pytest
 
-from ipytone import get_destination
-from ipytone.core import Destination, InternalAudioNode, InternalNode
+from ipytone.core import Destination, InternalAudioNode, InternalNode, Param, get_destination
 
 
 def test_internal_node():
@@ -38,14 +37,18 @@ def test_destination():
 def test_audio_graph(audio_graph):
     src = InternalAudioNode()
     dest = InternalAudioNode()
+    param = Param()
 
     audio_graph.connect(src, dest, sync=False)
     assert (src, dest) not in audio_graph.connections
     audio_graph.sync_connections()
     assert (src, dest) in audio_graph.connections
 
-    assert audio_graph.nodes == list({src, dest})
-    assert audio_graph.connections == [(src, dest)]
+    audio_graph.connect(src, param)
+    assert (src, param) in audio_graph.connections
+
+    assert audio_graph.nodes == list({src, dest, param})
+    assert audio_graph.connections == [(src, dest), (src, param)]
 
     audio_graph.disconnect(src, dest, sync=False)
     assert (src, dest) in audio_graph.connections
@@ -55,9 +58,11 @@ def test_audio_graph(audio_graph):
     with pytest.raises(ValueError, match=".*not connected to.*"):
         audio_graph.disconnect(src, dest)
 
-    for src, dest in [(src, "not a node"), ("not a node", dest), ("not a node", "not a node")]:
-        with pytest.raises(ValueError, match=".*must be AudioNode objects"):
-            audio_graph.connect(src, dest)
+    with pytest.raises(ValueError, match="src_node must be an AudioNode object"):
+        audio_graph.connect(param, dest)
+
+    with pytest.raises(ValueError, match=".*dest_node must be.*"):
+        audio_graph.connect(src, "not a node")
 
     src = InternalAudioNode()
     dest = InternalAudioNode(_n_inputs=0)
