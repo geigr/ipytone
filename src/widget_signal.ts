@@ -30,7 +30,10 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
     };
   }
 
-  initialize(attributes: Backbone.ObjectHash, options: any): void {
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
     super.initialize(attributes, options);
 
     if (this.get('_create_node')) {
@@ -54,7 +57,7 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
     this.save_changes();
   }
 
-  protected connectInputCallback(): void {
+  connectInputCallback(): void {
     // new connected incoming signal overrides this signal value
     this.updateOverridden();
   }

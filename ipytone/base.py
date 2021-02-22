@@ -1,5 +1,5 @@
 from ipywidgets import Widget, widget_serialization
-from traitlets import Bool, Instance, List, Unicode
+from traitlets import Bool, Instance, Unicode
 
 from ._frontend import module_name, module_version
 
@@ -19,26 +19,11 @@ class AudioNode(ToneWidgetBase):
     _is_internal = False
     _input = Instance(ToneWidgetBase, allow_none=True).tag(sync=True, **widget_serialization)
     _output = Instance(ToneWidgetBase, allow_none=True).tag(sync=True, **widget_serialization)
-
     _create_node = Bool(True).tag(sync=True)
-    _in_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
-    _out_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
-
-    def _normalize_destination(self, destination):
-        if isinstance(destination, AudioNode):
-            destination = [destination]
-
-        if not all([isinstance(d, AudioNode) for d in destination]):
-            raise ValueError("destination(s) must be AudioNode object(s)")
-        if any([not d.number_of_inputs for d in destination]):
-            raise ValueError("cannot connect to source audio node(s)")
-        if self in destination:
-            raise ValueError("cannot connect an audio node to itself")
-
-        return list(set(self._out_nodes) | set(destination))
 
     @property
     def number_of_inputs(self):
+        """Returns the number of input slots for the input node (0 for source nodes)."""
         if self._is_internal:
             return self._n_inputs
         elif self._input is None:
@@ -48,6 +33,7 @@ class AudioNode(ToneWidgetBase):
 
     @property
     def number_of_outputs(self):
+        """Returns the number of output slots for the output node (0 for sink nodes)."""
         if self._is_internal:
             return self._n_outputs
         elif self._output is None:
@@ -56,45 +42,45 @@ class AudioNode(ToneWidgetBase):
             return self._output.number_of_outputs
 
     def connect(self, destination):
-        """Connect the output of this audio node to another ``destination`` audio node."""
+        """Connect the output of this audio node to the input of a ``destination`` audio node."""
 
-        if destination not in self._out_nodes:
-            self._out_nodes = self._normalize_destination(destination)
-            destination._in_nodes = destination._in_nodes + [self]
+        from .core import _AUDIO_GRAPH
+
+        _AUDIO_GRAPH.connect(self, destination)
 
         return self
 
     def disconnect(self, destination):
         """Disconnect the ouput of this audio node from a connected destination."""
 
-        new_out_nodes = list(self._out_nodes)
-        new_out_nodes.remove(destination)
-        self._out_nodes = new_out_nodes
+        from .core import _AUDIO_GRAPH
 
-        new_in_nodes = list(destination._in_nodes)
-        new_in_nodes.remove(self)
-        destination._in_nodes = new_in_nodes
+        _AUDIO_GRAPH.disconnect(self, destination)
 
         return self
 
     def fan(self, *destinations):
         """Connect the output of this audio node to the ``destinations`` audio nodes in parallel."""
 
-        self._out_nodes = self._normalize_destination(destinations)
+        from .core import _AUDIO_GRAPH
 
         for node in destinations:
-            node._in_nodes = node._in_nodes + [self]
+            _AUDIO_GRAPH.connect(self, node, sync=False)
 
+        _AUDIO_GRAPH.sync_connections()
         return self
 
     def chain(self, *nodes):
         """Connect the output of this audio node to the other audio nodes in series."""
 
+        from .core import _AUDIO_GRAPH
+
         chain_nodes = [self] + list(nodes)
 
         for i in range(len(chain_nodes) - 1):
-            chain_nodes[i].connect(chain_nodes[i + 1])
+            _AUDIO_GRAPH.connect(chain_nodes[i], chain_nodes[i + 1], sync=False)
 
+        _AUDIO_GRAPH.sync_connections()
         return self
 
     def to_destination(self):
