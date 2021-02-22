@@ -1,8 +1,8 @@
 from ipywidgets import widget_serialization
-from traitlets import Bool, Enum, Float, Instance, Int, Unicode, Union
+from traitlets import Float, Instance, Int, Unicode, Union
 
 from .base import AudioNode
-from .core import UNITS, InternalAudioNode, InternalNode
+from .core import InternalAudioNode, Param
 
 
 class SignalOperator(AudioNode):
@@ -74,47 +74,43 @@ class Signal(SignalOperator):
     """
 
     _model_name = Unicode("SignalModel").tag(sync=True)
-
-    _units = Enum(UNITS, default_value="number", allow_none=False).tag(sync=True)
-    value = Union((Float(), Int(), Unicode()), help="Signal current value").tag(sync=True)
-    _min_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
-    _max_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
-    overridden = Bool(
-        read_only=True, help="If True, the signal value is overridden by an incoming signal"
-    ).tag(sync=True)
+    _input = Instance(Param).tag(sync=True, **widget_serialization)
+    value = Union((Float(), Int(), Unicode()), help="Signal value").tag(sync=True)
 
     _side_signal_prop_name = None
 
     def __init__(self, value=0, units="number", min_value=None, max_value=None, **kwargs):
-        in_node = InternalNode(tone_class="Param", _n_outputs=0)
+        in_node = Param(
+            value=value,
+            units=units,
+            min_value=min_value,
+            max_value=max_value,
+            _create_node=False,
+        )
         out_node = InternalAudioNode(tone_class="ToneConstantSource")
 
-        kw = {
-            "_input": in_node,
-            "_output": out_node,
-            "value": value,
-            "_units": units,
-            "_min_value": min_value,
-            "_max_value": max_value,
-        }
-
-        kwargs.update(kw)
+        kwargs.update({"_input": in_node, "_output": out_node, "value": value})
         super().__init__(**kwargs)
 
     @property
     def units(self):
         """Signal value units."""
-        return self._units
+        return self.input.units
 
     @property
     def min_value(self):
         """Signal value lower limit."""
-        return self._min_value
+        return self.input.min_value
 
     @property
     def max_value(self):
         """Signal value upper limit."""
-        return self._max_value
+        return self.input.max_value
+
+    @property
+    def overridden(self):
+        """If True, the signal value is overridden by an incoming signal."""
+        return self.input.overridden
 
     def _repr_keys(self):
         for key in super()._repr_keys():

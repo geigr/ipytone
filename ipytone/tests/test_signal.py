@@ -1,17 +1,22 @@
+import math
 import operator
 
 import pytest
 
-from ipytone import Abs, Add, GreaterThan, Multiply, Negate, Pow, Signal, Subtract
-from ipytone.core import InternalAudioNode, InternalNode
+from ipytone import Abs, Add, GreaterThan, Multiply, Negate, Param, Pow, Signal, Subtract
+from ipytone.core import InternalAudioNode
 
 
 def test_signal():
     sig = Signal()
 
-    assert sig.units == "number"
-    assert sig.min_value is sig.max_value is None
-    assert isinstance(sig.input, InternalNode)
+    assert sig.value == sig.input.value == 0
+    assert sig.units == sig.input.units == "number"
+    assert sig.min_value == sig.input.min_value == -math.inf
+    assert sig.max_value == sig.input.max_value == math.inf
+    assert sig.overridden is sig.input.overridden is False
+
+    assert isinstance(sig.input, Param)
     assert isinstance(sig.output, InternalAudioNode)
 
     sig.value = 2
@@ -22,7 +27,6 @@ def test_signal():
     assert sig2.units == "frequency"
     assert sig2.min_value == 100
     assert sig2.max_value == 1e3
-    assert sig2.overridden is False
     assert repr(sig2) == "Signal(value=440.0, units='frequency')"
 
 

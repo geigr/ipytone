@@ -22,11 +22,6 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
     return {
       ...super.defaults(),
       _model_name: SignalModel.model_name,
-      value: 0,
-      _units: 'number',
-      _min_value: undefined,
-      _max_value: undefined,
-      overridden: false,
     };
   }
 
@@ -43,16 +38,18 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
 
   createNode(): tone.Signal {
     return new tone.Signal({
-      value: this.get('value'),
-      units: this.get('_units'),
-      minValue: this.normalizeMinMax(this.get('_min_value')),
-      maxValue: this.normalizeMinMax(this.get('_max_value')),
+      value: this.input.get('value'),
+      units: this.input.get('_units'),
+      minValue: this.normalizeMinMax(this.input.get('_min_value')),
+      maxValue: this.normalizeMinMax(this.input.get('_max_value')),
     });
   }
 
   private updateOverridden(): void {
-    this.set('overridden', this.node.overridden);
+    this.input.set('overridden', this.node.overridden);
     // if overridden, value is reset to 0
+    this.input.set('value', this.node.value);
+    this.input.save_changes();
     this.set('value', this.node.value);
     this.save_changes();
   }
@@ -64,18 +61,6 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
 
   private normalizeMinMax(value: number | null): number | undefined {
     return value === null ? undefined : value;
-  }
-
-  get value(): any {
-    return this.node.value;
-  }
-
-  get minValue(): number {
-    return this.node.minValue;
-  }
-
-  get maxValue(): number {
-    return this.node.maxValue;
   }
 
   initEventListeners(): void {
