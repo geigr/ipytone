@@ -1,9 +1,9 @@
 import operator
 
 import pytest
-from traitlets import Bool
 
 from ipytone import Abs, Add, GreaterThan, Multiply, Negate, Pow, Signal, Subtract
+from ipytone.core import InternalAudioNode, InternalNode
 
 
 def test_signal():
@@ -11,6 +11,8 @@ def test_signal():
 
     assert sig.units == "number"
     assert sig.min_value is sig.max_value is None
+    assert isinstance(sig.input, InternalNode)
+    assert isinstance(sig.output, InternalAudioNode)
 
     sig.value = 2
     assert sig.value == 2
@@ -22,19 +24,6 @@ def test_signal():
     assert sig2.max_value == 1e3
     assert sig2.overridden is False
     assert repr(sig2) == "Signal(value=440.0, units='frequency')"
-
-
-def test_signal_overriden():
-    # overridden is read-only in Signal -> subclass it
-    # TODO: mocking would be better
-    class Signal_(Signal):
-        overridden = Bool(False)
-
-    sig = Signal_()
-
-    with pytest.warns(UserWarning, match=".*overridden.*"):
-        sig.overridden = True
-        sig.value = 2
 
 
 @pytest.mark.parametrize(
@@ -64,12 +53,12 @@ def test_signal_subclass(cls, cls_str, prop_name, default_value):
         (operator.pow, Pow, "value", 1, False),
     ],
 )
-def test_signal_operator(op, op_cls, op_prop_name, value, test_other_signal):
+def test_signal_operator(op, op_cls, op_prop_name, value, test_other_signal, audio_graph):
     # test operator with number
     sig = Signal(value=1)
     op_sig = op(sig, value)
     assert isinstance(op_sig, op_cls)
-    assert sig in op_sig.input
+    assert (sig, op_sig) in audio_graph.connections
 
     try:
         assert getattr(op_sig, op_prop_name).value == value
@@ -82,31 +71,39 @@ def test_signal_operator(op, op_cls, op_prop_name, value, test_other_signal):
         sig2 = Signal(value=2)
         op_sig2 = op(sig, sig2)
         assert isinstance(op_sig2, op_cls)
-        assert sig in op_sig2.input
-        assert sig2 in getattr(op_sig2, op_prop_name).input
+        assert (sig, op_sig2) in audio_graph.connections
+        assert (sig2, getattr(op_sig2, op_prop_name)) in audio_graph.connections
 
 
 @pytest.mark.parametrize("op,op_cls", [(operator.abs, Abs), (operator.neg, Negate)])
-def test_simple_signal_operator(op, op_cls):
+def test_simple_signal_operator(op, op_cls, audio_graph):
     sig = Signal(value=1)
     op_sig = op(sig)
     assert isinstance(op_sig, op_cls)
-    assert sig in op_sig.input
+    assert (sig, op_sig) in audio_graph.connections
 
 
-def test_complex_signal_expression():
+def test_complex_signal_expression(audio_graph):
     sig = Signal(value=400)
     mod = Signal(value=-0.5)
 
     res = sig + abs(mod) * 100
 
     assert isinstance(res, Add)
-    assert sig in res.input
+    assert (sig, res) in audio_graph.connections
 
-    mult = res.addend.input[0]
+    mult = None
+    for (src, dest) in audio_graph.connections:
+        if dest is res.addend:
+            mult = src
+            break
     assert isinstance(mult, Multiply)
     assert mult.factor.value == 100
 
-    abs_ = mult.input[0]
+    abs_ = None
+    for (src, dest) in audio_graph.connections:
+        if dest is mult:
+            abs_ = src
+            break
     assert isinstance(abs_, Abs)
-    assert mod in abs_.input
+    assert (mod, abs_) in audio_graph.connections
