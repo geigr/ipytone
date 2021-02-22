@@ -2,24 +2,7 @@ from ipywidgets import widget_serialization
 from traitlets import Bool, Enum, Float, Instance, Int, Unicode, Union
 
 from .base import AudioNode
-from .core import InternalAudioNode, InternalNode
-
-_UNITS = [
-    "bpm",
-    "cents",
-    "decibels",
-    "degrees",
-    "frequency",
-    "gain",
-    "hertz",
-    "number",
-    "positive",
-    "radians",
-    "samples",
-    "ticks",
-    "time",
-    "transport_time",
-]
+from .core import UNITS, InternalAudioNode, InternalNode
 
 
 class SignalOperator(AudioNode):
@@ -92,7 +75,7 @@ class Signal(SignalOperator):
 
     _model_name = Unicode("SignalModel").tag(sync=True)
 
-    _units = Enum(_UNITS, default_value="number", allow_none=False).tag(sync=True)
+    _units = Enum(UNITS, default_value="number", allow_none=False).tag(sync=True)
     value = Union((Float(), Int(), Unicode()), help="Signal current value").tag(sync=True)
     _min_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
     _max_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)

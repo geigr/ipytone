@@ -2,7 +2,14 @@ import { ISerializers, unpack_models } from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
 
-import { AudioNodeModel, ToneWidgetModel } from './widget_base';
+import { UnitName } from 'tone/Tone/core/type/Units';
+
+import {
+  AudioNodeModel,
+  ToneWidgetModel,
+  NodeModel,
+  NodeWithContextModel,
+} from './widget_base';
 
 export class InternalNodeModel extends ToneWidgetModel {
   defaults(): any {
@@ -35,6 +42,69 @@ export class InternalAudioNodeModel extends AudioNodeModel {
   }
 
   static model_name = 'InternalAudioNodeModel';
+}
+
+export class ParamModel<T extends UnitName> extends NodeWithContextModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: ParamModel.model_name,
+      _create_node: true,
+      _input: null,
+      value: 0,
+      convert: true,
+      _units: 'number',
+      _min_value: undefined,
+      _max_value: undefined,
+      overridden: false,
+    };
+  }
+
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
+    super.initialize(attributes, options);
+
+    if (this.get('_create_node')) {
+      this.node = new tone.Param<T>({
+        convert: this.get('convert'),
+        value: this.get('value'),
+        units: this.get('_units'),
+        minValue: this.normalizeMinMax(this.get('_min_value')),
+        maxValue: this.normalizeMinMax(this.get('_max_value')),
+      });
+      this.input.node = this.node.input;
+    }
+  }
+
+  get input(): NodeModel {
+    return this.get('_input');
+  }
+
+  private normalizeMinMax(value: number | null): number | undefined {
+    return value === null ? undefined : value;
+  }
+
+  setNode(node: tone.Param<T>): void {
+    this.node = node;
+    this.input.node = node.input;
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:value', () => {
+      this.node.value = this.get('value');
+    });
+    this.on('change:convert', () => {
+      this.node.convert = this.get('convert');
+    });
+  }
+
+  node: tone.Param<T>;
+
+  static model_name = 'ParamModel';
 }
 
 export class DestinationModel extends AudioNodeModel {

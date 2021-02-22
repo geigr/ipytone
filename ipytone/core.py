@@ -1,7 +1,28 @@
-from ipywidgets import widget_serialization
-from traitlets import Bool, Float, Instance, Int, List, Tuple, Unicode
+import math
 
-from .base import AudioNode, ToneWidgetBase
+from ipywidgets import widget_serialization
+from traitlets import Bool, Enum, Float, Instance, Int, List, Tuple, Unicode, Union
+
+from .base import AudioNode, NodeWithContext, ToneWidgetBase
+
+UNITS = [
+    "audio_range",
+    "bpm",
+    "cents",
+    "decibels",
+    "degrees",
+    "frequency",
+    "gain",
+    "hertz",
+    "number",
+    "normal_range",
+    "positive",
+    "radians",
+    "samples",
+    "ticks",
+    "time",
+    "transport_time",
+]
 
 
 class InternalNode(ToneWidgetBase):
@@ -44,6 +65,67 @@ class InternalAudioNode(AudioNode):
     def _repr_keys(self):
         if self.tone_class:
             yield "tone_class"
+
+
+class Param(NodeWithContext):
+    """Single, automatable parameter with units."""
+
+    _model_name = Unicode("ParamModel").tag(sync=True)
+
+    _create_node = Bool(True).tag(sync=True)
+    _input = Instance(ToneWidgetBase, allow_none=True).tag(sync=True, **widget_serialization)
+    _units = Enum(UNITS, default_value="number", allow_none=False).tag(sync=True)
+    value = Union((Float(), Int(), Unicode()), help="Parameter value").tag(sync=True)
+    _min_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
+    _max_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
+    overridden = Bool(False).tag(sync=True)
+    convert = Bool(help="If True, convert the value into the specified units").tag(sync=True)
+
+    def __init__(
+        self, value=1, units="number", convert=True, min_value=None, max_value=None, **kwargs
+    ):
+        in_node = InternalNode(tone_class="Gain", _n_outputs=0)
+
+        kw = {
+            "_input": in_node,
+            "value": value,
+            "_units": units,
+            "convert": convert,
+            "_min_value": min_value,
+            "_max_value": max_value,
+        }
+
+        kwargs.update(kw)
+        super().__init__(**kwargs)
+
+    @property
+    def units(self):
+        """Parameter value units."""
+        return self._units
+
+    @property
+    def min_value(self):
+        """Parameter value lower limit."""
+        if self._min_value is not None:
+            return self._min_value
+        elif self._units == "audio_range":
+            return -1
+        elif self._units in ["number", "decibels"]:
+            # min value for web audio API GainNode
+            return -math.inf
+        else:
+            # all other units
+            return 0
+
+    @property
+    def max_value(self):
+        """Parameter value upper limit."""
+        if self._max_value is not None:
+            return self._max_value
+        elif self._units in ["audio_range", "normal_range"]:
+            return 1
+        else:
+            return math.inf
 
 
 class Destination(AudioNode):
