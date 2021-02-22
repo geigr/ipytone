@@ -56,6 +56,7 @@ export class NodeWithContextModel extends NodeModel {
     return {
       ...super.defaults(),
       _model_name: NodeWithContextModel.model_name,
+      name: '',
     };
   }
 
@@ -67,7 +68,6 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
     return {
       ...super.defaults(),
       _model_name: AudioNodeModel.model_name,
-      name: '',
       _create_node: true,
       _input: null,
       _output: null,

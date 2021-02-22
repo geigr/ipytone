@@ -11,15 +11,19 @@ class ToneWidgetBase(Widget):
 
 class NodeWithContext(ToneWidgetBase):
 
+    name = Unicode("").tag(sync=True)
+
     _model_name = Unicode("NodeWithContextModel").tag(sync=True)
+
+    def _repr_keys(self):
+        if self.name:
+            yield "name"
 
 
 class AudioNode(NodeWithContext):
     """An audio node widget."""
 
     _model_name = Unicode("AudioNodeModel").tag(sync=True)
-
-    name = Unicode("").tag(sync=True)
 
     _is_internal = False
     _input = Instance(ToneWidgetBase, allow_none=True).tag(sync=True, **widget_serialization)
@@ -33,8 +37,11 @@ class AudioNode(NodeWithContext):
             return self._n_inputs
         elif self._input is None:
             return 0
-        else:
+        elif isinstance(self._input, AudioNode):
             return self._input.number_of_inputs
+        else:
+            # Param
+            return 1
 
     @property
     def number_of_outputs(self):
@@ -118,7 +125,3 @@ class AudioNode(NodeWithContext):
             return "internal"
         else:
             return None
-
-    def _repr_keys(self):
-        if self.name:
-            yield "name"

@@ -127,6 +127,20 @@ class Param(NodeWithContext):
         else:
             return math.inf
 
+    @property
+    def input(self):
+        """Returns the input node."""
+        return self._input
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        if self.overridden:
+            yield "overridden"
+        else:
+            yield "value"
+            yield "units"
+
 
 class Destination(AudioNode):
     """Audio master node."""

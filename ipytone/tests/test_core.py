@@ -30,6 +30,7 @@ def test_param():
     assert param.min_value == -math.inf
     assert param.max_value == math.inf
     assert param.overridden is False
+    assert repr(param) == "Param(value=1.0, units='number')"
 
     param2 = Param(min_value=-0.2, max_value=0.2)
 
@@ -43,8 +44,8 @@ def test_param():
         ("audio_range", (-1, 1)),
         ("normal_range", (0, 1)),
         ("time", (0, math.inf)),
-        ("decibels", (-math.inf, math.inf))
-    ]
+        ("decibels", (-math.inf, math.inf)),
+    ],
 )
 def test_param_min_max_value(units, expected_range):
     param = Param(units=units)
