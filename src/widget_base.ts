@@ -8,7 +8,7 @@ import * as tone from 'tone';
 
 import { MODULE_NAME, MODULE_VERSION } from './version';
 
-abstract class ToneWidgetModel extends WidgetModel {
+export abstract class ToneWidgetModel extends WidgetModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -17,8 +17,38 @@ abstract class ToneWidgetModel extends WidgetModel {
     };
   }
 
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
+    super.initialize(attributes, options);
+
+    this.initEventListeners();
+  }
+
+  initEventListeners(): void {
+    /**/
+  }
+
   static model_module = MODULE_NAME;
   static model_module_version = MODULE_VERSION;
+}
+
+export abstract class NodeModel extends ToneWidgetModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: NodeModel.model_name,
+    };
+  }
+
+  setNode(node: any): void {
+    this.node = node;
+  }
+
+  node: any;
+
+  static model_name = 'NodeModel';
 }
 
 export abstract class AudioNodeModel extends ToneWidgetModel {
@@ -27,57 +57,34 @@ export abstract class AudioNodeModel extends ToneWidgetModel {
       ...super.defaults(),
       _model_name: AudioNodeModel.model_name,
       name: '',
-      _in_nodes: [],
-      _out_nodes: [],
+      _create_node: true,
+      _input: null,
+      _output: null,
     };
   }
 
-  initialize(attributes: Backbone.ObjectHash, options: any): void {
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
     super.initialize(attributes, options);
 
-    this.node = this.createNode();
-
-    this.initEventListeners();
+    if (this.get('_create_node')) {
+      this.node = this.createNode();
+      this.setInputOutputNodes();
+      this.setSubNodes();
+    }
   }
 
-  initEventListeners(): void {
-    this.on('change:_out_nodes', this.updateConnections, this);
+  get input(): NodeModel {
+    return this.get('_input');
   }
 
-  private getToneAudioNodes(models: AudioNodeModel[]): tone.ToneAudioNode[] {
-    return models.map((model: AudioNodeModel) => {
-      return model.node;
-    });
+  get output(): NodeModel {
+    return this.get('_output');
   }
 
-  private updateConnections(): void {
-    // connect new nodes (if any)
-    const nodesAdded = this.get('_out_nodes').filter(
-      (other: AudioNodeModel) => {
-        return !this.previous('_out_nodes').includes(other);
-      }
-    );
-
-    this.node.fan(...this.getToneAudioNodes(nodesAdded));
-
-    // disconnect nodes that have been removed (if any)
-    const nodesRemoved = this.previous('_out_nodes').filter(
-      (other: AudioNodeModel) => {
-        return !this.get('_out_nodes').includes(other);
-      }
-    );
-
-    this.getToneAudioNodes(nodesRemoved).forEach((node) => {
-      this.node.disconnect(node);
-    });
-
-    // callbacks of updated destination nodes
-    nodesAdded.concat(nodesRemoved).forEach((model: AudioNodeModel) => {
-      model.connectInputCallback();
-    });
-  }
-
-  protected connectInputCallback(): void {
+  connectInputCallback(): void {
     /**/
   }
 
@@ -85,10 +92,29 @@ export abstract class AudioNodeModel extends ToneWidgetModel {
 
   abstract createNode(): tone.ToneAudioNode;
 
+  setNode(node: tone.ToneAudioNode): void {
+    this.node = node;
+    this.setInputOutputNodes();
+    this.setSubNodes();
+  }
+
+  private setInputOutputNodes(): void {
+    if (this.input !== null) {
+      this.input.node = this.node.input;
+    }
+    if (this.output !== null) {
+      this.output.node = this.node.output;
+    }
+  }
+
+  setSubNodes(): void {
+    /**/
+  }
+
   static serializers: ISerializers = {
     ...ToneWidgetModel.serializers,
-    _in_nodes: { deserialize: unpack_models as any },
-    _out_nodes: { deserialize: unpack_models as any },
+    _input: { deserialize: unpack_models as any },
+    _output: { deserialize: unpack_models as any },
   };
 
   static model_name = 'AudioNodeModel';

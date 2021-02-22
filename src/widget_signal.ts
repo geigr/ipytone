@@ -22,7 +22,7 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
     return {
       ...super.defaults(),
       _model_name: SignalModel.model_name,
-      value: null,
+      value: 0,
       _units: 'number',
       _min_value: undefined,
       _max_value: undefined,
@@ -30,10 +30,15 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
     };
   }
 
-  initialize(attributes: Backbone.ObjectHash, options: any): void {
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
     super.initialize(attributes, options);
 
-    this.updateOverridden();
+    if (this.get('_create_node')) {
+      this.updateOverridden();
+    }
   }
 
   createNode(): tone.Signal {
@@ -52,7 +57,7 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
     this.save_changes();
   }
 
-  protected connectInputCallback(): void {
+  connectInputCallback(): void {
     // new connected incoming signal overrides this signal value
     this.updateOverridden();
   }

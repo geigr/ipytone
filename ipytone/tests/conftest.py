@@ -8,6 +8,8 @@ import pytest
 from ipykernel.comm import Comm
 from ipywidgets import Widget
 
+from ipytone import get_audio_graph
+
 
 class MockComm(Comm):
     """A mock Comm object.
@@ -56,3 +58,13 @@ def mock_comm():
             delattr(Widget, attr)
         else:
             setattr(Widget, attr, value)
+
+
+@pytest.fixture
+def audio_graph():
+    audio_graph = get_audio_graph()
+    audio_graph._connections = []
+    audio_graph._updated_connections = []
+    yield audio_graph
+    audio_graph._connections = []
+    audio_graph._updated_connections = []
