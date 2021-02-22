@@ -262,7 +262,7 @@ class GreaterThan(Signal):
         in_node = InternalAudioNode(tone_class="Substract")
         out_node = InternalAudioNode(tone_class="GreaterThanZero")
 
-        kw = {"_comparator": _as_signal(comparator), "_input": in_node, "output": out_node}
+        kw = {"_comparator": _as_signal(comparator), "_input": in_node, "_output": out_node}
         kwargs.update(kw)
         super().__init__(**kwargs)
 

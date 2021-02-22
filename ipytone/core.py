@@ -98,7 +98,7 @@ class AudioGraph(ToneWidgetBase):
         if not dest_node.number_of_inputs:
             raise ValueError(f"Cannot connect to audio source {dest_node}")
         if not src_node.number_of_outputs:
-            raise ValueError("Cannot connect from an audio sink {src_node}")
+            raise ValueError(f"Cannot connect from audio sink {src_node}")
 
         conn = (src_node, dest_node)
 
