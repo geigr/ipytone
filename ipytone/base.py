@@ -9,7 +9,12 @@ class ToneWidgetBase(Widget):
     _model_module_version = Unicode(module_version).tag(sync=True)
 
 
-class AudioNode(ToneWidgetBase):
+class NodeWithContext(ToneWidgetBase):
+
+    _model_name = Unicode("NodeWithContextModel").tag(sync=True)
+
+
+class AudioNode(NodeWithContext):
     """An audio node widget."""
 
     _model_name = Unicode("AudioNodeModel").tag(sync=True)

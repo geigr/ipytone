@@ -5,7 +5,10 @@ from .base import AudioNode, ToneWidgetBase
 
 
 class InternalNode(ToneWidgetBase):
-    """Ipytone Widget that wraps a Tone.js object with no exposed functionality."""
+    """Ipytone Widget that wraps a Tone.js or Web API audio object with
+    no exposed functionality.
+
+    """
 
     _model_name = Unicode("InternalNodeModel").tag(sync=True)
 
