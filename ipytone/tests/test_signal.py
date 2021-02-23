@@ -43,7 +43,7 @@ def test_signal_subclass(cls, cls_str, prop_name, default_value):
     op_signal = cls(name="op")
     assert getattr(op_signal, prop_name).value == default_value
 
-    op_repr = f"{cls_str}(name='op', {prop_name}=Signal(value={default_value:.1f}, units='number'))"
+    op_repr = f"{cls_str}(name='op', {prop_name}=Param(value={default_value:.1f}, units='number'))"
     assert repr(op_signal) == op_repr
 
 
@@ -67,7 +67,7 @@ def test_signal_operator(op, op_cls, op_prop_name, value, test_other_signal, aud
     try:
         assert getattr(op_sig, op_prop_name).value == value
     except AttributeError:
-        # attribute is a simple value (not a signal)
+        # attribute is a simple value (not a param)
         assert getattr(op_sig, op_prop_name) == value
 
     # test operator with another signal

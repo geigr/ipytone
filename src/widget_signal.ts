@@ -6,6 +6,8 @@ import { UnitName } from 'tone/Tone/core/type/Units';
 
 import { AudioNodeModel } from './widget_base';
 
+import { ParamModel } from './widget_core';
+
 abstract class SignalOperatorModel extends AudioNodeModel {
   defaults(): any {
     return {
@@ -86,12 +88,15 @@ export class MultiplyModel extends SignalModel<'number'> {
   }
 
   createNode(): tone.Multiply {
-    const mult = new tone.Multiply();
-    this.factor.node.connect(mult.factor);
-    return mult;
+    return new tone.Multiply(this.factor.value);
   }
 
-  get factor(): SignalModel<'number'> {
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.factor.setNode(this.node.factor);
+  }
+
+  get factor(): ParamModel<'number'> {
     return this.get('_factor');
   }
 
@@ -115,12 +120,15 @@ export class AddModel extends SignalModel<'number'> {
   }
 
   createNode(): tone.Add {
-    const add = new tone.Add();
-    this.addend.node.connect(add.addend);
-    return add;
+    return new tone.Add(this.addend.value);
   }
 
-  get addend(): SignalModel<'number'> {
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.addend.setNode(this.node.addend);
+  }
+
+  get addend(): ParamModel<'number'> {
     return this.get('_addend');
   }
 
@@ -144,13 +152,16 @@ export class SubtractModel extends SignalModel<'number'> {
   }
 
   createNode(): tone.Subtract {
-    const sub = new tone.Subtract();
-    this.subtrahend.node.connect(sub.subtrahend);
-    return sub;
+    return new tone.Subtract(this.subtrahend.value);
   }
 
-  get subtrahend(): SignalModel<'number'> {
+  get subtrahend(): ParamModel<'number'> {
     return this.get('_subtrahend');
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.subtrahend.setNode(this.node.subtrahend);
   }
 
   static serializers: ISerializers = {
@@ -173,13 +184,16 @@ export class GreaterThanModel extends SignalModel<'number'> {
   }
 
   createNode(): tone.GreaterThan {
-    const comp = new tone.GreaterThan();
-    this.comparator.node.connect(comp.comparator);
-    return comp;
+    return new tone.GreaterThan(this.comparator.value);
   }
 
-  get comparator(): SignalModel<'number'> {
+  get comparator(): ParamModel<'number'> {
     return this.get('_comparator');
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.comparator.setNode(this.node.comparator);
   }
 
   static serializers: ISerializers = {
