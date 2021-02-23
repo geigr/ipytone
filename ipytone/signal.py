@@ -2,7 +2,7 @@ from ipywidgets import widget_serialization
 from traitlets import Float, Instance, Int, Unicode, Union
 
 from .base import AudioNode
-from .core import InternalAudioNode, Param
+from .core import Gain, InternalAudioNode, Param
 
 
 class SignalOperator(AudioNode):
@@ -151,10 +151,16 @@ class Multiply(Signal):
     _side_signal_prop_name = "factor"
 
     def __init__(self, factor=1, **kwargs):
-        node = InternalAudioNode(tone_class="Gain")
-        _factor = Param(value=factor, _create_node=False)
+        gain = Gain(
+            gain=factor,
+            units="number",
+            min_value=kwargs.pop("min_value", None),
+            max_value=kwargs.pop("max_value", None),
+            _create_node=False,
+        )
+        _factor = gain.gain
 
-        kwargs.update({"_factor": _factor, "_input": node, "_output": node})
+        kwargs.update({"_factor": _factor, "_input": gain, "_output": gain})
         super().__init__(**kwargs)
 
     @property
@@ -181,7 +187,7 @@ class Add(Signal):
     _side_signal_prop_name = "addend"
 
     def __init__(self, addend=0, **kwargs):
-        node = InternalAudioNode(tone_class="Gain")
+        node = Gain(_create_node=False)
         _addend = Param(value=addend, _create_node=False)
 
         kwargs.update({"_addend": _addend, "_input": node, "_output": node})
@@ -211,7 +217,7 @@ class Subtract(Signal):
     _side_signal_prop_name = "subtrahend"
 
     def __init__(self, subtrahend=0, **kwargs):
-        node = InternalAudioNode(tone_class="Gain")
+        node = Gain(_create_node=False)
         _subtrahend = Param(value=subtrahend, _create_node=False)
 
         kwargs.update({"_subtrahend": _subtrahend, "_input": node, "_output": node})

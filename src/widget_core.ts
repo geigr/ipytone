@@ -44,6 +44,14 @@ export class InternalAudioNodeModel extends AudioNodeModel {
   static model_name = 'InternalAudioNodeModel';
 }
 
+interface ParamProperties<T extends UnitName> {
+  value: UnitMap[T];
+  units: T;
+  convert: boolean;
+  minValue?: number;
+  maxValue?: number;
+}
+
 export class ParamModel<T extends UnitName> extends NodeWithContextModel {
   defaults(): any {
     return {
@@ -68,9 +76,9 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
 
     if (this.get('_create_node')) {
       this.node = new tone.Param<T>({
-        convert: this.get('convert'),
-        value: this.get('value'),
-        units: this.get('_units'),
+        convert: this.convert,
+        value: this.value,
+        units: this.units,
         minValue: this.normalizeMinMax(this.get('_min_value')),
         maxValue: this.normalizeMinMax(this.get('_max_value')),
       });
@@ -84,6 +92,40 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
 
   get value(): UnitMap[T] {
     return this.get('value');
+  }
+
+  get units(): T {
+    return this.get('_units');
+  }
+
+  get convert(): boolean {
+    return this.get('convert');
+  }
+
+  get minValue(): number | undefined {
+    return this.normalizeMinMax(this.get('_min_value'));
+  }
+
+  get maxValue(): number | undefined {
+    return this.normalizeMinMax(this.get('_max_value'));
+  }
+
+  get properties(): ParamProperties<T> {
+    const opts: any = {
+      value: this.value,
+      units: this.units,
+      convert: this.convert,
+    };
+
+    if (this.minValue !== undefined) {
+      opts.minValue = this.minValue;
+    }
+
+    if (this.maxValue !== undefined) {
+      opts.maxValue = this.maxValue;
+    }
+
+    return opts;
   }
 
   private normalizeMinMax(value: number | null): number | undefined {
@@ -112,6 +154,38 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
   node: tone.Param<T>;
 
   static model_name = 'ParamModel';
+}
+
+export class GainModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: GainModel.model_name,
+      _gain: undefined,
+    };
+  }
+
+  createNode(): tone.Gain {
+    return new tone.Gain(this.gain.properties);
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.gain.setNode(this.node.gain);
+  }
+
+  get gain(): ParamModel<'gain'> {
+    return this.get('_gain');
+  }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _gain: { deserialize: unpack_models as any },
+  };
+
+  node: tone.Gain;
+
+  static model_name = 'GainModel';
 }
 
 export class DestinationModel extends AudioNodeModel {

@@ -142,6 +142,35 @@ class Param(NodeWithContext):
             yield "units"
 
 
+class Gain(AudioNode):
+    """A simple node for adjusting audio gain."""
+
+    _model_name = Unicode("GainModel").tag(sync=True)
+
+    _gain = Instance(Param).tag(sync=True, **widget_serialization)
+
+    def __init__(self, gain=1, units="gain", **kwargs):
+        name = kwargs.pop("name", "")
+        create_node = kwargs.pop("_create_node", True)
+
+        node = InternalNode(tone_class="GainNode")
+        _gain = Param(value=gain, units=units, _create_node=False, **kwargs)
+
+        super().__init__(
+            _gain=_gain, _input=node, _output=node, name=name, _create_node=create_node
+        )
+
+    @property
+    def gain(self):
+        """The gain parameter."""
+        return self._gain
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        yield "gain"
+
+
 class Destination(AudioNode):
     """Audio master node."""
 
@@ -160,7 +189,7 @@ class Destination(AudioNode):
         return Destination._singleton
 
     def __init__(self, *args, **kwargs):
-        in_node = InternalAudioNode(tone_class="Gain")
+        in_node = Gain(_create_node=False)
         out_node = InternalAudioNode(tone_class="Volume")
 
         kwargs.update({"_input": in_node, "_output": out_node})

@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from ipytone.core import Destination, InternalAudioNode, InternalNode, Param, get_destination
+from ipytone.core import Destination, Gain, InternalAudioNode, InternalNode, Param, get_destination
 
 
 def test_internal_node():
@@ -53,12 +53,22 @@ def test_param_min_max_value(units, expected_range):
     assert actual_range == expected_range
 
 
+def test_gain():
+    gain = Gain()
+
+    assert gain.gain.value == 1
+    assert gain.gain.units == "gain"
+    assert isinstance(gain.input, InternalNode)
+    assert gain.input is gain.output
+    assert repr(gain) == "Gain(gain=Param(value=1.0, units='gain'))"
+
+
 def test_destination():
     dest = get_destination()
 
     assert dest.mute is False
     assert dest.volume == -16
-    assert isinstance(dest.input, InternalAudioNode)
+    assert isinstance(dest.input, Gain)
     assert isinstance(dest.output, InternalAudioNode)
 
     # test singleton
