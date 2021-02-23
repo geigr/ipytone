@@ -165,6 +165,11 @@ class Gain(AudioNode):
         """The gain parameter."""
         return self._gain
 
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        yield "gain"
+
 
 class Destination(AudioNode):
     """Audio master node."""

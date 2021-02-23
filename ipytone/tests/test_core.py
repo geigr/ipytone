@@ -53,6 +53,16 @@ def test_param_min_max_value(units, expected_range):
     assert actual_range == expected_range
 
 
+def test_gain():
+    gain = Gain()
+
+    assert gain.gain.value == 1
+    assert gain.gain.units == "gain"
+    assert isinstance(gain.input, InternalNode)
+    assert gain.input is gain.output
+    assert repr(gain) == "Gain(gain=Param(value=1.0, units='gain'))"
+
+
 def test_destination():
     dest = get_destination()
 
