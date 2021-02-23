@@ -156,7 +156,9 @@ class Gain(AudioNode):
         node = InternalNode(tone_class="GainNode")
         _gain = Param(value=gain, units=units, _create_node=False, **kwargs)
 
-        super().__init__(_gain=_gain, _input=node, _output=node, name=name, _create_node=create_node)
+        super().__init__(
+            _gain=_gain, _input=node, _output=node, name=name, _create_node=create_node
+        )
 
     @property
     def gain(self):

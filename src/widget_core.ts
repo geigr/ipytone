@@ -45,11 +45,11 @@ export class InternalAudioNodeModel extends AudioNodeModel {
 }
 
 interface ParamProperties<T extends UnitName> {
-  value: UnitMap[T],
-  units: T,
-  convert: boolean,
-  minValue?: number,
-  maxValue?: number,
+  value: UnitMap[T];
+  units: T;
+  convert: boolean;
+  minValue?: number;
+  maxValue?: number;
 }
 
 export class ParamModel<T extends UnitName> extends NodeWithContextModel {
@@ -111,13 +111,17 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
   }
 
   get properties(): ParamProperties<T> {
-    let opts: any = { value: this.value, units: this.units, convert: this.convert };
+    const opts: any = {
+      value: this.value,
+      units: this.units,
+      convert: this.convert,
+    };
 
-    if(this.minValue !== undefined) {
+    if (this.minValue !== undefined) {
       opts.minValue = this.minValue;
     }
 
-    if(this.maxValue !== undefined) {
+    if (this.maxValue !== undefined) {
       opts.maxValue = this.maxValue;
     }
 
@@ -158,7 +162,7 @@ export class GainModel extends AudioNodeModel {
       ...super.defaults(),
       _model_name: GainModel.model_name,
       _gain: undefined,
-    }
+    };
   }
 
   createNode(): tone.Gain {
@@ -181,7 +185,7 @@ export class GainModel extends AudioNodeModel {
 
   node: tone.Gain;
 
-  static model_name = "GainModel";
+  static model_name = 'GainModel';
 }
 
 export class DestinationModel extends AudioNodeModel {
