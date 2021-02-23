@@ -2,7 +2,7 @@ import { ISerializers, unpack_models } from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
 
-import { UnitName } from 'tone/Tone/core/type/Units';
+import { UnitMap, UnitName } from 'tone/Tone/core/type/Units';
 
 import {
   AudioNodeModel,
@@ -82,13 +82,20 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
     return this.get('_input');
   }
 
+  get value(): UnitMap[T] {
+    return this.get('value');
+  }
+
   private normalizeMinMax(value: number | null): number | undefined {
     return value === null ? undefined : value;
   }
 
   setNode(node: tone.Param<T>): void {
     this.node = node;
-    this.input.node = node.input;
+  }
+
+  connectInputCallback(): void {
+    /**/
   }
 
   initEventListeners(): void {
@@ -145,8 +152,11 @@ export class DestinationModel extends AudioNodeModel {
   static model_name = 'DestinationModel';
 }
 
-type Connection = [AudioNodeModel, AudioNodeModel];
-type ConnectionNode = [tone.ToneAudioNode, tone.ToneAudioNode];
+type Connection = [AudioNodeModel, AudioNodeModel | ParamModel<any>];
+type ConnectionNode = [
+  tone.ToneAudioNode,
+  tone.ToneAudioNode | tone.Param<any>
+];
 
 function getConnectionNodes(connections: Connection[]): ConnectionNode[] {
   return connections.map((conn: Connection) => {
