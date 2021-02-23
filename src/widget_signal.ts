@@ -38,13 +38,12 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
     }
   }
 
-  createNode(): tone.Signal {
-    return new tone.Signal({
-      value: this.input.get('value'),
-      units: this.input.get('_units'),
-      minValue: this.normalizeMinMax(this.input.get('_min_value')),
-      maxValue: this.normalizeMinMax(this.input.get('_max_value')),
-    });
+  get input(): ParamModel<T> {
+    return this.get('_input');
+  }
+
+  createNode(): tone.Signal<T> {
+    return new tone.Signal(this.input.properties);
   }
 
   private updateOverridden(): void {
@@ -59,10 +58,6 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
   connectInputCallback(): void {
     // new connected incoming signal overrides this signal value
     this.updateOverridden();
-  }
-
-  private normalizeMinMax(value: number | null): number | undefined {
-    return value === null ? undefined : value;
   }
 
   initEventListeners(): void {
