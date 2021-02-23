@@ -51,12 +51,23 @@ export abstract class NodeModel extends ToneWidgetModel {
   static model_name = 'NodeModel';
 }
 
-export abstract class AudioNodeModel extends ToneWidgetModel {
+export class NodeWithContextModel extends NodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: NodeWithContextModel.model_name,
+      name: '',
+    };
+  }
+
+  static model_name = 'NodeWithContextModel';
+}
+
+export abstract class AudioNodeModel extends NodeWithContextModel {
   defaults(): any {
     return {
       ...super.defaults(),
       _model_name: AudioNodeModel.model_name,
-      name: '',
       _create_node: true,
       _input: null,
       _output: null,

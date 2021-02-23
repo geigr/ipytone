@@ -1,17 +1,22 @@
+import math
 import operator
 
 import pytest
 
-from ipytone import Abs, Add, GreaterThan, Multiply, Negate, Pow, Signal, Subtract
-from ipytone.core import InternalAudioNode, InternalNode
+from ipytone import Abs, Add, GreaterThan, Multiply, Negate, Param, Pow, Signal, Subtract
+from ipytone.core import InternalAudioNode
 
 
 def test_signal():
     sig = Signal()
 
-    assert sig.units == "number"
-    assert sig.min_value is sig.max_value is None
-    assert isinstance(sig.input, InternalNode)
+    assert sig.value == sig.input.value == 0
+    assert sig.units == sig.input.units == "number"
+    assert sig.min_value == sig.input.min_value == -math.inf
+    assert sig.max_value == sig.input.max_value == math.inf
+    assert sig.overridden is sig.input.overridden is False
+
+    assert isinstance(sig.input, Param)
     assert isinstance(sig.output, InternalAudioNode)
 
     sig.value = 2
@@ -22,7 +27,6 @@ def test_signal():
     assert sig2.units == "frequency"
     assert sig2.min_value == 100
     assert sig2.max_value == 1e3
-    assert sig2.overridden is False
     assert repr(sig2) == "Signal(value=440.0, units='frequency')"
 
 
@@ -39,7 +43,7 @@ def test_signal_subclass(cls, cls_str, prop_name, default_value):
     op_signal = cls(name="op")
     assert getattr(op_signal, prop_name).value == default_value
 
-    op_repr = f"{cls_str}(name='op', {prop_name}=Signal(value={default_value:.1f}, units='number'))"
+    op_repr = f"{cls_str}(name='op', {prop_name}=Param(value={default_value:.1f}, units='number'))"
     assert repr(op_signal) == op_repr
 
 
@@ -63,7 +67,7 @@ def test_signal_operator(op, op_cls, op_prop_name, value, test_other_signal, aud
     try:
         assert getattr(op_sig, op_prop_name).value == value
     except AttributeError:
-        # attribute is a simple value (not a signal)
+        # attribute is a simple value (not a param)
         assert getattr(op_sig, op_prop_name) == value
 
     # test operator with another signal

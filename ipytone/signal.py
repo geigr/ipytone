@@ -1,25 +1,8 @@
 from ipywidgets import widget_serialization
-from traitlets import Bool, Enum, Float, Instance, Int, Unicode, Union
+from traitlets import Float, Instance, Int, Unicode, Union
 
 from .base import AudioNode
-from .core import InternalAudioNode, InternalNode
-
-_UNITS = [
-    "bpm",
-    "cents",
-    "decibels",
-    "degrees",
-    "frequency",
-    "gain",
-    "hertz",
-    "number",
-    "positive",
-    "radians",
-    "samples",
-    "ticks",
-    "time",
-    "transport_time",
-]
+from .core import InternalAudioNode, Param
 
 
 class SignalOperator(AudioNode):
@@ -91,47 +74,43 @@ class Signal(SignalOperator):
     """
 
     _model_name = Unicode("SignalModel").tag(sync=True)
-
-    _units = Enum(_UNITS, default_value="number", allow_none=False).tag(sync=True)
-    value = Union((Float(), Int(), Unicode()), help="Signal current value").tag(sync=True)
-    _min_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
-    _max_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
-    overridden = Bool(
-        read_only=True, help="If True, the signal value is overridden by an incoming signal"
-    ).tag(sync=True)
+    _input = Instance(Param).tag(sync=True, **widget_serialization)
+    value = Union((Float(), Int(), Unicode()), help="Signal value").tag(sync=True)
 
     _side_signal_prop_name = None
 
     def __init__(self, value=0, units="number", min_value=None, max_value=None, **kwargs):
-        in_node = InternalNode(tone_class="Param", _n_outputs=0)
+        in_node = Param(
+            value=value,
+            units=units,
+            min_value=min_value,
+            max_value=max_value,
+            _create_node=False,
+        )
         out_node = InternalAudioNode(tone_class="ToneConstantSource")
 
-        kw = {
-            "_input": in_node,
-            "_output": out_node,
-            "value": value,
-            "_units": units,
-            "_min_value": min_value,
-            "_max_value": max_value,
-        }
-
-        kwargs.update(kw)
+        kwargs.update({"_input": in_node, "_output": out_node, "value": value})
         super().__init__(**kwargs)
 
     @property
     def units(self):
         """Signal value units."""
-        return self._units
+        return self.input.units
 
     @property
     def min_value(self):
         """Signal value lower limit."""
-        return self._min_value
+        return self.input.min_value
 
     @property
     def max_value(self):
         """Signal value upper limit."""
-        return self._max_value
+        return self.input.max_value
+
+    @property
+    def overridden(self):
+        """If True, the signal value is overridden by an incoming signal."""
+        return self.input.overridden
 
     def _repr_keys(self):
         for key in super()._repr_keys():
@@ -160,25 +139,27 @@ class Multiply(Signal):
 
     Parameters
     ----------
-    factor : integer or float or :class:`Signal`, optional
-        Multiplication factor, either a constant value or a signal (default: 1).
+    factor : integer or float, optional
+        Multiplication factor (default: 1).
     **kwargs
         Arguments passed to :class:`Signal`.
 
     """
 
     _model_name = Unicode("MultiplyModel").tag(sync=True)
-    _factor = Instance(SignalOperator, allow_none=True).tag(sync=True, **widget_serialization)
+    _factor = Instance(Param).tag(sync=True, **widget_serialization)
     _side_signal_prop_name = "factor"
 
     def __init__(self, factor=1, **kwargs):
         node = InternalAudioNode(tone_class="Gain")
-        kwargs.update({"_factor": _as_signal(factor), "_input": node, "_output": node})
+        _factor = Param(value=factor, _create_node=False)
+
+        kwargs.update({"_factor": _factor, "_input": node, "_output": node})
         super().__init__(**kwargs)
 
     @property
-    def factor(self) -> Signal:
-        """The signal used as multiplication factor."""
+    def factor(self) -> Param:
+        """The multiplication factor."""
         return self._factor
 
 
@@ -188,26 +169,27 @@ class Add(Signal):
 
     Parameters
     ----------
-    addend : integer or float or :class:`Signal`, optional
-        Either a constant value or a signal to be added to the incoming signal
-        (default: 0).
+    addend : integer or float, optional
+        The value to be added to the incoming signal (default: 0).
     **kwargs
         Arguments passed to :class:`Signal`.
 
     """
 
     _model_name = Unicode("AddModel").tag(sync=True)
-    _addend = Instance(SignalOperator, allow_none=True).tag(sync=True, **widget_serialization)
+    _addend = Instance(Param).tag(sync=True, **widget_serialization)
     _side_signal_prop_name = "addend"
 
     def __init__(self, addend=0, **kwargs):
         node = InternalAudioNode(tone_class="Gain")
-        kwargs.update({"_addend": _as_signal(addend), "_input": node, "_output": node})
+        _addend = Param(value=addend, _create_node=False)
+
+        kwargs.update({"_addend": _addend, "_input": node, "_output": node})
         super().__init__(**kwargs)
 
     @property
-    def addend(self):
-        """The signal which is added to the input signal."""
+    def addend(self) -> Param:
+        """The value which is added to the input signal."""
         return self._addend
 
 
@@ -217,26 +199,27 @@ class Subtract(Signal):
 
     Parameters
     ----------
-    subtrahend : integer or float or :class:`Signal`, optional
-        Either a constant value or a signal to substract to the incoming signal
-        (default: 0).
+    subtrahend : integer or float, optional
+        The value to substract to the incoming signal (default: 0).
     **kwargs
         Arguments passed to :class:`Signal`.
 
     """
 
     _model_name = Unicode("SubtractModel").tag(sync=True)
-    _subtrahend = Instance(SignalOperator, allow_none=True).tag(sync=True, **widget_serialization)
+    _subtrahend = Instance(Param).tag(sync=True, **widget_serialization)
     _side_signal_prop_name = "subtrahend"
 
     def __init__(self, subtrahend=0, **kwargs):
         node = InternalAudioNode(tone_class="Gain")
-        kwargs.update({"_subtrahend": _as_signal(subtrahend), "_input": node, "_output": node})
+        _subtrahend = Param(value=subtrahend, _create_node=False)
+
+        kwargs.update({"_subtrahend": _subtrahend, "_input": node, "_output": node})
         super().__init__(**kwargs)
 
     @property
-    def subtrahend(self):
-        """The signal which is substracted from the input signal."""
+    def subtrahend(self) -> Param:
+        """The value which is substracted from the input signal."""
         return self._subtrahend
 
 
@@ -246,29 +229,29 @@ class GreaterThan(Signal):
 
     Parameters
     ----------
-    comparator : integer or float or :class:`Signal`, optional
-        Either a constant value or a signal to compare to the incoming signal
-        (default: 0).
+    comparator : integer or float, optional
+        The value to compare to the incoming signal (default: 0).
     **kwargs
         Arguments passed to :class:`Signal`.
 
     """
 
-    _model_name = Unicode("SubtractModel").tag(sync=True)
-    _comparator = Instance(SignalOperator, allow_none=True).tag(sync=True, **widget_serialization)
+    _model_name = Unicode("GreaterThanModel").tag(sync=True)
+    _comparator = Instance(Param).tag(sync=True, **widget_serialization)
     _side_signal_prop_name = "comparator"
 
     def __init__(self, comparator=0, **kwargs):
         in_node = InternalAudioNode(tone_class="Substract")
         out_node = InternalAudioNode(tone_class="GreaterThanZero")
+        _comparator = Param(value=comparator, _create_node=False)
 
-        kw = {"_comparator": _as_signal(comparator), "_input": in_node, "_output": out_node}
+        kw = {"_comparator": _comparator, "_input": in_node, "_output": out_node}
         kwargs.update(kw)
         super().__init__(**kwargs)
 
     @property
-    def comparator(self):
-        """The signal to compare to the incoming signal against."""
+    def comparator(self) -> Param:
+        """The value that is compared to the incoming signal against."""
         return self._comparator
 
 
