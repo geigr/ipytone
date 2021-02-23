@@ -184,7 +184,7 @@ class Destination(AudioNode):
         return Destination._singleton
 
     def __init__(self, *args, **kwargs):
-        in_node = InternalAudioNode(tone_class="Gain")
+        in_node = Gain(_create_node=False)
         out_node = InternalAudioNode(tone_class="Volume")
 
         kwargs.update({"_input": in_node, "_output": out_node})

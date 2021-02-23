@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from ipytone.core import Destination, InternalAudioNode, InternalNode, Param, get_destination
+from ipytone.core import Destination, Gain, InternalAudioNode, InternalNode, Param, get_destination
 
 
 def test_internal_node():
@@ -58,7 +58,7 @@ def test_destination():
 
     assert dest.mute is False
     assert dest.volume == -16
-    assert isinstance(dest.input, InternalAudioNode)
+    assert isinstance(dest.input, Gain)
     assert isinstance(dest.output, InternalAudioNode)
 
     # test singleton

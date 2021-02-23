@@ -86,11 +86,6 @@ export class MultiplyModel extends SignalModel<'number'> {
     return new tone.Multiply(this.factor.value);
   }
 
-  setSubNodes(): void {
-    super.setSubNodes();
-    this.factor.setNode(this.node.factor);
-  }
-
   get factor(): ParamModel<'number'> {
     return this.get('_factor');
   }
