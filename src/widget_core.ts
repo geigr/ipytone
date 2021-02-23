@@ -152,6 +152,38 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
   static model_name = 'ParamModel';
 }
 
+export class GainModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: GainModel.model_name,
+      _gain: undefined,
+    }
+  }
+
+  createNode(): tone.Gain {
+    return new tone.Gain(this.gain.properties);
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.gain.setNode(this.node.gain);
+  }
+
+  get gain(): ParamModel<'gain'> {
+    return this.get('_gain');
+  }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _gain: { deserialize: unpack_models as any },
+  };
+
+  node: tone.Gain;
+
+  static model_name = "GainModel";
+}
+
 export class DestinationModel extends AudioNodeModel {
   defaults(): any {
     return {
