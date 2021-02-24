@@ -3,7 +3,7 @@ import math
 from ipywidgets import widget_serialization
 from traitlets import Bool, Enum, Float, Instance, Int, List, Tuple, Unicode, Union
 
-from .base import AudioNode, NodeWithContext, ToneWidgetBase
+from .base import AudioNode, Node, NodeWithContext, ToneWidgetBase
 
 UNITS = [
     "audio_range",
@@ -25,7 +25,7 @@ UNITS = [
 ]
 
 
-class InternalNode(ToneWidgetBase):
+class InternalNode(Node):
     """Ipytone Widget that wraps a Tone.js or Web API audio object with
     no exposed functionality.
 
@@ -73,7 +73,7 @@ class Param(NodeWithContext):
     _model_name = Unicode("ParamModel").tag(sync=True)
 
     _create_node = Bool(True).tag(sync=True)
-    _input = Instance(ToneWidgetBase, allow_none=True).tag(sync=True, **widget_serialization)
+    _input = Instance(Node, allow_none=True).tag(sync=True, **widget_serialization)
     _units = Enum(UNITS, default_value="number", allow_none=False).tag(sync=True)
     value = Union((Float(), Int(), Unicode()), help="Parameter value").tag(sync=True)
     _min_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)

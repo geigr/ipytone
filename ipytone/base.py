@@ -9,7 +9,25 @@ class ToneWidgetBase(Widget):
     _model_module_version = Unicode(module_version).tag(sync=True)
 
 
-class NodeWithContext(ToneWidgetBase):
+class Node(ToneWidgetBase):
+
+    _model_name = Unicode("NodeModel").tag(sync=True)
+    _disposed = Bool(False).tag(sync=True)
+
+    @property
+    def disposed(self):
+        """Returns True if the node was disposed (i.e., disconnected and
+        web audio node freed for garbage collection).
+
+        """
+        return self._disposed
+
+    def _repr_keys(self):
+        if self.disposed:
+            yield "disposed"
+
+
+class NodeWithContext(Node):
 
     name = Unicode("").tag(sync=True)
 
@@ -18,6 +36,8 @@ class NodeWithContext(ToneWidgetBase):
     def _repr_keys(self):
         if self.name:
             yield "name"
+        if self.disposed:
+            yield "disposed"
 
 
 class AudioNode(NodeWithContext):
@@ -125,3 +145,13 @@ class AudioNode(NodeWithContext):
             return "internal"
         else:
             return None
+
+    def dispose(self):
+        """Dispose and disconnect this audio node (as well as its input/output)."""
+
+        self._disposed = True
+        # TODO: remove connections in AudioGraph (without disconnect in JS as it's done by dispose?)
+
+    def close(self):
+        self.dispose()
+        super().close()

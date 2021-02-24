@@ -39,11 +39,21 @@ export abstract class NodeModel extends ToneWidgetModel {
     return {
       ...super.defaults(),
       _model_name: NodeModel.model_name,
+      _disposed: false,
     };
   }
 
   setNode(node: any): void {
     this.node = node;
+  }
+
+  get disposed(): boolean {
+    return this.get('_disposed');
+  }
+
+  set disposed(flag: boolean) {
+    this.set('_disposed', flag);
+    this.save_changes();
   }
 
   node: any;
@@ -95,6 +105,18 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
     return this.get('_output');
   }
 
+  set disposed(flag: boolean) {
+    super.disposed = flag;
+
+    // propagate disposed to input/output
+    if (this.input !== null) {
+      this.input.disposed = true;
+    }
+    if (this.output !== null) {
+      this.output.disposed = true;
+    }
+  }
+
   connectInputCallback(): void {
     /**/
   }
@@ -120,6 +142,25 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
 
   setSubNodes(): void {
     /**/
+  }
+
+  dispose(): void {
+    // this will also call dispose on input and output ToneAudioNode objects
+    this.node.dispose();
+
+    // we need to update the _disposed attribute in input/output models
+    if (this.input !== null) {
+      this.input.disposed = true;
+    }
+    if (this.output !== null) {
+      this.output.disposed = true;
+    }
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:_disposed', this.dispose, this);
   }
 
   static serializers: ISerializers = {
