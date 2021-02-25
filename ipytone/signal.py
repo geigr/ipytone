@@ -236,7 +236,9 @@ class Subtract(Signal):
         node = Gain(_create_node=False)
         _subtrahend = Param(value=subtrahend, _create_node=False)
 
-        kwargs.update({"_subtrahend": _subtrahend, "_input": node, "_output": node, "_override": False})
+        kwargs.update(
+            {"_subtrahend": _subtrahend, "_input": node, "_output": node, "_override": False}
+        )
         super().__init__(**kwargs)
 
     @property
@@ -276,7 +278,12 @@ class GreaterThan(Signal):
         out_node = InternalAudioNode(type="GreaterThanZero")
         _comparator = Param(value=comparator, _create_node=False)
 
-        kw = {"_comparator": _comparator, "_input": in_node, "_output": out_node, "_override": False}
+        kw = {
+            "_comparator": _comparator,
+            "_input": in_node,
+            "_output": out_node,
+            "_override": False,
+        }
         kwargs.update(kw)
         super().__init__(**kwargs)
 
