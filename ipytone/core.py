@@ -3,7 +3,7 @@ import math
 from ipywidgets import widget_serialization
 from traitlets import Bool, Enum, Float, Instance, Int, Unicode, Union
 
-from .base import AudioNode, NativeAudioNode, NativeAudioParam, ToneObject, NodeWithContext
+from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext
 
 UNITS = [
     "audio_range",
@@ -61,7 +61,9 @@ class Param(NodeWithContext):
 
     _is_param = True
     _create_node = Bool(False).tag(sync=True)
-    _input = Union((Instance(NativeAudioParam), Instance(NativeAudioNode))).tag(sync=True, **widget_serialization)
+    _input = Union((Instance(NativeAudioParam), Instance(NativeAudioNode))).tag(
+        sync=True, **widget_serialization
+    )
     _units = Enum(UNITS, default_value="number", allow_none=False).tag(sync=True)
     value = Union((Float(), Int(), Unicode()), help="Parameter value").tag(sync=True)
     _min_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
@@ -71,7 +73,14 @@ class Param(NodeWithContext):
     convert = Bool(help="If True, convert the value into the specified units").tag(sync=True)
 
     def __init__(
-            self, value=1, units="number", convert=True, min_value=None, max_value=None, swappable=False, **kwargs
+        self,
+        value=1,
+        units="number",
+        convert=True,
+        min_value=None,
+        max_value=None,
+        swappable=False,
+        **kwargs
     ):
         if swappable:
             input = NativeAudioNode(type="GainNode")
@@ -182,7 +191,7 @@ class Destination(AudioNode):
         return Destination._singleton
 
     def __init__(self, *args, **kwargs):
-        in_node = InternalAudioNode(tone_class="Volume")
+        in_node = InternalAudioNode(type="Volume")
         out_node = Gain(_create_node=False)
 
         kwargs.update({"_input": in_node, "_output": out_node})

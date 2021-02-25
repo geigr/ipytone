@@ -87,7 +87,7 @@ class Signal(SignalOperator):
             max_value=max_value,
             _create_node=False,
         )
-        out_node = InternalAudioNode(tone_class="ToneConstantSource")
+        out_node = InternalAudioNode(type="ToneConstantSource")
 
         kwargs.update({"_input": in_node, "_output": out_node, "value": value})
         super().__init__(**kwargs)
@@ -247,8 +247,8 @@ class GreaterThan(Signal):
     _side_signal_prop_name = "comparator"
 
     def __init__(self, comparator=0, **kwargs):
-        in_node = InternalAudioNode(tone_class="Substract")
-        out_node = InternalAudioNode(tone_class="GreaterThanZero")
+        in_node = InternalAudioNode(type="Substract")
+        out_node = InternalAudioNode(type="GreaterThanZero")
         _comparator = Param(value=comparator, _create_node=False)
 
         kw = {"_comparator": _comparator, "_input": in_node, "_output": out_node}
@@ -271,7 +271,7 @@ class Abs(SignalOperator):
     _model_name = Unicode("AbsModel").tag(sync=True)
 
     def __init__(self, *args, **kwargs):
-        node = InternalAudioNode(tone_class="WaveShaper")
+        node = InternalAudioNode(type="WaveShaper")
         kwargs.update({"_input": node, "_output": node})
         super().__init__(*args, **kwargs)
 
@@ -285,7 +285,7 @@ class Negate(SignalOperator):
     _model_name = Unicode("NegateModel").tag(sync=True)
 
     def __init__(self, *args, **kwargs):
-        node = InternalAudioNode(tone_class="Multiply")
+        node = InternalAudioNode(type="Multiply")
         kwargs.update({"_input": node, "_output": node})
         super().__init__(*args, **kwargs)
 
@@ -301,6 +301,6 @@ class Pow(SignalOperator):
     value = Union((Float(), Int()), help="exponent value").tag(sync=True)
 
     def __init__(self, *args, **kwargs):
-        node = InternalAudioNode(tone_class="WaveShaper")
+        node = InternalAudioNode(type="WaveShaper")
         kwargs.update({"_input": node, "_output": node})
         super().__init__(*args, **kwargs)

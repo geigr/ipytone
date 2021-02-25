@@ -1,5 +1,43 @@
-from ipytone.base import AudioNode
+from ipytone.base import AudioNode, NativeAudioNode, NativeAudioParam, ToneObject
 from ipytone.core import InternalAudioNode, get_destination
+
+
+def test_native_audio_node(audio_graph):
+    node = NativeAudioNode(type="GainNode")
+
+    assert node.number_of_inputs == 1
+    assert node.number_of_outputs == 1
+    assert node.type == "GainNode"
+    assert repr(node) == "NativeAudioNode(type='GainNode')"
+
+    node2 = NativeAudioNode()
+    node.connect(node2)
+    assert (node, node2) in audio_graph.connections
+
+    node.disconnect(node2)
+    assert (node, node2) not in audio_graph.connections
+
+
+def test_native_audio_param():
+    param = NativeAudioParam(type="Param")
+
+    assert param.type == "Param"
+    assert repr(param) == "NativeAudioParam(type='Param')"
+
+
+def test_tone_object():
+    obj = ToneObject()
+
+    assert obj.disposed is False
+    assert repr(obj) == "ToneObject()"
+    obj.dispose()
+    assert obj.disposed is True
+    assert repr(obj) == "ToneObject(disposed=True)"
+
+    obj2 = ToneObject()
+
+    obj2.close()
+    assert obj2.disposed is True
 
 
 def test_audio_node_creation():
@@ -38,10 +76,22 @@ def test_audio_node_disconnect(audio_graph):
 
 
 def test_audio_node_dispose(audio_graph):
-    node1 = InternalAudioNode()
+    in_node = InternalAudioNode()
+    out_node = InternalAudioNode()
+    node1 = AudioNode(_input=in_node, _output=out_node)
     node2 = InternalAudioNode()
 
-    n = node1.connect(node2)
+    node1.connect(node2)
+
+    assert node1.disposed is False
+    assert (node1, node2) in audio_graph.connections
+
+    node1.dispose()
+
+    assert node1.disposed is True
+    assert in_node.disposed is True
+    assert out_node.disposed is True
+    assert (node1, node2) not in audio_graph.connections
 
 
 def test_audio_node_to_destination(audio_graph):

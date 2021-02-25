@@ -113,7 +113,7 @@ export abstract class ToneObjectModel extends ToneWidgetModel {
     this.on('change:_disposed', this.dispose, this);
   }
 
-  node: any;  //tone_base.Tone | tone.ToneAudioNode | tone.Param<any> | AudioNode | AudioParam | undefined;
+  node: any; //tone_base.Tone | tone.ToneAudioNode | tone.Param<any> | AudioNode | AudioParam | undefined;
 
   static model_name = 'ToneObjectModel';
 }

@@ -21,6 +21,7 @@ class NativeAudioNode(ToneWidgetBase):
 
     def __init__(self, *args, **kwargs):
         from .graph import _AUDIO_GRAPH
+
         self._graph = _AUDIO_GRAPH
 
         super().__init__(*args, **kwargs)
@@ -74,6 +75,7 @@ class ToneObject(ToneWidgetBase):
 
     def __init__(self, *args, **kwargs):
         from .graph import _AUDIO_GRAPH
+
         self._graph = _AUDIO_GRAPH
 
         super().__init__(*args, **kwargs)
@@ -216,5 +218,3 @@ class AudioNode(NodeWithContext):
             self._graph.clean()
 
         return self
-
-

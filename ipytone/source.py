@@ -18,7 +18,7 @@ class Source(AudioNode):
     volume = Float(-16, help="Source gain").tag(sync=True)
 
     def __init__(self, *args, **kwargs):
-        out_node = InternalAudioNode(tone_class="Volume")
+        out_node = InternalAudioNode(type="Volume")
         kwargs.update({"_output": out_node})
         super().__init__(*args, **kwargs)
 

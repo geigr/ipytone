@@ -18,7 +18,7 @@ export class InternalAudioNodeModel extends AudioNodeModel {
       _model_name: InternalAudioNodeModel.model_name,
       _n_inputs: 1,
       _n_outputs: 1,
-      _tone_class: 'ToneAudioNode',
+      type: '',
       _create_node: false,
     };
   }
