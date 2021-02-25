@@ -12,9 +12,9 @@ from ipytone.core import InternalAudioNode, Param
     ],
 )
 def test_audio_graph(audio_graph, src, dest, param):
-    audio_graph.connect(src, dest, sync=False)
-    assert (src, dest) not in audio_graph.connections
-    audio_graph.sync_connections()
+    with audio_graph.hold_state():
+        audio_graph.connect(src, dest)
+        assert (src, dest) not in audio_graph.connections
     assert (src, dest) in audio_graph.connections
 
     audio_graph.connect(src, param)
@@ -23,9 +23,9 @@ def test_audio_graph(audio_graph, src, dest, param):
     assert audio_graph.nodes == list({src, dest, param})
     assert audio_graph.connections == [(src, dest), (src, param)]
 
-    audio_graph.disconnect(src, dest, sync=False)
-    assert (src, dest) in audio_graph.connections
-    audio_graph.sync_connections()
+    with audio_graph.hold_state():
+        audio_graph.disconnect(src, dest)
+        assert (src, dest) in audio_graph.connections
     assert (src, dest) not in audio_graph.connections
 
 

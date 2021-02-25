@@ -88,13 +88,11 @@ class ToneObject(ToneWidgetBase):
         """
         return self._disposed
 
-    def dispose(self, clean_graph=True):
+    def dispose(self):
         """Dispose and disconnect this node."""
 
-        self._disposed = True
-
-        if clean_graph:
-            self._graph.clean()
+        with self._graph.hold_state():
+            self._disposed = True
 
         return self
 
@@ -105,6 +103,10 @@ class ToneObject(ToneWidgetBase):
     def _repr_keys(self):
         if self.disposed:
             yield "disposed"
+
+
+def is_disposed(node):
+    return not is_native(node) and node.disposed
 
 
 class NodeWithContext(ToneObject):
@@ -163,10 +165,10 @@ class AudioNode(NodeWithContext):
     def fan(self, *destinations):
         """Connect the output of this audio node to the ``destinations`` audio nodes in parallel."""
 
-        for node in destinations:
-            self._graph.connect(self, node, sync=False)
+        with self._graph.hold_state():
+            for node in destinations:
+                self._graph.connect(self, node)
 
-        self._graph.sync_connections()
         return self
 
     def chain(self, *nodes):
@@ -174,10 +176,10 @@ class AudioNode(NodeWithContext):
 
         chain_nodes = [self] + list(nodes)
 
-        for i in range(len(chain_nodes) - 1):
-            self._graph.connect(chain_nodes[i], chain_nodes[i + 1], sync=False)
+        with self._graph.hold_state():
+            for i in range(len(chain_nodes) - 1):
+                self._graph.connect(chain_nodes[i], chain_nodes[i + 1])
 
-        self._graph.sync_connections()
         return self
 
     def to_destination(self):
@@ -202,19 +204,17 @@ class AudioNode(NodeWithContext):
 
         return self._output
 
-    def dispose(self, clean_graph=True):
+    def dispose(self):
         """Dispose and disconnect this audio node (as well as its input/output)."""
 
-        super().dispose(clean_graph=False)
+        with self._graph.hold_state():
+            super().dispose()
 
-        # also dispose input/output
-        # TODO: will not clean the audio graph if native node are connected directly.
-        if self.input is not None and not is_native(self.input):
-            self.input.dispose(clean_graph=False)
-        if self.output is not None and not is_native(self.output):
-            self.output.dispose(clean_graph=False)
-
-        if clean_graph:
-            self._graph.clean()
+            # also dispose input/output
+            # TODO: will not clean the audio graph if native node are connected directly.
+            if self.input is not None and not is_native(self.input):
+                self.input.dispose()
+            if self.output is not None and not is_native(self.output):
+                self.output.dispose()
 
         return self

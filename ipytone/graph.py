@@ -1,7 +1,9 @@
+from contextlib import contextmanager
+
 from ipywidgets import widget_serialization
 from traitlets import Instance, List, Tuple, Unicode, Union
 
-from .base import AudioNode, NativeAudioNode, NativeAudioParam, ToneWidgetBase
+from .base import AudioNode, NativeAudioNode, NativeAudioParam, ToneWidgetBase, is_disposed
 from .core import Param
 
 _Connection = List(
@@ -24,13 +26,29 @@ class AudioGraph(ToneWidgetBase):
 
     _model_name = Unicode("AudioGraphModel").tag(sync=True)
     _connections = _Connection.tag(sync=True, **widget_serialization)
+    _holding_state = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._updated_connections = list(self._connections)
+        self._updated_connections = self._connections.copy()
 
-    def connect(self, src_node, dest_node, sync=True):
+    @contextmanager
+    def hold_state(self):
+        """Hold updating the graph's state until the outermost context
+        manager exits, then clean.
+
+        """
+        if self._holding_state is True:
+            yield
+        else:
+            try:
+                self._holding_state = True
+                yield
+            finally:
+                self.clean()
+
+    def connect(self, src_node, dest_node):
         """Connect a source node output to a destination node input."""
 
         if not isinstance(src_node, (AudioNode, NativeAudioNode)):
@@ -48,10 +66,10 @@ class AudioGraph(ToneWidgetBase):
         if conn not in self._connections:
             self._updated_connections.append(conn)
 
-        if sync:
+        if not self._holding_state:
             self.sync_connections()
 
-    def disconnect(self, src_node, dest_node, sync=True):
+    def disconnect(self, src_node, dest_node):
         """Disconnect a source node output from a destination node input."""
 
         conn = (src_node, dest_node)
@@ -61,18 +79,20 @@ class AudioGraph(ToneWidgetBase):
 
         self._updated_connections.remove(conn)
 
-        if sync:
+        if not self._holding_state:
             self.sync_connections()
 
-    def clean(self, sync=True):
+    def clean(self):
         """Remove all connections from/to disposed nodes."""
 
-        for src, dest in self._connections:
-            if src.disposed or dest.disposed:
-                self.disconnect(src, dest, sync=False)
+        self._holding_state = True
 
-        if sync:
-            self.sync_connections()
+        for src, dest in self._connections:
+            if is_disposed(src) or is_disposed(dest):
+                self.disconnect(src, dest)
+
+        self.sync_connections()
+        self._holding_state = False
 
     def sync_connections(self):
         """Synchronize connections with the front-end (internal use)."""

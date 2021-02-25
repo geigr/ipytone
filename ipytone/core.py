@@ -174,12 +174,10 @@ class Gain(AudioNode):
             yield key
         yield "gain"
 
-    def dispose(self, clean_graph=True):
-        super().dispose(clean_graph=False)
-        self.gain.dispose(clean_graph=False)
-
-        if clean_graph:
-            self._graph.clean()
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self.gain.dispose()
 
         return self
 

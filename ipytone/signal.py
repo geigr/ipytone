@@ -205,12 +205,10 @@ class Add(Signal):
         """The value which is added to the input signal."""
         return self._addend
 
-    def dispose(self, clean_graph=True):
-        super().dispose(clean_graph=False)
-        self.addend.dispose(clean_graph=False)
-
-        if clean_graph:
-            self._graph.clean()
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self.addend.dispose()
 
         return self
 
@@ -246,12 +244,12 @@ class Subtract(Signal):
         """The value which is substracted from the input signal."""
         return self._subtrahend
 
-    def dispose(self, clean_graph=True):
-        super().dispose(clean_graph=False)
-        self.subtrahend.dispose(clean_graph=False)
-
-        if clean_graph:
-            self._graph.clean()
+    def dispose(
+        self,
+    ):
+        with self._graph.hold_state():
+            super().dispose()
+            self.subtrahend.dispose()
 
         return self
 
@@ -292,12 +290,12 @@ class GreaterThan(Signal):
         """The value that is compared to the incoming signal against."""
         return self._comparator
 
-    def dispose(self, clean_graph=True):
-        super().dispose(clean_graph=False)
-        self.comparator.dispose(clean_graph=False)
-
-        if clean_graph:
-            self._graph.clean()
+    def dispose(
+        self,
+    ):
+        with self._graph.hold_state():
+            super().dispose()
+            self.comparator.dispose()
 
         return self
 
