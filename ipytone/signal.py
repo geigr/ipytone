@@ -75,6 +75,7 @@ class Signal(SignalOperator):
 
     _model_name = Unicode("SignalModel").tag(sync=True)
     _input = Instance(Param).tag(sync=True, **widget_serialization)
+    _override = Bool(True).tag(sync=True)
     value = Union((Float(), Int(), Unicode()), help="Signal value").tag(sync=True)
 
     _side_signal_prop_name = None
@@ -110,7 +111,10 @@ class Signal(SignalOperator):
     @property
     def overridden(self):
         """If True, the signal value is overridden by an incoming signal."""
-        return self.input.overridden
+        if self._override:
+            return self.input.overridden
+        else:
+            return False
 
     def _repr_keys(self):
         for key in super()._repr_keys():
@@ -160,7 +164,7 @@ class Multiply(Signal):
         )
         _factor = gain.gain
 
-        kwargs.update({"_factor": _factor, "_input": gain, "_output": gain})
+        kwargs.update({"_factor": _factor, "_input": gain, "_output": gain, "_override": False})
         super().__init__(**kwargs)
 
     @property
@@ -190,7 +194,7 @@ class Add(Signal):
         node = Gain(_create_node=False)
         _addend = Param(value=addend, _create_node=False)
 
-        kwargs.update({"_addend": _addend, "_input": node, "_output": node})
+        kwargs.update({"_addend": _addend, "_input": node, "_output": node, "_override": False})
         super().__init__(**kwargs)
 
     @property
@@ -220,7 +224,7 @@ class Subtract(Signal):
         node = Gain(_create_node=False)
         _subtrahend = Param(value=subtrahend, _create_node=False)
 
-        kwargs.update({"_subtrahend": _subtrahend, "_input": node, "_output": node})
+        kwargs.update({"_subtrahend": _subtrahend, "_input": node, "_output": node, "_override": False})
         super().__init__(**kwargs)
 
     @property
@@ -251,7 +255,7 @@ class GreaterThan(Signal):
         out_node = InternalAudioNode(type="GreaterThanZero")
         _comparator = Param(value=comparator, _create_node=False)
 
-        kw = {"_comparator": _comparator, "_input": in_node, "_output": out_node}
+        kw = {"_comparator": _comparator, "_input": in_node, "_output": out_node, "_override": False}
         kwargs.update(kw)
         super().__init__(**kwargs)
 

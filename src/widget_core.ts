@@ -127,7 +127,10 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
   }
 
   connectInputCallback(): void {
-    /**/
+    this.set('overridden', this.node.overridden);
+    // if overridden, value is reset to 0
+    this.set('value', this.node.value);
+    this.save_changes();
   }
 
   dispose(): void {
