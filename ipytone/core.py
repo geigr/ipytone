@@ -82,13 +82,15 @@ class Param(NodeWithContext):
         swappable=False,
         **kwargs
     ):
-        if swappable:
-            input = NativeAudioNode(type="GainNode")
-        else:
-            input = NativeAudioParam()
+        if "_input" not in kwargs:
+            if swappable:
+                input = NativeAudioNode(type="GainNode")
+            else:
+                input = NativeAudioParam()
+
+            kwargs["_input"] = input
 
         kw = {
-            "_input": input,
             "value": value,
             "_units": units,
             "convert": convert,
@@ -163,7 +165,7 @@ class Gain(AudioNode):
         )
 
     @property
-    def gain(self):
+    def gain(self) -> Param:
         """The gain parameter."""
         return self._gain
 
@@ -171,6 +173,15 @@ class Gain(AudioNode):
         for key in super()._repr_keys():
             yield key
         yield "gain"
+
+    def dispose(self, clean_graph=True):
+        super().dispose(clean_graph=False)
+        self.gain.dispose(clean_graph=False)
+
+        if clean_graph:
+            self._graph.clean()
+
+        return self
 
 
 class Destination(AudioNode):

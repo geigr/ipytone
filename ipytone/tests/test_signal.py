@@ -78,6 +78,14 @@ def test_signal_operator(op, op_cls, op_prop_name, value, test_other_signal, aud
         assert (sig, op_sig2) in audio_graph.connections
         assert (sig2, getattr(op_sig2, op_prop_name)) in audio_graph.connections
 
+        # test dispose
+        s = op_sig2.dispose()
+        assert s is op_sig2
+        assert op_sig2.disposed is True
+        assert getattr(op_sig2, op_prop_name).disposed is True
+        assert (sig, op_sig2) not in audio_graph.connections
+        assert (sig2, getattr(op_sig2, op_prop_name)) not in audio_graph.connections
+
 
 @pytest.mark.parametrize("op,op_cls", [(operator.abs, Abs), (operator.neg, Negate)])
 def test_simple_signal_operator(op, op_cls, audio_graph):

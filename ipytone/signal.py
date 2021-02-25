@@ -1,7 +1,7 @@
 from ipywidgets import widget_serialization
-from traitlets import Float, Instance, Int, Unicode, Union
+from traitlets import Bool, Float, Instance, Int, Unicode, Union
 
-from .base import AudioNode
+from .base import AudioNode, ToneObject
 from .core import Gain, InternalAudioNode, Param
 
 
@@ -74,23 +74,26 @@ class Signal(SignalOperator):
     """
 
     _model_name = Unicode("SignalModel").tag(sync=True)
-    _input = Instance(Param).tag(sync=True, **widget_serialization)
+    _input = Instance(ToneObject).tag(sync=True, **widget_serialization)
     _override = Bool(True).tag(sync=True)
     value = Union((Float(), Int(), Unicode()), help="Signal value").tag(sync=True)
 
     _side_signal_prop_name = None
 
     def __init__(self, value=0, units="number", min_value=None, max_value=None, **kwargs):
-        in_node = Param(
-            value=value,
-            units=units,
-            min_value=min_value,
-            max_value=max_value,
-            _create_node=False,
-        )
-        out_node = InternalAudioNode(type="ToneConstantSource")
+        if "_input" not in kwargs:
+            kwargs["_input"] = Param(
+                value=value,
+                units=units,
+                min_value=min_value,
+                max_value=max_value,
+                _create_node=False,
+            )
+        if "_output" not in kwargs:
+            kwargs["_output"] = InternalAudioNode(type="ToneConstantSource")
 
-        kwargs.update({"_input": in_node, "_output": out_node, "value": value})
+        kwargs["value"] = value
+
         super().__init__(**kwargs)
 
     @property
@@ -202,6 +205,15 @@ class Add(Signal):
         """The value which is added to the input signal."""
         return self._addend
 
+    def dispose(self, clean_graph=True):
+        super().dispose(clean_graph=False)
+        self.addend.dispose(clean_graph=False)
+
+        if clean_graph:
+            self._graph.clean()
+
+        return self
+
 
 class Subtract(Signal):
     """A signal that outputs the difference between the incoming signal and another signal
@@ -231,6 +243,15 @@ class Subtract(Signal):
     def subtrahend(self) -> Param:
         """The value which is substracted from the input signal."""
         return self._subtrahend
+
+    def dispose(self, clean_graph=True):
+        super().dispose(clean_graph=False)
+        self.subtrahend.dispose(clean_graph=False)
+
+        if clean_graph:
+            self._graph.clean()
+
+        return self
 
 
 class GreaterThan(Signal):
@@ -263,6 +284,15 @@ class GreaterThan(Signal):
     def comparator(self) -> Param:
         """The value that is compared to the incoming signal against."""
         return self._comparator
+
+    def dispose(self, clean_graph=True):
+        super().dispose(clean_graph=False)
+        self.comparator.dispose(clean_graph=False)
+
+        if clean_graph:
+            self._graph.clean()
+
+        return self
 
 
 class Abs(SignalOperator):

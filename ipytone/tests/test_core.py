@@ -57,6 +57,11 @@ def test_gain():
     assert gain.input is gain.output
     assert repr(gain) == "Gain(gain=Param(value=1.0, units='gain'))"
 
+    s = gain.dispose()
+    assert s is gain
+    assert gain.disposed is True
+    assert gain.gain.disposed is True
+
 
 def test_destination():
     dest = get_destination()

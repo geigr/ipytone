@@ -89,10 +89,15 @@ class Oscillator(Source):
         """Oscillator detune."""
         return self._detune
 
-    def dispose(self):
-        super().dispose()
-        self._frequency.dispose()
-        self._detune.dispose()
+    def dispose(self, clean_graph=True):
+        super().dispose(clean_graph=False)
+        self._frequency.dispose(clean_graph=False)
+        self._detune.dispose(clean_graph=False)
+
+        if clean_graph:
+            self._graph.clean()
+
+        return self
 
 
 class Noise(Source):
