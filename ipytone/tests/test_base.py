@@ -37,6 +37,13 @@ def test_audio_node_disconnect(audio_graph):
     assert n is node1
 
 
+def test_audio_node_dispose(audio_graph):
+    node1 = InternalAudioNode()
+    node2 = InternalAudioNode()
+
+    n = node1.connect(node2)
+
+
 def test_audio_node_to_destination(audio_graph):
     node = InternalAudioNode()
 

@@ -6,6 +6,8 @@ import {
 
 import * as tone from 'tone';
 
+// import * as tone_base from 'tone/Tone/core/Tone';
+
 import { MODULE_NAME, MODULE_VERSION } from './version';
 
 export abstract class ToneWidgetModel extends WidgetModel {
@@ -34,11 +36,57 @@ export abstract class ToneWidgetModel extends WidgetModel {
   static model_module_version = MODULE_VERSION;
 }
 
-export abstract class NodeModel extends ToneWidgetModel {
+export class NativeAudioNodeModel extends ToneWidgetModel {
   defaults(): any {
     return {
       ...super.defaults(),
-      _model_name: NodeModel.model_name,
+      _model_name: NativeAudioNodeModel.model_name,
+      _n_inputs: 1,
+      _n_outputs: 1,
+      type: '',
+    };
+  }
+
+  connectInputCallback(): void {
+    /**/
+  }
+
+  setNode(node: AudioNode): void {
+    this.node = node;
+  }
+
+  node: AudioNode;
+
+  static model_name = 'NativeAudioNodeModel';
+}
+
+export class NativeAudioParamModel extends ToneWidgetModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: NativeAudioParamModel.model_name,
+      type: '',
+    };
+  }
+
+  connectInputCallback(): void {
+    /**/
+  }
+
+  setNode(node: AudioParam): void {
+    this.node = node;
+  }
+
+  node: AudioParam;
+
+  static model_name = 'NativeAudioParamModel';
+}
+
+export abstract class ToneObjectModel extends ToneWidgetModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: ToneObjectModel.model_name,
       _disposed: false,
     };
   }
@@ -47,12 +95,30 @@ export abstract class NodeModel extends ToneWidgetModel {
     this.node = node;
   }
 
-  node: any;
+  get disposed(): boolean {
+    return this.get('_disposed');
+  }
 
-  static model_name = 'NodeModel';
+  dispose(): void {
+    // Tone.js calls dispose internally for sub-nodes such as input, output, etc.
+    // so we need to check if the node is already disposed
+    if (!this.node.disposed) {
+      this.node.dispose();
+    }
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:_disposed', this.dispose, this);
+  }
+
+  node: any;  //tone_base.Tone | tone.ToneAudioNode | tone.Param<any> | AudioNode | AudioParam | undefined;
+
+  static model_name = 'ToneObjectModel';
 }
 
-export class NodeWithContextModel extends NodeModel {
+export class NodeWithContextModel extends ToneObjectModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -88,11 +154,11 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
     }
   }
 
-  get input(): NodeModel {
+  get input(): ToneObjectModel | NativeAudioNodeModel | NativeAudioParamModel {
     return this.get('_input');
   }
 
-  get output(): NodeModel {
+  get output(): ToneObjectModel | NativeAudioNodeModel {
     return this.get('_output');
   }
 
@@ -112,29 +178,15 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
 
   private setInputOutputNodes(): void {
     if (this.input !== null) {
-      this.input.node = this.node.input;
+      this.input.setNode(this.node.input);
     }
     if (this.output !== null) {
-      this.output.node = this.node.output;
+      this.output.setNode(this.node.output as any);
     }
   }
 
   setSubNodes(): void {
     /**/
-  }
-
-  dispose(): void {
-    // Tone.js also calls dispose internally for input and output
-    // so we need to check if the node is already disposed
-    if (!this.node.disposed) {
-      this.node.dispose();
-    }
-  }
-
-  initEventListeners(): void {
-    super.initEventListeners();
-
-    this.on('change:_disposed', this.dispose, this);
   }
 
   static serializers: ISerializers = {
