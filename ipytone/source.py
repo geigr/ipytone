@@ -89,6 +89,11 @@ class Oscillator(Source):
         """Oscillator detune."""
         return self._detune
 
+    def dispose(self):
+        super().dispose()
+        self._frequency.dispose()
+        self._detune.dispose()
+
 
 class Noise(Source):
     """A noise source."""

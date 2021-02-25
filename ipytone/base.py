@@ -13,6 +13,7 @@ class Node(ToneWidgetBase):
 
     _model_name = Unicode("NodeModel").tag(sync=True)
     _disposed = Bool(False).tag(sync=True)
+    _is_internal = False
 
     @property
     def disposed(self):
@@ -45,7 +46,6 @@ class AudioNode(NodeWithContext):
 
     _model_name = Unicode("AudioNodeModel").tag(sync=True)
 
-    _is_internal = False
     _input = Instance(ToneWidgetBase, allow_none=True).tag(sync=True, **widget_serialization)
     _output = Instance(ToneWidgetBase, allow_none=True).tag(sync=True, **widget_serialization)
     _create_node = Bool(True).tag(sync=True)
@@ -146,11 +146,23 @@ class AudioNode(NodeWithContext):
         else:
             return None
 
-    def dispose(self):
+    def dispose(self, clean_graph=True):
         """Dispose and disconnect this audio node (as well as its input/output)."""
 
+        from .core import _AUDIO_GRAPH
+
         self._disposed = True
-        # TODO: remove connections in AudioGraph (without disconnect in JS as it's done by dispose?)
+
+        # also dispose input/output
+        if self.input is not None:
+            self.input.dispose(clean_graph=False)
+        if self.output is not None:
+            self.output.dispose(clean_graph=False)
+
+        if clean_graph:
+            _AUDIO_GRAPH.clean()
+
+        return self
 
     def close(self):
         self.dispose()

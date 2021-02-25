@@ -46,6 +46,9 @@ class InternalNode(Node):
     def number_of_outputs(self):
         return self._n_outputs
 
+    def dispose(self, *args, **kwargs):
+        self._disposed = True
+
     def _repr_keys(self):
         if self.tone_class:
             yield "tone_class"
@@ -61,6 +64,9 @@ class InternalAudioNode(AudioNode):
     _n_outputs = Int(1, allow_none=True).tag(sync=True)
     tone_class = Unicode().tag(sync=True)
     _create_node = Bool(False).tag(sync=True)
+
+    def dispose(self, *args, **kwargs):
+        self._disposed = True
 
     def _repr_keys(self):
         if self.tone_class:
@@ -131,6 +137,22 @@ class Param(NodeWithContext):
     def input(self):
         """Returns the input node."""
         return self._input
+
+    def dispose(self, clean_graph=True):
+        """Dispose and disconnect this parameter and its input."""
+
+        from .core import _AUDIO_GRAPH
+
+        self._disposed = True
+
+        # also dispose input
+        if self.input is not None and not self.input._is_internal:
+            self.input.dispose(clean_graph=False)
+
+        if clean_graph:
+            _AUDIO_GRAPH.clean()
+
+        return self
 
     def _repr_keys(self):
         for key in super()._repr_keys():
@@ -247,6 +269,16 @@ class AudioGraph(ToneWidgetBase):
             raise ValueError(f"Node {src_node} is not connected to node {dest_node}")
 
         self._updated_connections.remove(conn)
+
+        if sync:
+            self.sync_connections()
+
+    def clean(self, sync=True):
+        """Remove all connections from/to disposed nodes."""
+
+        for src, dest in self._connections:
+            if src.disposed or dest.disposed:
+                self.disconnect(src, dest, sync=False)
 
         if sync:
             self.sync_connections()

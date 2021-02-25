@@ -18,7 +18,7 @@ export class InternalNodeModel extends ToneWidgetModel {
       _model_name: InternalNodeModel.model_name,
       _n_inputs: 1,
       _n_outputs: 1,
-      _tone_class: 'ToneWithContext',
+      _tone_class: 'WebAPIAudioNode',
     };
   }
 
@@ -140,6 +140,14 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
     /**/
   }
 
+  dispose(): void {
+    // Tone.js also calls dispose internally for input
+    // so we need to check if the node is already disposed
+    if (!this.node.disposed) {
+      this.node.dispose();
+    }
+  }
+
   initEventListeners(): void {
     super.initEventListeners();
 
@@ -149,6 +157,7 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
     this.on('change:convert', () => {
       this.node.convert = this.get('convert');
     });
+    this.on('change:_disposed', this.dispose, this);
   }
 
   node: tone.Param<T>;
@@ -285,7 +294,13 @@ export class AudioGraphModel extends ToneWidgetModel {
     });
 
     getConnectionNodes(connRemoved).forEach((conn_node) => {
-      conn_node[0].disconnect(conn_node[1]);
+      const src = conn_node[0];
+      const dest = conn_node[1];
+
+      // Disposed nodes should have been already disconnected by Tone.js
+      if (!src.disposed || !dest.disposed) {
+        src.disconnect(dest);
+      }
     });
 
     // callbacks of updated destination nodes

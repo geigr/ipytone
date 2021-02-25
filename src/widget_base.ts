@@ -47,15 +47,6 @@ export abstract class NodeModel extends ToneWidgetModel {
     this.node = node;
   }
 
-  get disposed(): boolean {
-    return this.get('_disposed');
-  }
-
-  set disposed(flag: boolean) {
-    this.set('_disposed', flag);
-    this.save_changes();
-  }
-
   node: any;
 
   static model_name = 'NodeModel';
@@ -105,18 +96,6 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
     return this.get('_output');
   }
 
-  set disposed(flag: boolean) {
-    super.disposed = flag;
-
-    // propagate disposed to input/output
-    if (this.input !== null) {
-      this.input.disposed = true;
-    }
-    if (this.output !== null) {
-      this.output.disposed = true;
-    }
-  }
-
   connectInputCallback(): void {
     /**/
   }
@@ -145,15 +124,10 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
   }
 
   dispose(): void {
-    // this will also call dispose on input and output ToneAudioNode objects
-    this.node.dispose();
-
-    // we need to update the _disposed attribute in input/output models
-    if (this.input !== null) {
-      this.input.disposed = true;
-    }
-    if (this.output !== null) {
-      this.output.disposed = true;
+    // Tone.js also calls dispose internally for input and output
+    // so we need to check if the node is already disposed
+    if (!this.node.disposed) {
+      this.node.dispose();
     }
   }
 

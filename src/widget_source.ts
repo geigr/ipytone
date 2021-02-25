@@ -90,13 +90,6 @@ export class OscillatorModel extends SourceModel {
     return this.get('_detune');
   }
 
-  dispose(): void {
-    super.dispose();
-
-    this.frequency.disposed = true;
-    this.detune.disposed = true;
-  }
-
   initEventListeners(): void {
     super.initEventListeners();
 
