@@ -18,7 +18,7 @@ class Source(AudioNode):
     volume = Float(-16, help="Source gain").tag(sync=True)
 
     def __init__(self, *args, **kwargs):
-        out_node = InternalAudioNode(tone_class="Volume")
+        out_node = InternalAudioNode(type="Volume")
         kwargs.update({"_output": out_node})
         super().__init__(*args, **kwargs)
 
@@ -88,6 +88,14 @@ class Oscillator(Source):
     def detune(self) -> Signal:
         """Oscillator detune."""
         return self._detune
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._frequency.dispose()
+            self._detune.dispose()
+
+        return self
 
 
 class Noise(Source):

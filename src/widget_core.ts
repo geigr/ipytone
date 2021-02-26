@@ -6,24 +6,10 @@ import { UnitMap, UnitName } from 'tone/Tone/core/type/Units';
 
 import {
   AudioNodeModel,
-  ToneWidgetModel,
-  NodeModel,
+  NativeAudioNodeModel,
+  NativeAudioParamModel,
   NodeWithContextModel,
 } from './widget_base';
-
-export class InternalNodeModel extends ToneWidgetModel {
-  defaults(): any {
-    return {
-      ...super.defaults(),
-      _model_name: InternalNodeModel.model_name,
-      _n_inputs: 1,
-      _n_outputs: 1,
-      _tone_class: 'ToneWithContext',
-    };
-  }
-
-  static model_name = 'InternalNodeModel';
-}
 
 export class InternalAudioNodeModel extends AudioNodeModel {
   defaults(): any {
@@ -32,7 +18,7 @@ export class InternalAudioNodeModel extends AudioNodeModel {
       _model_name: InternalAudioNodeModel.model_name,
       _n_inputs: 1,
       _n_outputs: 1,
-      _tone_class: 'ToneAudioNode',
+      type: '',
       _create_node: false,
     };
   }
@@ -64,6 +50,7 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
       _units: 'number',
       _min_value: undefined,
       _max_value: undefined,
+      _swappable: false,
       overridden: false,
     };
   }
@@ -75,6 +62,8 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
     super.initialize(attributes, options);
 
     if (this.get('_create_node')) {
+      // TODO: is there any use case of creating a new Tone.Param from Python?
+      // Usually a ParamModel wraps an existing Tone.Param object
       this.node = new tone.Param<T>({
         convert: this.convert,
         value: this.value,
@@ -86,7 +75,7 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
     }
   }
 
-  get input(): NodeModel {
+  get input(): NativeAudioParamModel | NativeAudioNodeModel {
     return this.get('_input');
   }
 
@@ -134,10 +123,22 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
 
   setNode(node: tone.Param<T>): void {
     this.node = node;
+    this.input.setNode(node.input as any);
   }
 
   connectInputCallback(): void {
-    /**/
+    this.set('overridden', this.node.overridden);
+    // if overridden, value is reset to 0
+    this.set('value', this.node.value);
+    this.save_changes();
+  }
+
+  dispose(): void {
+    // Tone.js may have called dispose internally for this Tone instance
+    // so we need to check if the instance is already disposed
+    if (!this.node.disposed) {
+      this.node.dispose();
+    }
   }
 
   initEventListeners(): void {
@@ -149,7 +150,13 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
     this.on('change:convert', () => {
       this.node.convert = this.get('convert');
     });
+    this.on('change:_disposed', this.dispose, this);
   }
+
+  static serializers: ISerializers = {
+    ...NodeWithContextModel.serializers,
+    _input: { deserialize: unpack_models as any },
+  };
 
   node: tone.Param<T>;
 
@@ -224,86 +231,4 @@ export class DestinationModel extends AudioNodeModel {
   node: typeof tone.Destination;
 
   static model_name = 'DestinationModel';
-}
-
-type Connection = [AudioNodeModel, AudioNodeModel | ParamModel<any>];
-type ConnectionNode = [
-  tone.ToneAudioNode,
-  tone.ToneAudioNode | tone.Param<any>
-];
-
-function getConnectionNodes(connections: Connection[]): ConnectionNode[] {
-  return connections.map((conn: Connection) => {
-    return [conn[0].node, conn[1].node];
-  });
-}
-
-function getConnectionId(conn: Connection): string {
-  return conn[0].model_id + '::' + conn[1].model_id;
-}
-
-function getConnectionIds(connections: Connection[]): string[] {
-  return connections.map((conn: Connection) => {
-    return getConnectionId(conn);
-  });
-}
-
-export class AudioGraphModel extends ToneWidgetModel {
-  defaults(): any {
-    return {
-      ...super.defaults(),
-      _model_name: AudioGraphModel.model_name,
-      _connections: [],
-    };
-  }
-
-  get connections(): Connection[] {
-    return this.get('_connections');
-  }
-
-  get connections_prev(): Connection[] {
-    return this.previous('_connections');
-  }
-
-  private updateConnections(): void {
-    // connect nodes for new connections
-    const connAdded = this.connections.filter((other: Connection) => {
-      const other_id: string = getConnectionId(other);
-      const prev_ids = getConnectionIds(this.connections_prev);
-      return !prev_ids.includes(other_id);
-    });
-
-    getConnectionNodes(connAdded).forEach((conn_node) => {
-      conn_node[0].connect(conn_node[1]);
-    });
-
-    // disconnect nodes for removed connections
-    const connRemoved = this.connections_prev.filter((other: Connection) => {
-      const other_id: string = getConnectionId(other);
-      const current_ids = getConnectionIds(this.connections_prev);
-      return !current_ids.includes(other_id);
-    });
-
-    getConnectionNodes(connRemoved).forEach((conn_node) => {
-      conn_node[0].disconnect(conn_node[1]);
-    });
-
-    // callbacks of updated destination nodes
-    connAdded.concat(connRemoved).forEach((conn: Connection) => {
-      conn[1].connectInputCallback();
-    });
-  }
-
-  initEventListeners(): void {
-    super.initEventListeners();
-
-    this.on('change:_connections', this.updateConnections, this);
-  }
-
-  static serializers: ISerializers = {
-    ...ToneWidgetModel.serializers,
-    _connections: { deserialize: unpack_models as any },
-  };
-
-  static model_name = 'AudioGraphModel';
 }

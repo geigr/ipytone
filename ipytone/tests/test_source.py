@@ -38,6 +38,13 @@ def test_oscillator():
     with pytest.raises(TraitError, match="Invalid oscillator type"):
         osc.type = "not a good oscillator wave"
 
+    # test dispose
+    n = osc.dispose()
+    assert n is osc
+    assert osc.disposed is True
+    assert osc.frequency.disposed is True
+    assert osc.detune.disposed is True
+
 
 def test_noise():
     noise = Noise()

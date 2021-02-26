@@ -1,7 +1,7 @@
 from ipywidgets import widget_serialization
-from traitlets import Float, Instance, Int, Unicode, Union
+from traitlets import Bool, Float, Instance, Int, Unicode, Union
 
-from .base import AudioNode
+from .base import AudioNode, ToneObject
 from .core import Gain, InternalAudioNode, Param
 
 
@@ -74,22 +74,26 @@ class Signal(SignalOperator):
     """
 
     _model_name = Unicode("SignalModel").tag(sync=True)
-    _input = Instance(Param).tag(sync=True, **widget_serialization)
+    _input = Instance(ToneObject).tag(sync=True, **widget_serialization)
+    _override = Bool(True).tag(sync=True)
     value = Union((Float(), Int(), Unicode()), help="Signal value").tag(sync=True)
 
     _side_signal_prop_name = None
 
     def __init__(self, value=0, units="number", min_value=None, max_value=None, **kwargs):
-        in_node = Param(
-            value=value,
-            units=units,
-            min_value=min_value,
-            max_value=max_value,
-            _create_node=False,
-        )
-        out_node = InternalAudioNode(tone_class="ToneConstantSource")
+        if "_input" not in kwargs:
+            kwargs["_input"] = Param(
+                value=value,
+                units=units,
+                min_value=min_value,
+                max_value=max_value,
+                _create_node=False,
+            )
+        if "_output" not in kwargs:
+            kwargs["_output"] = InternalAudioNode(type="ToneConstantSource")
 
-        kwargs.update({"_input": in_node, "_output": out_node, "value": value})
+        kwargs["value"] = value
+
         super().__init__(**kwargs)
 
     @property
@@ -110,7 +114,10 @@ class Signal(SignalOperator):
     @property
     def overridden(self):
         """If True, the signal value is overridden by an incoming signal."""
-        return self.input.overridden
+        if self._override:
+            return self.input.overridden
+        else:
+            return False
 
     def _repr_keys(self):
         for key in super()._repr_keys():
@@ -160,7 +167,7 @@ class Multiply(Signal):
         )
         _factor = gain.gain
 
-        kwargs.update({"_factor": _factor, "_input": gain, "_output": gain})
+        kwargs.update({"_factor": _factor, "_input": gain, "_output": gain, "_override": False})
         super().__init__(**kwargs)
 
     @property
@@ -190,13 +197,20 @@ class Add(Signal):
         node = Gain(_create_node=False)
         _addend = Param(value=addend, _create_node=False)
 
-        kwargs.update({"_addend": _addend, "_input": node, "_output": node})
+        kwargs.update({"_addend": _addend, "_input": node, "_output": node, "_override": False})
         super().__init__(**kwargs)
 
     @property
     def addend(self) -> Param:
         """The value which is added to the input signal."""
         return self._addend
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self.addend.dispose()
+
+        return self
 
 
 class Subtract(Signal):
@@ -220,13 +234,24 @@ class Subtract(Signal):
         node = Gain(_create_node=False)
         _subtrahend = Param(value=subtrahend, _create_node=False)
 
-        kwargs.update({"_subtrahend": _subtrahend, "_input": node, "_output": node})
+        kwargs.update(
+            {"_subtrahend": _subtrahend, "_input": node, "_output": node, "_override": False}
+        )
         super().__init__(**kwargs)
 
     @property
     def subtrahend(self) -> Param:
         """The value which is substracted from the input signal."""
         return self._subtrahend
+
+    def dispose(
+        self,
+    ):
+        with self._graph.hold_state():
+            super().dispose()
+            self.subtrahend.dispose()
+
+        return self
 
 
 class GreaterThan(Signal):
@@ -247,11 +272,16 @@ class GreaterThan(Signal):
     _side_signal_prop_name = "comparator"
 
     def __init__(self, comparator=0, **kwargs):
-        in_node = InternalAudioNode(tone_class="Substract")
-        out_node = InternalAudioNode(tone_class="GreaterThanZero")
+        in_node = InternalAudioNode(type="Substract")
+        out_node = InternalAudioNode(type="GreaterThanZero")
         _comparator = Param(value=comparator, _create_node=False)
 
-        kw = {"_comparator": _comparator, "_input": in_node, "_output": out_node}
+        kw = {
+            "_comparator": _comparator,
+            "_input": in_node,
+            "_output": out_node,
+            "_override": False,
+        }
         kwargs.update(kw)
         super().__init__(**kwargs)
 
@@ -259,6 +289,15 @@ class GreaterThan(Signal):
     def comparator(self) -> Param:
         """The value that is compared to the incoming signal against."""
         return self._comparator
+
+    def dispose(
+        self,
+    ):
+        with self._graph.hold_state():
+            super().dispose()
+            self.comparator.dispose()
+
+        return self
 
 
 class Abs(SignalOperator):
@@ -271,7 +310,7 @@ class Abs(SignalOperator):
     _model_name = Unicode("AbsModel").tag(sync=True)
 
     def __init__(self, *args, **kwargs):
-        node = InternalAudioNode(tone_class="WaveShaper")
+        node = InternalAudioNode(type="WaveShaper")
         kwargs.update({"_input": node, "_output": node})
         super().__init__(*args, **kwargs)
 
@@ -285,7 +324,7 @@ class Negate(SignalOperator):
     _model_name = Unicode("NegateModel").tag(sync=True)
 
     def __init__(self, *args, **kwargs):
-        node = InternalAudioNode(tone_class="Multiply")
+        node = InternalAudioNode(type="Multiply")
         kwargs.update({"_input": node, "_output": node})
         super().__init__(*args, **kwargs)
 
@@ -301,6 +340,6 @@ class Pow(SignalOperator):
     value = Union((Float(), Int()), help="exponent value").tag(sync=True)
 
     def __init__(self, *args, **kwargs):
-        node = InternalAudioNode(tone_class="WaveShaper")
+        node = InternalAudioNode(type="WaveShaper")
         kwargs.update({"_input": node, "_output": node})
         super().__init__(*args, **kwargs)

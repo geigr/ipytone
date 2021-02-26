@@ -24,6 +24,7 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
     return {
       ...super.defaults(),
       _model_name: SignalModel.model_name,
+      _override: true,
     };
   }
 
