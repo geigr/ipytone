@@ -9,6 +9,7 @@ from .core import Gain, Param, get_destination
 from .graph import get_audio_graph
 from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Signal, Subtract
 from .source import Noise, Oscillator
+from .transport import transport
 
 
 def _jupyter_labextension_paths():

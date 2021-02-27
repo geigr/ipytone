@@ -6,6 +6,7 @@ from traitlets import Bool, Enum, Float, Instance, TraitError, Unicode, validate
 from .base import AudioNode
 from .core import InternalAudioNode
 from .signal import Signal
+from .transport import transport
 
 
 class Source(AudioNode):
@@ -22,20 +23,30 @@ class Source(AudioNode):
         kwargs.update({"_output": out_node})
         super().__init__(*args, **kwargs)
 
-    def start(self):
+    def start(self, time=""):
         """Start the audio source.
 
         If it's already started, this will stop and restart the source.
         """
-        self.state = "started"
+        if transport._is_scheduling:
+            transport._audio_nodes = transport._audio_nodes + [self]
+            transport._methods = transport._methods + ["start"]
+            transport._packed_args = transport._packed_args + [time + " *** "]
+        else:
+            self.state = "started"
 
         return self
 
-    def stop(self):
+    def stop(self, time=""):
         """Stop the audio source."""
 
-        if self.state == "started":
-            self.state = "stopped"
+        if transport._is_scheduling:
+            transport._audio_nodes = transport._audio_nodes + [self]
+            transport._methods = transport._methods + ["stop"]
+            transport._packed_args = transport._packed_args + [time + " *** "]
+        else:
+            if self.state == "started":
+                self.state = "stopped"
 
         return self
 
