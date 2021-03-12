@@ -1,5 +1,5 @@
 from ipywidgets import Widget, widget_serialization
-from traitlets import Bool, Instance, Int, Unicode
+from traitlets import Bool, Enum, Instance, Int, Unicode
 
 from ._frontend import module_name, module_version
 
@@ -131,6 +131,11 @@ class AudioNode(NodeWithContext):
     _input = Instance(ToneWidgetBase, allow_none=True).tag(sync=True, **widget_serialization)
     _output = Instance(ToneWidgetBase, allow_none=True).tag(sync=True, **widget_serialization)
     _create_node = Bool(True).tag(sync=True)
+    channel_count = Int(2).tag(sync=True)
+    channel_count_mode = Enum(["max", "clamped-max", "explicit"], default_value="max").tag(
+        sync=True
+    )
+    channel_interpretation = Enum(["speakers", "discrete"], default_value="speakers").tag(sync=True)
 
     @property
     def number_of_inputs(self):

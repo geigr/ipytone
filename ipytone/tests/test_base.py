@@ -47,6 +47,9 @@ def test_audio_node_creation():
     assert node.output is None
     assert node.number_of_inputs == 0
     assert node.number_of_outputs == 0
+    assert node.channel_count == 2
+    assert node.channel_count_mode == "max"
+    assert node.channel_interpretation == "speakers"
     assert repr(node) == "AudioNode(name='test')"
 
 

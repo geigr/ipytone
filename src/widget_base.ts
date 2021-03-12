@@ -138,6 +138,9 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
       _create_node: true,
       _input: null,
       _output: null,
+      channel_count: 2,
+      channel_count_mode: 'max',
+      channel_interpretation: 'speakers',
     };
   }
 
@@ -149,6 +152,7 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
 
     if (this.get('_create_node')) {
       this.node = this.createNode();
+      this.setNodeChannels();
       this.setInputOutputNodes();
       this.setSubNodes();
     }
@@ -172,8 +176,15 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
 
   setNode(node: tone.ToneAudioNode): void {
     this.node = node;
+    this.setNodeChannels();
     this.setInputOutputNodes();
     this.setSubNodes();
+  }
+
+  setNodeChannels(): void {
+    this.node.channelCount = this.get('channel_count');
+    this.node.channelCountMode = this.get('channel_count_mode');
+    this.node.channelInterpretation = this.get('channel_interpretation');
   }
 
   private setInputOutputNodes(): void {
@@ -187,6 +198,14 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
 
   setSubNodes(): void {
     /**/
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:channel_count', this.setNodeChannels, this);
+    this.on('change:channel_count_mode', this.setNodeChannels, this);
+    this.on('change:channel_interpretation', this.setNodeChannels, this);
   }
 
   static serializers: ISerializers = {
