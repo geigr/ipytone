@@ -9,11 +9,11 @@ def test_transport():
     interval = "8n"
     start_time = "1m"
     with transport.schedule_repeat(interval, start_time):
-        assert transport._is_scheduling == True
+        assert transport._is_scheduling is True
         assert transport._audio_nodes == []
         assert transport._methods == []
         assert transport._packed_args == []
-        assert transport._toggle_schedule == False
+        assert transport._toggle_schedule is False
         node.start("time").stop("time + 0.1")
         assert transport._audio_nodes == [node, node]
         assert transport._methods == ["start", "stop"]
@@ -22,8 +22,8 @@ def test_transport():
     assert transport._interval == interval
     assert transport._start_time == start_time
     assert transport._duration is None
-    assert transport._toggle_schedule == True
-    assert transport._is_scheduling == False
+    assert transport._toggle_schedule is True
+    assert transport._is_scheduling is False
 
     transport.start()
     assert transport.state == "started"
