@@ -30,7 +30,10 @@ export class TransportModel extends WidgetModel {
     _audio_nodes: { deserialize: unpack_models as any },
   };
 
-  initialize(attributes: Backbone.ObjectHash, options: any): void {
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
     super.initialize(attributes, options);
 
     this.initEventListeners();

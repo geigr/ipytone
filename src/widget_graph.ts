@@ -26,22 +26,28 @@ type Connection = [
     | NativeAudioNodeModel
     | ParamModel<any>
     | NativeAudioParamModel
-  )
+  ),
+  number,
+  number
 ];
 
 type ConnectionNode = [
   tone.ToneAudioNode | AudioNode,
-  tone.ToneAudioNode | AudioNode | tone.Param<any> | AudioParam
+  tone.ToneAudioNode | AudioNode | tone.Param<any> | AudioParam,
+  number,
+  number
 ];
 
 function getConnectionNodes(connections: Connection[]): ConnectionNode[] {
   return connections.map((conn: Connection) => {
-    return [conn[0].node, conn[1].node];
+    return [conn[0].node, conn[1].node, conn[2], conn[3]];
   });
 }
 
 function getConnectionId(conn: Connection): string {
-  return conn[0].model_id + '::' + conn[1].model_id;
+  return (
+    conn[0].model_id + '::' + conn[1].model_id + '::' + conn[2] + '::' + conn[3]
+  );
 }
 
 function getConnectionIds(connections: Connection[]): string[] {
@@ -76,7 +82,7 @@ export class AudioGraphModel extends ToneWidgetModel {
     });
 
     getConnectionNodes(connAdded).forEach((conn_node) => {
-      conn_node[0].connect(conn_node[1] as any);
+      conn_node[0].connect(conn_node[1] as any, conn_node[2], conn_node[3]);
     });
 
     // disconnect nodes for removed connections
@@ -92,7 +98,9 @@ export class AudioGraphModel extends ToneWidgetModel {
 
       // Disposed nodes should have been already disconnected by Tone.js
       if (!isDisposed(src) || !isDisposed(dest)) {
-        src.disconnect(dest);
+        const outputNum = conn_node[2];
+        const inputNum = conn_node[3];
+        src.disconnect(dest, outputNum, inputNum);
       }
     });
 

@@ -1,5 +1,5 @@
 from ipywidgets import Widget, widget_serialization
-from traitlets import Bool, Instance, Int, Unicode
+from traitlets import Bool, Enum, Instance, Int, Unicode
 
 from ._frontend import module_name, module_version
 
@@ -131,6 +131,11 @@ class AudioNode(NodeWithContext):
     _input = Instance(ToneWidgetBase, allow_none=True).tag(sync=True, **widget_serialization)
     _output = Instance(ToneWidgetBase, allow_none=True).tag(sync=True, **widget_serialization)
     _create_node = Bool(True).tag(sync=True)
+    channel_count = Int(2).tag(sync=True)
+    channel_count_mode = Enum(["max", "clamped-max", "explicit"], default_value="max").tag(
+        sync=True
+    )
+    channel_interpretation = Enum(["speakers", "discrete"], default_value="speakers").tag(sync=True)
 
     @property
     def number_of_inputs(self):
@@ -150,16 +155,40 @@ class AudioNode(NodeWithContext):
         else:
             return self._output.number_of_outputs
 
-    def connect(self, destination):
-        """Connect the output of this audio node to the input of a ``destination`` audio node."""
+    def connect(self, destination, output_number=0, input_number=0):
+        """Connect the output of this audio node to the input of another node.
 
-        self._graph.connect(self, destination)
+        Parameters
+        ----------
+        destination : :class:`AudioNode` or ``NativeAudioNode`` or :class:`Param` or ``NativeAudioParam``
+            The destination node.
+        output_number : int
+            The channel number of the output of this node (default: 0).
+        input_number : int
+            The channel number of the input of the destination node (default: 0).
+
+        """
+        self._graph.connect(
+            self, destination, output_number=output_number, input_number=input_number
+        )
         return self
 
-    def disconnect(self, destination):
-        """Disconnect the ouput of this audio node from a connected destination."""
+    def disconnect(self, destination, output_number=0, input_number=0):
+        """Disconnect the ouput of this audio node from a connected node.
 
-        self._graph.disconnect(self, destination)
+        Parameters
+        ----------
+        destination : :class:`AudioNode` or ``NativeAudioNode`` or :class:`Param` or ``NativeAudioParam``
+            The connected destination node.
+        output_number : int
+            The channel number of the output of this node (default: 0).
+        input_number : int
+            The channel number of the input of the destination node (default: 0).
+
+        """
+        self._graph.disconnect(
+            self, destination, output_number=output_number, input_number=input_number
+        )
         return self
 
     def fan(self, *destinations):
