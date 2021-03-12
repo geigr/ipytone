@@ -12,10 +12,10 @@ def test_native_audio_node(audio_graph):
 
     node2 = NativeAudioNode()
     node.connect(node2)
-    assert (node, node2) in audio_graph.connections
+    assert (node, node2, 0, 0) in audio_graph.connections
 
     node.disconnect(node2)
-    assert (node, node2) not in audio_graph.connections
+    assert (node, node2, 0, 0) not in audio_graph.connections
 
 
 def test_native_audio_param():
@@ -59,13 +59,19 @@ def test_audio_node_connect(audio_graph):
 
     n = node1.connect(node2)
 
-    assert (node1, node2) in audio_graph.connections
+    assert (node1, node2, 0, 0) in audio_graph.connections
     assert n is node1
+
+    node1.connect(node2, 1, 2)
+    assert (node1, node2, 1, 2) in audio_graph.connections
 
     n = node1.disconnect(node2)
 
-    assert (node1, node2) not in audio_graph.connections
+    assert (node1, node2, 0, 0) not in audio_graph.connections
     assert n is node1
+
+    node1.disconnect(node2, 1, 2)
+    assert (node1, node2, 1, 2) not in audio_graph.connections
 
 
 def test_audio_node_disconnect(audio_graph):
@@ -74,7 +80,7 @@ def test_audio_node_disconnect(audio_graph):
 
     n = node1.connect(node2).disconnect(node2)
 
-    assert (node1, node2) not in audio_graph.connections
+    assert (node1, node2, 0, 0) not in audio_graph.connections
     assert n is node1
 
 
@@ -87,14 +93,14 @@ def test_audio_node_dispose(audio_graph):
     node1.connect(node2)
 
     assert node1.disposed is False
-    assert (node1, node2) in audio_graph.connections
+    assert (node1, node2, 0, 0) in audio_graph.connections
 
     node1.dispose()
 
     assert node1.disposed is True
     assert in_node.disposed is True
     assert out_node.disposed is True
-    assert (node1, node2) not in audio_graph.connections
+    assert (node1, node2, 0, 0) not in audio_graph.connections
 
 
 def test_audio_node_to_destination(audio_graph):
@@ -102,7 +108,7 @@ def test_audio_node_to_destination(audio_graph):
 
     n = node.to_destination()
 
-    assert (node, get_destination()) in audio_graph.connections
+    assert (node, get_destination(), 0, 0) in audio_graph.connections
     assert n is node
 
 
@@ -113,8 +119,8 @@ def test_audio_node_fan(audio_graph):
 
     n = node1.fan(node2, node3)
 
-    assert (node1, node2) in audio_graph.connections
-    assert (node1, node3) in audio_graph.connections
+    assert (node1, node2, 0, 0) in audio_graph.connections
+    assert (node1, node3, 0, 0) in audio_graph.connections
     assert n is node1
 
 
@@ -125,6 +131,6 @@ def test_audio_node_chain(audio_graph):
 
     n = node1.chain(node2, node3)
 
-    assert (node1, node2) in audio_graph.connections
-    assert (node2, node3) in audio_graph.connections
+    assert (node1, node2, 0, 0) in audio_graph.connections
+    assert (node2, node3, 0, 0) in audio_graph.connections
     assert n is node1

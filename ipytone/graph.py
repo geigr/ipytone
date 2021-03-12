@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 
 from ipywidgets import widget_serialization
-from traitlets import Instance, List, Tuple, Unicode, Union
+from traitlets import Instance, Int, List, Tuple, Unicode, Union
 
 from .base import AudioNode, NativeAudioNode, NativeAudioParam, ToneWidgetBase, is_disposed
 from .core import Param
@@ -17,6 +17,8 @@ _Connection = List(
                 Instance(NativeAudioParam),
             )
         ),
+        Int(0),
+        Int(0),
     )
 )
 
@@ -48,7 +50,7 @@ class AudioGraph(ToneWidgetBase):
             finally:
                 self.clean()
 
-    def connect(self, src_node, dest_node):
+    def connect(self, src_node, dest_node, output_number=0, input_number=0):
         """Connect a source node output to a destination node input."""
 
         if not isinstance(src_node, (AudioNode, NativeAudioNode)):
@@ -61,7 +63,7 @@ class AudioGraph(ToneWidgetBase):
         if not src_node.number_of_outputs:
             raise ValueError(f"Cannot connect from audio sink {src_node}")
 
-        conn = (src_node, dest_node)
+        conn = (src_node, dest_node, output_number, input_number)
 
         if conn not in self._connections:
             self._updated_connections.append(conn)
@@ -69,13 +71,16 @@ class AudioGraph(ToneWidgetBase):
         if not self._holding_state:
             self.sync_connections()
 
-    def disconnect(self, src_node, dest_node):
+    def disconnect(self, src_node, dest_node, output_number=0, input_number=0):
         """Disconnect a source node output from a destination node input."""
 
-        conn = (src_node, dest_node)
+        conn = (src_node, dest_node, output_number, input_number)
 
         if conn not in self._connections:
-            raise ValueError(f"Node {src_node} is not connected to node {dest_node}")
+            raise ValueError(
+                f"Node {src_node} (channel {output_number}) is not connected to "
+                f"node {dest_node} (channel {input_number})"
+            )
 
         self._updated_connections.remove(conn)
 
@@ -87,9 +92,9 @@ class AudioGraph(ToneWidgetBase):
 
         self._holding_state = True
 
-        for src, dest in self._connections:
+        for src, dest, *channels in self._connections:
             if is_disposed(src) or is_disposed(dest):
-                self.disconnect(src, dest)
+                self.disconnect(src, dest, *channels)
 
         self.sync_connections()
         self._holding_state = False
@@ -102,15 +107,19 @@ class AudioGraph(ToneWidgetBase):
 
     @property
     def connections(self):
-        """Returns the audio graph edges as a list of (src_node, dest_node) tuples."""
+        """Returns the audio graph edges as a list of
+        (src_node, dest_node, output_channel, input_channel) tuples.
 
+        """
         return list(self._connections)
 
     @property
     def nodes(self):
         """Returns a list of all nodes in the audio graph."""
 
-        return list({node for conn in self._connections for node in conn})
+        return list(
+            {node for conn in self._connections for node in conn if not isinstance(node, int)}
+        )
 
 
 _AUDIO_GRAPH = AudioGraph()

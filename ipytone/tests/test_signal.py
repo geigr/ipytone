@@ -62,7 +62,7 @@ def test_signal_operator(op, op_cls, op_prop_name, value, test_other_signal, aud
     sig = Signal(value=1)
     op_sig = op(sig, value)
     assert isinstance(op_sig, op_cls)
-    assert (sig, op_sig) in audio_graph.connections
+    assert (sig, op_sig, 0, 0) in audio_graph.connections
 
     try:
         assert getattr(op_sig, op_prop_name).value == value
@@ -75,8 +75,8 @@ def test_signal_operator(op, op_cls, op_prop_name, value, test_other_signal, aud
         sig2 = Signal(value=2)
         op_sig2 = op(sig, sig2)
         assert isinstance(op_sig2, op_cls)
-        assert (sig, op_sig2) in audio_graph.connections
-        assert (sig2, getattr(op_sig2, op_prop_name)) in audio_graph.connections
+        assert (sig, op_sig2, 0, 0) in audio_graph.connections
+        assert (sig2, getattr(op_sig2, op_prop_name), 0, 0) in audio_graph.connections
 
         # test dispose
         s = op_sig2.dispose()
@@ -84,7 +84,7 @@ def test_signal_operator(op, op_cls, op_prop_name, value, test_other_signal, aud
         assert op_sig2.disposed is True
         assert getattr(op_sig2, op_prop_name).disposed is True
         assert (sig, op_sig2) not in audio_graph.connections
-        assert (sig2, getattr(op_sig2, op_prop_name)) not in audio_graph.connections
+        assert (sig2, getattr(op_sig2, op_prop_name), 0, 0) not in audio_graph.connections
 
 
 @pytest.mark.parametrize("op,op_cls", [(operator.abs, Abs), (operator.neg, Negate)])
@@ -92,7 +92,7 @@ def test_simple_signal_operator(op, op_cls, audio_graph):
     sig = Signal(value=1)
     op_sig = op(sig)
     assert isinstance(op_sig, op_cls)
-    assert (sig, op_sig) in audio_graph.connections
+    assert (sig, op_sig, 0, 0) in audio_graph.connections
 
 
 def test_complex_signal_expression(audio_graph):
@@ -102,10 +102,10 @@ def test_complex_signal_expression(audio_graph):
     res = sig + abs(mod) * 100
 
     assert isinstance(res, Add)
-    assert (sig, res) in audio_graph.connections
+    assert (sig, res, 0, 0) in audio_graph.connections
 
     mult = None
-    for (src, dest) in audio_graph.connections:
+    for (src, dest, *_) in audio_graph.connections:
         if dest is res.addend:
             mult = src
             break
@@ -113,9 +113,9 @@ def test_complex_signal_expression(audio_graph):
     assert mult.factor.value == 100
 
     abs_ = None
-    for (src, dest) in audio_graph.connections:
+    for (src, dest, *_) in audio_graph.connections:
         if dest is mult:
             abs_ = src
             break
     assert isinstance(abs_, Abs)
-    assert (mod, abs_) in audio_graph.connections
+    assert (mod, abs_, 0, 0) in audio_graph.connections
