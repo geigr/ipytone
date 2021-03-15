@@ -190,7 +190,7 @@ class Volume(AudioNode):
     _volume = Instance(Param).tag(sync=True, **widget_serialization)
     mute = Bool(False).tag(sync=True)
 
-    def __init__(self, mute=False, volume=0, **kwargs):
+    def __init__(self, volume=0, mute=False, **kwargs):
 
         node = Gain(gain=volume, units="decibels", _create_node=False)
         _volume = node._gain
@@ -218,20 +218,31 @@ class Destination(AudioNode):
 
     name = Unicode("main output").tag(sync=True)
 
+    _volume = Instance(Param).tag(sync=True, **widget_serialization)
     mute = Bool(False).tag(sync=True)
-    volume = Float(-16).tag(sync=True)
 
     def __new__(cls):
         if Destination._singleton is None:
             Destination._singleton = super(Destination, cls).__new__(cls)
         return Destination._singleton
 
-    def __init__(self, *args, **kwargs):
-        in_node = InternalAudioNode(type="Volume")
+    def __init__(self, **kwargs):
+        in_node = Volume(_create_node=False)
         out_node = Gain(_create_node=False)
 
-        kwargs.update({"_input": in_node, "_output": out_node})
-        super().__init__(*args, **kwargs)
+        kwargs.update({"_input": in_node, "_output": out_node, "_volume": in_node.volume})
+        super().__init__(**kwargs)
+
+    @property
+    def volume(self) -> Param:
+        """The volume parameter."""
+        return self._volume
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        yield "volume"
+        yield "mute"
 
 
 _DESTINATION = Destination()

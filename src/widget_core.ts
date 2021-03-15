@@ -247,8 +247,8 @@ export class DestinationModel extends AudioNodeModel {
     return {
       ...super.defaults(),
       _model_name: DestinationModel.model_name,
+      _volume: undefined,
       mute: false,
-      volume: -16,
     };
   }
 
@@ -260,8 +260,8 @@ export class DestinationModel extends AudioNodeModel {
     return this.get('mute');
   }
 
-  get volume(): number {
-    return this.get('volume');
+  get volume(): ParamModel<'decibels'> {
+    return this.get('_volume');
   }
 
   initEventListeners(): void {
@@ -269,11 +269,16 @@ export class DestinationModel extends AudioNodeModel {
 
     this.on('change:mute', () => {
       this.node.mute = this.mute;
-    });
-    this.on('change:volume', () => {
-      this.node.volume.value = this.volume;
+      // update volume param model value
+      this.volume.value = this.node.volume.value;
+      this.volume.save_changes();
     });
   }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _volume: { deserialize: unpack_models as any },
+  };
 
   node: typeof tone.Destination;
 

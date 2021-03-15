@@ -78,9 +78,10 @@ def test_destination():
     dest = get_destination()
 
     assert dest.mute is False
-    assert dest.volume == -16
-    assert isinstance(dest.input, InternalAudioNode)
+    assert isinstance(dest.input, Volume)
     assert isinstance(dest.output, Gain)
+    assert dest.volume is dest.input.volume
+    assert repr(dest) == "Destination(name='main output', volume=Param(value=0.0, units='decibels'), mute=False)"
 
     # test singleton
     dest1 = Destination()
