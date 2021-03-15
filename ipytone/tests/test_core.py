@@ -3,7 +3,7 @@ import math
 import pytest
 
 from ipytone.base import NativeAudioNode, NativeAudioParam
-from ipytone.core import Destination, Gain, InternalAudioNode, Param, get_destination
+from ipytone.core import Destination, Gain, InternalAudioNode, Param, get_destination, Volume
 
 
 def test_internal_audio_node():
@@ -61,6 +61,17 @@ def test_gain():
     assert s is gain
     assert gain.disposed is True
     assert gain.gain.disposed is True
+
+
+def test_volume():
+    volume = Volume()
+
+    assert volume.volume.value == 0
+    assert volume.volume.units == "decibels"
+    assert volume.mute is False
+    assert isinstance(volume.input, Gain)
+    assert volume.input is volume.output
+    assert repr(volume) == "Volume(volume=Param(value=0.0, units='decibels'), mute=False)"
 
 
 def test_destination():

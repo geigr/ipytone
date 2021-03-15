@@ -83,6 +83,10 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
     return this.get('value');
   }
 
+  set value(val: UnitMap[T]) {
+    this.set('value', val);
+  }
+
   get units(): T {
     return this.get('_units');
   }
@@ -193,6 +197,49 @@ export class GainModel extends AudioNodeModel {
   node: tone.Gain;
 
   static model_name = 'GainModel';
+}
+
+export class VolumeModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: VolumeModel.model_name,
+      _volume: undefined,
+      mute: false,
+    };
+  }
+
+  createNode(): tone.Volume {
+    return new tone.Volume({volume: this.volume.value, mute: this.mute});
+  }
+
+  get volume(): ParamModel<'decibels'> {
+    return this.get('_volume');
+  }
+
+  get mute(): boolean {
+    return this.get('mute');
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:mute', () => {
+      this.node.mute = this.mute;
+      // update volume param model value
+      this.volume.value = this.node.volume.value;
+      this.volume.save_changes();
+    });
+  }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _volume: { deserialize: unpack_models as any },
+  };
+
+  node: tone.Volume;
+
+  static model_name = 'VolumeModel';
 }
 
 export class DestinationModel extends AudioNodeModel {

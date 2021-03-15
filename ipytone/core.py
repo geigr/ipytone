@@ -182,6 +182,33 @@ class Gain(AudioNode):
         return self
 
 
+class Volume(AudioNode):
+    """Simple volume node."""
+
+    _model_name = Unicode("VolumeModel").tag(sync=True)
+
+    _volume = Instance(Param).tag(sync=True, **widget_serialization)
+    mute = Bool(False).tag(sync=True)
+
+    def __init__(self, mute=False, volume=0, **kwargs):
+
+        node = Gain(gain=volume, units="decibels", _create_node=False)
+        _volume = node._gain
+
+        super().__init__(_volume=_volume, _input=node, _output=node, mute=mute, **kwargs)
+
+    @property
+    def volume(self) -> Param:
+        """The volume parameter."""
+        return self._volume
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        yield "volume"
+        yield "mute"
+
+
 class Destination(AudioNode):
     """Audio master node."""
 
