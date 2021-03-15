@@ -5,7 +5,7 @@
 # Distributed under the terms of the Modified BSD License.
 
 from ._version import __version__, version_info
-from .core import Gain, Param, get_destination, Volume
+from .core import Gain, Param, Volume, get_destination
 from .graph import get_audio_graph
 from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Signal, Subtract
 from .source import Noise, Oscillator

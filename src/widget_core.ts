@@ -210,7 +210,7 @@ export class VolumeModel extends AudioNodeModel {
   }
 
   createNode(): tone.Volume {
-    return new tone.Volume({volume: this.volume.value, mute: this.mute});
+    return new tone.Volume({ volume: this.volume.value, mute: this.mute });
   }
 
   get volume(): ParamModel<'decibels'> {
