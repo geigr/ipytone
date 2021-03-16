@@ -1,12 +1,11 @@
-import re
-
 from ipywidgets import widget_serialization
-from traitlets import Bool, Enum, Float, Instance, TraitError, Unicode, validate
+from traitlets import Bool, Enum, Float, Instance, Unicode, validate
 
 from .base import AudioNode
 from .core import Param, Volume
 from .signal import Signal
 from .transport import transport
+from .utils import validate_osc_type
 
 
 class Source(AudioNode):
@@ -87,13 +86,7 @@ class Oscillator(Source):
 
     @validate("type")
     def _validate_type(self, proposal):
-        wave = proposal["value"]
-        wave_re = r"(sine|square|sawtooth|triangle)[\d]*"
-
-        if re.fullmatch(wave_re, wave) is None:
-            raise TraitError(f"Invalid oscillator type: {wave}")
-
-        return proposal["value"]
+        return validate_osc_type(proposal["value"])
 
     @property
     def frequency(self) -> Signal:

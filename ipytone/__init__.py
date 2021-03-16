@@ -7,6 +7,7 @@
 from ._version import __version__, version_info
 from .channel import CrossFade
 from .core import Gain, Param, Volume, destination
+from .effect import Vibrato
 from .graph import get_audio_graph
 from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Signal, Subtract
 from .source import Noise, Oscillator
