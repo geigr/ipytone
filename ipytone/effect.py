@@ -31,6 +31,17 @@ class Effect(AudioNode):
         return self.output.fade
 
 
+class StereoEffect(Effect):
+    """Stereo effect base class."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # input source forced to stereo
+        self.input.channel_count = 2
+        self.input.channel_count_mode = "explicit"
+
+
 class FeedbackDelay(Effect):
     """Feedback delay effect."""
 
@@ -56,6 +67,43 @@ class FeedbackDelay(Effect):
 
     @property
     def feedback(self) -> Param:
+        """The feedback parameter."""
+        return self._feedback
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._delay_time.dispose()
+            self._feedback.dispose()
+
+        return self
+
+
+class PingPongDelay(StereoEffect):
+    """Ping-pong delay effect."""
+
+    _model_name = Unicode("PingPongDelayModel").tag(sync=True)
+
+    _max_delay = Float().tag(sync=True)
+    _feedback = Instance(Signal).tag(sync=True, **widget_serialization)
+    _delay_time = Instance(Signal).tag(sync=True, **widget_serialization)
+
+    def __init__(self, delay_time=0.25, feedback=0.125, max_delay=1, **kwargs):
+        feedback_node = Signal(value=feedback, units="normalRange", _create_node=False)
+        delay_time_node = Signal(value=delay_time, units="time", _create_node=False)
+
+        kwargs.update(
+            {"_max_delay": max_delay, "_feedback": feedback_node, "_delay_time": delay_time_node}
+        )
+        super().__init__(**kwargs)
+
+    @property
+    def delay_time(self) -> Signal:
+        """The delay time parameter."""
+        return self._delay_time
+
+    @property
+    def feedback(self) -> Signal:
         """The feedback parameter."""
         return self._feedback
 

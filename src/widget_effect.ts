@@ -52,6 +52,50 @@ export class FeedbackDelayModel extends AudioNodeModel {
   static model_name = 'FeedbackDelayModel';
 }
 
+export class PingPongDelayModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: PingPongDelayModel.model_name,
+      _max_delay: 1,
+      _delay_time: undefined,
+      _feedback: undefined,
+    };
+  }
+
+  createNode(): tone.PingPongDelay {
+    return new tone.PingPongDelay({
+      delayTime: this.delayTime.value,
+      feedback: this.feedback.value,
+      maxDelay: this.get('_max_delay'),
+    });
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.delayTime.setNode(this.node.delayTime);
+    this.feedback.setNode(this.node.feedback);
+  }
+
+  get delayTime(): SignalModel<'time'> {
+    return this.get('_delay_time');
+  }
+
+  get feedback(): SignalModel<'normalRange'> {
+    return this.get('_feedback');
+  }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _delay_time: { deserialize: unpack_models as any },
+    _feedback: { deserialize: unpack_models as any },
+  };
+
+  node: tone.PingPongDelay;
+
+  static model_name = 'PingPongDelayModel';
+}
+
 export class VibratoModel extends AudioNodeModel {
   defaults(): any {
     return {
