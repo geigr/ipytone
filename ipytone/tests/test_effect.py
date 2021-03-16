@@ -2,7 +2,7 @@ import pytest
 from traitlets import TraitError
 
 from ipytone import CrossFade, Gain, Vibrato
-from ipytone.effect import Effect
+from ipytone.effect import Effect, FeedbackDelay
 
 
 def test_effect():
@@ -11,6 +11,20 @@ def test_effect():
     assert isinstance(fx.input, Gain)
     assert isinstance(fx.output, CrossFade)
     assert fx.wet is fx.output.fade
+
+
+def test_feedback_delay():
+    dly = FeedbackDelay()
+
+    assert dly.delay_time.value == 0.25
+    assert dly.delay_time.units == "time"
+    assert dly.feedback.value == 0.125
+    assert dly.feedback.units == "normalRange"
+
+    s = dly.dispose()
+    assert s is dly
+    assert dly.delay_time.disposed is True
+    assert dly.feedback.disposed is True
 
 
 def test_vibrato():

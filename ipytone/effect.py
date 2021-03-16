@@ -31,6 +31,43 @@ class Effect(AudioNode):
         return self.output.fade
 
 
+class FeedbackDelay(Effect):
+    """Feedback delay effect."""
+
+    _model_name = Unicode("FeedbackDelayModel").tag(sync=True)
+
+    _max_delay = Float().tag(sync=True)
+    _feedback = Instance(Param).tag(sync=True, **widget_serialization)
+    _delay_time = Instance(Param).tag(sync=True, **widget_serialization)
+
+    def __init__(self, delay_time=0.25, feedback=0.125, max_delay=1, **kwargs):
+        feedback_node = Param(value=feedback, units="normalRange", _create_node=False)
+        delay_time_node = Param(value=delay_time, units="time", _create_node=False)
+
+        kwargs.update(
+            {"_max_delay": max_delay, "_feedback": feedback_node, "_delay_time": delay_time_node}
+        )
+        super().__init__(**kwargs)
+
+    @property
+    def delay_time(self) -> Param:
+        """The delay time parameter."""
+        return self._delay_time
+
+    @property
+    def feedback(self) -> Param:
+        """The feedback parameter."""
+        return self._feedback
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._delay_time.dispose()
+            self._feedback.dispose()
+
+        return self
+
+
 class Vibrato(Effect):
     """Vibrato effect."""
 

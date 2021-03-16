@@ -8,6 +8,50 @@ import { ParamModel } from './widget_core';
 
 import { SignalModel } from './widget_signal';
 
+export class FeedbackDelayModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: FeedbackDelayModel.model_name,
+      _max_delay: 1,
+      _delay_time: undefined,
+      _feedback: undefined,
+    };
+  }
+
+  createNode(): tone.FeedbackDelay {
+    return new tone.FeedbackDelay({
+      delayTime: this.delayTime.value,
+      feedback: this.feedback.value,
+      maxDelay: this.get('_max_delay'),
+    });
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.delayTime.setNode(this.node.delayTime);
+    this.feedback.setNode(this.node.feedback);
+  }
+
+  get delayTime(): ParamModel<'time'> {
+    return this.get('_delay_time');
+  }
+
+  get feedback(): ParamModel<'normalRange'> {
+    return this.get('_feedback');
+  }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _delay_time: { deserialize: unpack_models as any },
+    _feedback: { deserialize: unpack_models as any },
+  };
+
+  node: tone.FeedbackDelay;
+
+  static model_name = 'FeedbackDelayModel';
+}
+
 export class VibratoModel extends AudioNodeModel {
   defaults(): any {
     return {
