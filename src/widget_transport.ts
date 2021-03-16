@@ -14,6 +14,7 @@ export class TransportModel extends WidgetModel {
       ...super.defaults(),
       _model_name: TransportModel.model_name,
       _toggle_schedule: false,
+      _toggle_clear: false,
       _schedule_op: '',
       _audio_nodes: [],
       _methods: [],
@@ -21,6 +22,8 @@ export class TransportModel extends WidgetModel {
       _interval: '',
       _start_time: '',
       _duration: null,
+      _py_event_id: 0,
+      _clear_event_id: 0,
       state: 'stopped',
     };
   }
@@ -35,13 +38,14 @@ export class TransportModel extends WidgetModel {
     options: { model_id: string; comm: any; widget_manager: any }
   ): void {
     super.initialize(attributes, options);
-
+    this.py2jsEventID = {};
     this.initEventListeners();
   }
 
   initEventListeners(): void {
     this.on('change:state', this.startStopTransport, this);
     this.on('change:_toggle_schedule', this.schedule, this);
+    this.on('change:_toggle_clear', this.clear_event, this);
   }
 
   private startStopTransport(): void {
@@ -73,6 +77,7 @@ export class TransportModel extends WidgetModel {
         }
       }
     };
+    let eventID;
     if (schedule_op === 'scheduleRepeat') {
       const interval = this.get('_interval');
       const startTime = this.get('_start_time');
@@ -80,9 +85,26 @@ export class TransportModel extends WidgetModel {
       if (!duration) {
         duration = Infinity;
       }
-      tone.Transport.scheduleRepeat(callback, interval, startTime, duration);
+      eventID = tone.Transport.scheduleRepeat(
+        callback,
+        interval,
+        startTime,
+        duration
+      );
+    } else {
+      return;
     }
+    const pyEventID = this.get('_py_event_id');
+    this.py2jsEventID[pyEventID] = eventID;
   }
+
+  private clear_event(): void {
+    const pyEventID = this.get('_clear_event_id');
+    tone.Transport.clear(this.py2jsEventID[pyEventID]);
+    delete this.py2jsEventID[pyEventID];
+  }
+
+  py2jsEventID: { [id: number]: number };
 
   static model_name = 'TransportModel';
 }
