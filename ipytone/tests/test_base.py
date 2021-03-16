@@ -1,5 +1,5 @@
 from ipytone.base import AudioNode, NativeAudioNode, NativeAudioParam, ToneObject
-from ipytone.core import InternalAudioNode, get_destination
+from ipytone.core import InternalAudioNode, destination
 
 
 def test_native_audio_node(audio_graph):
@@ -108,7 +108,7 @@ def test_audio_node_to_destination(audio_graph):
 
     n = node.to_destination()
 
-    assert (node, get_destination(), 0, 0) in audio_graph.connections
+    assert (node, destination, 0, 0) in audio_graph.connections
     assert n is node
 
 

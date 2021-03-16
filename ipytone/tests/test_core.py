@@ -3,7 +3,7 @@ import math
 import pytest
 
 from ipytone.base import NativeAudioNode, NativeAudioParam
-from ipytone.core import Destination, Gain, InternalAudioNode, Param, get_destination
+from ipytone.core import Destination, Gain, InternalAudioNode, Param, Volume, destination
 
 
 def test_internal_audio_node():
@@ -63,16 +63,29 @@ def test_gain():
     assert gain.gain.disposed is True
 
 
-def test_destination():
-    dest = get_destination()
+def test_volume():
+    volume = Volume()
 
-    assert dest.mute is False
-    assert dest.volume == -16
-    assert isinstance(dest.input, InternalAudioNode)
-    assert isinstance(dest.output, Gain)
+    assert volume.volume.value == 0
+    assert volume.volume.units == "decibels"
+    assert volume.mute is False
+    assert isinstance(volume.input, Gain)
+    assert volume.input is volume.output
+    assert repr(volume) == "Volume(volume=Param(value=0.0, units='decibels'), mute=False)"
+
+
+def test_destination():
+    assert destination.mute is False
+    assert isinstance(destination.input, Volume)
+    assert isinstance(destination.output, Gain)
+    assert destination.volume is destination.input.volume
+    expected = (
+        "Destination(name='main output', volume=Param(value=0.0, units='decibels'), mute=False)"
+    )
+    assert repr(destination) == expected
 
     # test singleton
     dest1 = Destination()
     dest2 = Destination()
 
-    assert dest1 == dest2 == get_destination()
+    assert dest1 == dest2 == destination
