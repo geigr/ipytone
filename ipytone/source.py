@@ -4,7 +4,7 @@ from ipywidgets import widget_serialization
 from traitlets import Bool, Enum, Float, Instance, TraitError, Unicode, validate
 
 from .base import AudioNode
-from .core import InternalAudioNode
+from .core import Param, Volume
 from .signal import Signal
 from .transport import transport
 
@@ -16,12 +16,17 @@ class Source(AudioNode):
 
     mute = Bool(False, help="Mute source").tag(sync=True)
     state = Enum(["started", "stopped"], allow_none=False, default_value="stopped").tag(sync=True)
-    volume = Float(-16, help="Source gain").tag(sync=True)
+    _volume = Instance(Param).tag(sync=True, **widget_serialization)
 
-    def __init__(self, *args, **kwargs):
-        out_node = InternalAudioNode(type="Volume")
-        kwargs.update({"_output": out_node})
-        super().__init__(*args, **kwargs)
+    def __init__(self, volume=0, mute=False, **kwargs):
+        out_node = Volume(volume=volume, mute=mute, _create_node=False)
+        kwargs.update({"_output": out_node, "_volume": out_node.volume})
+        super().__init__(**kwargs)
+
+    @property
+    def volume(self) -> Param:
+        """The volume parameter."""
+        return self._volume
 
     def start(self, time=""):
         """Start the audio source.

@@ -79,7 +79,9 @@ def test_destination():
     assert isinstance(destination.input, Volume)
     assert isinstance(destination.output, Gain)
     assert destination.volume is destination.input.volume
-    expected = "Destination(name='main output', volume=Param(value=0.0, units='decibels'), mute=False)"
+    expected = (
+        "Destination(name='main output', volume=Param(value=0.0, units='decibels'), mute=False)"
+    )
     assert repr(destination) == expected
 
     # test singleton

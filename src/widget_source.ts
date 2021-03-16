@@ -6,6 +6,8 @@ import * as tone from 'tone';
 
 import { AudioNodeModel } from './widget_base';
 
+import { ParamModel } from './widget_core';
+
 import { SignalModel } from './widget_signal';
 
 abstract class SourceModel extends AudioNodeModel {
@@ -13,9 +15,9 @@ abstract class SourceModel extends AudioNodeModel {
     return {
       ...super.defaults(),
       _model_name: SourceModel.model_name,
-      mute: false,
       state: 'stopped',
-      volume: -16,
+      _volume: undefined,
+      mute: false,
     };
   }
 
@@ -23,8 +25,8 @@ abstract class SourceModel extends AudioNodeModel {
     return this.get('mute');
   }
 
-  get volume(): number {
-    return this.get('volume');
+  get volume(): ParamModel<'decibels'> {
+    return this.get('_volume');
   }
 
   initEventListeners(): void {
@@ -32,11 +34,11 @@ abstract class SourceModel extends AudioNodeModel {
 
     this.on('change:mute', () => {
       this.node.mute = this.mute;
+      // update volume param model value
+      this.volume.value = this.node.volume.value;
+      this.volume.save_changes();
     });
     this.on('change:state', this.startStopNode, this);
-    this.on('change:volume', () => {
-      this.node.volume.value = this.volume;
-    });
   }
 
   private startStopNode(): void {
@@ -46,6 +48,11 @@ abstract class SourceModel extends AudioNodeModel {
       this.node.stop(0);
     }
   }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _volume: { deserialize: unpack_models as any },
+  };
 
   // FIXME: typescript error: property not assignable to the same property in base type
   // node: source.Source<source.SourceOptions>;

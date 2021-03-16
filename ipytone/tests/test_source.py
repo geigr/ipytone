@@ -1,7 +1,7 @@
 import pytest
 from traitlets import TraitError
 
-from ipytone import Noise, Oscillator
+from ipytone import Noise, Oscillator, Volume
 from ipytone.source import Source
 
 
@@ -10,7 +10,8 @@ def test_source():
 
     assert node.mute is False
     assert node.state == "stopped"
-    assert node.volume == -16
+    assert isinstance(node.output, Volume)
+    assert node.volume is node.output.volume
 
     n = node.start()
     assert node.state == "started"
