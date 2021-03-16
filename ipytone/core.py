@@ -245,9 +245,5 @@ class Destination(AudioNode):
         yield "mute"
 
 
-_DESTINATION = Destination()
-
-
-def get_destination():
-    """Returns ipytone's audio master node."""
-    return _DESTINATION
+destination = Destination()
+"""Ipytone's audio main output node."""
