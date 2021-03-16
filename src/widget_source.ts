@@ -60,6 +60,7 @@ abstract class SourceModel extends AudioNodeModel {
 
   static model_name = 'SourceModel';
 }
+
 export class OscillatorModel extends SourceModel {
   defaults(): any {
     return {

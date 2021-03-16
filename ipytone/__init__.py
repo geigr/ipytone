@@ -5,6 +5,7 @@
 # Distributed under the terms of the Modified BSD License.
 
 from ._version import __version__, version_info
+from .channel import CrossFade
 from .core import Gain, Param, Volume, destination
 from .graph import get_audio_graph
 from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Signal, Subtract

@@ -2,6 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 
 export { NativeAudioNodeModel, NativeAudioParamModel } from './widget_base';
+export * from './widget_channel';
 export * from './widget_core';
 export * from './widget_graph';
 export * from './widget_signal';
