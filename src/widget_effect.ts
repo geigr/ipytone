@@ -96,6 +96,57 @@ export class PingPongDelayModel extends AudioNodeModel {
   static model_name = 'PingPongDelayModel';
 }
 
+export class ReverbModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: ReverbModel.model_name,
+      decay: 1.5,
+      pre_delay: 0.01,
+    };
+  }
+
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
+    // special case: reverb impulse response is generated asynchronuously
+    if (this.get('_create_node')) {
+      this.node = this.createNode();
+      this.node.ready.then(() => {
+        this.input.setNode(this.node.input);
+        this.output.setNode(this.node.output as any);
+      });
+      this.set('_create_node', false);
+      this.save_changes();
+    }
+
+    super.initialize(attributes, options);
+  }
+
+  createNode(): tone.Reverb {
+    return new tone.Reverb({
+      decay: this.get('decay'),
+      preDelay: this.get('pre_delay'),
+    });
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:decay', () => {
+      this.node.decay = this.get('decay');
+    });
+    this.on('change:pre_delay', () => {
+      this.node.preDelay = this.get('pre_delay');
+    });
+  }
+
+  node: tone.Reverb;
+
+  static model_name = 'ReverbModel';
+}
+
 export class TremoloModel extends AudioNodeModel {
   defaults(): any {
     return {

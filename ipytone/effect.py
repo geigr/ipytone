@@ -1,5 +1,5 @@
 from ipywidgets import widget_serialization
-from traitlets import Enum, Float, Instance, Unicode, validate
+from traitlets import Enum, Float, Instance, TraitError, Unicode, validate
 
 from .base import AudioNode
 from .channel import CrossFade
@@ -115,6 +115,31 @@ class PingPongDelay(StereoEffect):
             self._feedback.dispose()
 
         return self
+
+
+class Reverb(Effect):
+    """Simple convolution reverb.
+
+    The impulse response is generated from a simple noise pulse.
+
+    """
+
+    _model_name = Unicode("ReverbModel").tag(sync=True)
+
+    decay = Float(1.5, help="decay time (seconds)").tag(sync=True)
+    pre_delay = Float(0.01, help="pre-delay time (seconds)").tag(sync=True)
+
+    @validate("decay")
+    def _validate_decay(self, proposal):
+        if proposal["value"] < 0.001:
+            raise TraitError("Decay must be greater than 0.001 seconds")
+        return proposal["value"]
+
+    @validate("pre_delay")
+    def _validate_pre_delay(self, proposal):
+        if proposal["value"] < 0:
+            raise TraitError("Pre-delay value must be positive")
+        return proposal["value"]
 
 
 class Tremolo(StereoEffect):

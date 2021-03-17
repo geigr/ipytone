@@ -1,7 +1,7 @@
 import pytest
 from traitlets import TraitError
 
-from ipytone import CrossFade, FeedbackDelay, Gain, PingPongDelay, Tremolo, Vibrato
+from ipytone import CrossFade, FeedbackDelay, Gain, PingPongDelay, Reverb, Tremolo, Vibrato
 from ipytone.effect import Effect, StereoEffect
 
 
@@ -46,6 +46,19 @@ def test_pingpong_delay():
     assert e is dly
     assert dly.delay_time.disposed is True
     assert dly.feedback.disposed is True
+
+
+def test_reverb():
+    rv = Reverb()
+
+    assert rv.decay == 1.5
+    assert rv.pre_delay == 0.01
+
+    with pytest.raises(TraitError, match="Decay must be greater than 0.001 seconds"):
+        rv.decay = 0
+
+    with pytest.raises(TraitError, match="Pre-delay value must be positive"):
+        rv.pre_delay = -1
 
 
 def test_tremolo():
