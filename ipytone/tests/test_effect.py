@@ -1,7 +1,16 @@
 import pytest
 from traitlets import TraitError
 
-from ipytone import CrossFade, FeedbackDelay, Gain, PingPongDelay, Reverb, Tremolo, Vibrato
+from ipytone import (
+    CrossFade,
+    Distortion,
+    FeedbackDelay,
+    Gain,
+    PingPongDelay,
+    Reverb,
+    Tremolo,
+    Vibrato,
+)
 from ipytone.effect import Effect, StereoEffect
 
 
@@ -18,6 +27,21 @@ def test_stereo_effect():
 
     assert fx.input.channel_count == 2
     assert fx.input.channel_count_mode == "explicit"
+
+
+def test_distortion():
+    dist = Distortion()
+
+    assert dist.distortion == 0.4
+    assert dist.oversample == "none"
+
+    for value in [-1.2, 1.2]:
+        with pytest.raises(TraitError, match="Distortion value must be in range.*"):
+            dist.distortion = value
+
+    # just test enum values
+    dist.oversample = "2x"
+    dist.oversample = "4x"
 
 
 def test_feedback_delay():

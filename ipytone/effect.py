@@ -43,6 +43,21 @@ class StereoEffect(Effect):
         self.input.channel_count_mode = "explicit"
 
 
+class Distortion(Effect):
+    """Simple distortion effect."""
+
+    _model_name = Unicode("DistortionModel").tag(sync=True)
+
+    distortion = Float(0.4, help="Distortion amount ([0, 1])").tag(sync=True)
+    oversample = Enum(["none", "2x", "4x"], default_value="none").tag(sync=True)
+
+    @validate("distortion")
+    def _validate_distorition(self, proposal):
+        if proposal["value"] < 0 or proposal["value"] > 1:
+            raise TraitError("Distortion value must be in range [0, 1]")
+        return proposal["value"]
+
+
 class FeedbackDelay(Effect):
     """Feedback delay effect."""
 

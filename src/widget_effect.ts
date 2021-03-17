@@ -8,6 +8,39 @@ import { ParamModel } from './widget_core';
 
 import { SignalModel } from './widget_signal';
 
+export class DistortionModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: DistortionModel.model_name,
+      distortion: 0.4,
+      oversample: 'none',
+    };
+  }
+
+  createNode(): tone.Distortion {
+    return new tone.Distortion({
+      distortion: this.get('distortion'),
+      oversample: this.get('oversample'),
+    });
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:distortion', () => {
+      this.node.distortion = this.get('distortion');
+    });
+    this.on('change:oversample', () => {
+      this.node.oversample = this.get('oversample');
+    });
+  }
+
+  node: tone.Distortion;
+
+  static model_name = 'DistortionModel';
+}
+
 export class FeedbackDelayModel extends AudioNodeModel {
   defaults(): any {
     return {
