@@ -1,7 +1,7 @@
 import pytest
 from traitlets import TraitError
 
-from ipytone import CrossFade, FeedbackDelay, Gain, PingPongDelay, Vibrato
+from ipytone import CrossFade, FeedbackDelay, Gain, PingPongDelay, Tremolo, Vibrato
 from ipytone.effect import Effect, StereoEffect
 
 
@@ -28,8 +28,8 @@ def test_feedback_delay():
     assert dly.feedback.value == 0.125
     assert dly.feedback.units == "normalRange"
 
-    s = dly.dispose()
-    assert s is dly
+    e = dly.dispose()
+    assert e is dly
     assert dly.delay_time.disposed is True
     assert dly.feedback.disposed is True
 
@@ -42,10 +42,38 @@ def test_pingpong_delay():
     assert dly.feedback.value == 0.125
     assert dly.feedback.units == "normalRange"
 
-    s = dly.dispose()
-    assert s is dly
+    e = dly.dispose()
+    assert e is dly
     assert dly.delay_time.disposed is True
     assert dly.feedback.disposed is True
+
+
+def test_tremolo():
+    tre = Tremolo()
+
+    assert tre.type == "sine"
+    assert tre.frequency.value == 10
+    assert tre.frequency.units == "frequency"
+    assert tre.depth.value == 0.5
+    assert tre.depth.units == "normalRange"
+    assert tre.spread == 180
+    assert tre.state == "stopped"
+
+    e = tre.start()
+    assert tre.state == "started"
+    assert e is tre
+
+    e = tre.stop()
+    assert tre.state == "stopped"
+    assert e is tre
+
+    with pytest.raises(TraitError, match="Invalid oscillator type"):
+        tre.type = "not a good oscillator wave"
+
+    e = tre.dispose()
+    assert e is tre
+    assert tre.frequency.disposed is True
+    assert tre.depth.disposed is True
 
 
 def test_vibrato():
@@ -60,7 +88,7 @@ def test_vibrato():
     with pytest.raises(TraitError, match="Invalid oscillator type"):
         vib.type = "not a good oscillator wave"
 
-    s = vib.dispose()
-    assert s is vib
+    e = vib.dispose()
+    assert e is vib
     assert vib.frequency.disposed is True
     assert vib.depth.disposed is True

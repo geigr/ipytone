@@ -1,10 +1,11 @@
 from ipywidgets import widget_serialization
-from traitlets import Float, Instance, Unicode, validate
+from traitlets import Enum, Float, Instance, Unicode, validate
 
 from .base import AudioNode
 from .channel import CrossFade
 from .core import Gain, Param
 from .signal import Signal
+from .transport import start_node, stop_node
 from .utils import validate_osc_type
 
 
@@ -112,6 +113,61 @@ class PingPongDelay(StereoEffect):
             super().dispose()
             self._delay_time.dispose()
             self._feedback.dispose()
+
+        return self
+
+
+class Tremolo(StereoEffect):
+    """Tremolo effect."""
+
+    _model_name = Unicode("TremoloModel").tag(sync=True)
+
+    type = Unicode("sine", help="Tremolo LFO type").tag(sync=True)
+    spread = Float(180, help="Tremolo stereo spread (degrees)").tag(sync=True)
+    state = Enum(["started", "stopped"], allow_none=False, default_value="stopped").tag(sync=True)
+    _frequency = Instance(Signal).tag(sync=True, **widget_serialization)
+    _depth = Instance(Signal).tag(sync=True, **widget_serialization)
+
+    def __init__(self, frequency=10, depth=0.5, type="sine", spread=180, **kwargs):
+        freq_node = Signal(value=frequency, units="frequency", _create_node=False)
+        depth_node = Signal(value=depth, units="normalRange", _create_node=False)
+
+        kwargs.update(
+            {"_frequency": freq_node, "_depth": depth_node, "type": type, "spread": spread}
+        )
+        super().__init__(**kwargs)
+
+    @validate("type")
+    def _validate_type(self, proposal):
+        return validate_osc_type(proposal["value"])
+
+    @property
+    def frequency(self) -> Signal:
+        """Tremolo frequency."""
+        return self._frequency
+
+    @property
+    def depth(self) -> Param:
+        """Tremolo depth."""
+        return self._depth
+
+    def start(self, time=""):
+        """Start the tremolo effect.
+
+        If it's already started, this will stop and restart the source.
+        """
+        return start_node(self, time=time)
+
+    def stop(self, time=""):
+        """Stop the tremolo effect."""
+
+        return stop_node(self, time=time)
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._frequency.dispose()
+            self._depth.dispose()
 
         return self
 

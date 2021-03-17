@@ -96,6 +96,77 @@ export class PingPongDelayModel extends AudioNodeModel {
   static model_name = 'PingPongDelayModel';
 }
 
+export class TremoloModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: TremoloModel.model_name,
+      _frequency: undefined,
+      _depth: undefined,
+      type: 'sine',
+      spread: 180,
+      state: 'stopped',
+    };
+  }
+
+  createNode(): tone.Tremolo {
+    return new tone.Tremolo({
+      frequency: this.frequency.value,
+      depth: this.depth.value,
+      type: this.get('type'),
+      spread: this.get('spread'),
+    });
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.frequency.setNode(this.node.frequency);
+    this.depth.setNode(this.node.depth);
+  }
+
+  get frequency(): SignalModel<'frequency'> {
+    return this.get('_frequency');
+  }
+
+  get depth(): SignalModel<'normalRange'> {
+    return this.get('_depth');
+  }
+
+  get type(): tone.ToneOscillatorType {
+    return this.get('type');
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:spread', () => {
+      this.node.spread = this.get('spread');
+    });
+    this.on('change:type', () => {
+      this.node.type = this.type;
+    });
+    this.on('change:state', this.startStopNode, this);
+  }
+
+  private startStopNode(): void {
+    if (this.get('state') === 'started') {
+      this.node.start(0);
+    } else {
+      this.node.stop(0);
+    }
+  }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _frequency: { deserialize: unpack_models as any },
+    _depth: { deserialize: unpack_models as any },
+  };
+
+  node: tone.Tremolo;
+
+  static model_name = 'TremoloModel';
+}
+
 export class VibratoModel extends AudioNodeModel {
   defaults(): any {
     return {
@@ -129,6 +200,18 @@ export class VibratoModel extends AudioNodeModel {
 
   get depth(): ParamModel<'normalRange'> {
     return this.get('_depth');
+  }
+
+  get type(): tone.ToneOscillatorType {
+    return this.get('type');
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:type', () => {
+      this.node.type = this.type;
+    });
   }
 
   static serializers: ISerializers = {

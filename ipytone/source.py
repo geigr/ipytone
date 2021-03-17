@@ -4,7 +4,7 @@ from traitlets import Bool, Enum, Float, Instance, Unicode, validate
 from .base import AudioNode
 from .core import Param, Volume
 from .signal import Signal
-from .transport import transport
+from .transport import start_node, stop_node
 from .utils import validate_osc_type
 
 
@@ -32,27 +32,12 @@ class Source(AudioNode):
 
         If it's already started, this will stop and restart the source.
         """
-        if transport._is_scheduling:
-            transport._audio_nodes = transport._audio_nodes + [self]
-            transport._methods = transport._methods + ["start"]
-            transport._packed_args = transport._packed_args + [time + " *** "]
-        else:
-            self.state = "started"
-
-        return self
+        return start_node(self, time=time)
 
     def stop(self, time=""):
         """Stop the audio source."""
 
-        if transport._is_scheduling:
-            transport._audio_nodes = transport._audio_nodes + [self]
-            transport._methods = transport._methods + ["stop"]
-            transport._packed_args = transport._packed_args + [time + " *** "]
-        else:
-            if self.state == "started":
-                self.state = "stopped"
-
-        return self
+        return stop_node(self, time=time)
 
 
 class Oscillator(Source):
