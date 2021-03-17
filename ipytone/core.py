@@ -6,7 +6,7 @@ from traitlets import Bool, Enum, Float, Instance, Int, Unicode, Union
 from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext
 
 UNITS = [
-    "audio_range",
+    "audioRange",
     "bpm",
     "cents",
     "decibels",
@@ -15,13 +15,13 @@ UNITS = [
     "gain",
     "hertz",
     "number",
-    "normal_range",
+    "normalRange",
     "positive",
     "radians",
     "samples",
     "ticks",
     "time",
-    "transport_time",
+    "transportTime",
 ]
 
 
@@ -112,7 +112,7 @@ class Param(NodeWithContext):
         """Parameter value lower limit."""
         if self._min_value is not None:
             return self._min_value
-        elif self._units == "audio_range":
+        elif self._units == "audioRange":
             return -1
         elif self._units in ["number", "decibels"]:
             # min value for web audio API GainNode
@@ -126,7 +126,7 @@ class Param(NodeWithContext):
         """Parameter value upper limit."""
         if self._max_value is not None:
             return self._max_value
-        elif self._units in ["audio_range", "normal_range"]:
+        elif self._units in ["audioRange", "normalRange"]:
             return 1
         else:
             return math.inf

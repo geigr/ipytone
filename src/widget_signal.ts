@@ -2,7 +2,7 @@ import { ISerializers, unpack_models } from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
 
-import { UnitName } from 'tone/Tone/core/type/Units';
+import { UnitName, UnitMap } from 'tone/Tone/core/type/Units';
 
 import { AudioNodeModel } from './widget_base';
 
@@ -41,6 +41,10 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
 
   get input(): ParamModel<T> {
     return this.get('_input');
+  }
+
+  get value(): UnitMap[T] {
+    return this.get('value');
   }
 
   createNode(): tone.Signal<T> {

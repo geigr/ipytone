@@ -36,8 +36,8 @@ def test_param():
 @pytest.mark.parametrize(
     "units,expected_range",
     [
-        ("audio_range", (-1, 1)),
-        ("normal_range", (0, 1)),
+        ("audioRange", (-1, 1)),
+        ("normalRange", (0, 1)),
         ("time", (0, math.inf)),
         ("decibels", (-math.inf, math.inf)),
     ],
