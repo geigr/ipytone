@@ -85,6 +85,7 @@ setup_args = dict(
     install_requires=[
         "ipywidgets>=7.6.0",
         "numpy",
+        'traittypes',
     ],
     extras_require={
         "test": [
