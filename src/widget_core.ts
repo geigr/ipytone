@@ -1,4 +1,4 @@
-import { ISerializers, unpack_models } from '@jupyter-widgets/base';
+import { ISerializers, unpack_models, WidgetModel } from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
 
@@ -9,6 +9,7 @@ import {
   NativeAudioNodeModel,
   NativeAudioParamModel,
   NodeWithContextModel,
+  ToneWidgetModel,
 } from './widget_base';
 
 export class InternalAudioNodeModel extends AudioNodeModel {
@@ -283,4 +284,145 @@ export class DestinationModel extends AudioNodeModel {
   node: typeof tone.Destination;
 
   static model_name = 'DestinationModel';
+}
+
+function isNDArrayWidget(obj: any): boolean {
+  return obj.hasOwnProperty('model_name') && obj.model_name == 'NDArrayModel';
+}
+
+function deserializeFloat32Array (data: any, manager: any) {
+    return new Float32Array(data.data.buffer);
+}
+
+function deserializeDataArray (value: any, manager: any) {
+  if (typeof value == 'string') {
+    return unpack_models(value, manager);
+  } else {
+    return deserializeFloat32Array(value, manager);
+  }
+}
+
+function serializeDataArray(obj: any, widget?: WidgetModel): any {
+  if (obj === null) {
+    return null;
+  }
+  else if (isNDArrayWidget(obj)) {
+    return 'IPY_MODEL_' + obj.model_id
+  }
+  return { shape: obj.size, dtype: 'float32', buffer: obj.data as Float32Array };
+}
+
+export class AudioBufferModel extends ToneWidgetModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: AudioBufferModel.model_name,
+      buffer_url: null,
+      array: null,
+      _sync_array: false,
+      duration: 0,
+      length: 0,
+      n_channels: 0,
+      sample_rate: 0,
+      loaded: false,
+      reverse: false,
+    };
+  }
+
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
+    super.initialize(attributes, options);
+
+    this.buffer = new tone.ToneAudioBuffer({reverse: this.get('reverse')});
+
+    if (this.array !== null) {
+      this.fromArray(this.array);
+    }
+    else if (this.buffer_url !== null) {
+      this.fromUrl(this.buffer_url);
+    }
+  }
+
+  get buffer_url() : string {
+    return this.get('buffer_url');
+  }
+
+  get array() : null | Float32Array {
+    const array = this.get('array');
+
+    if (isNDArrayWidget(array)) {
+      return new Float32Array(array.getNDArray().data);
+    }
+    else {
+      return array;
+    }
+  }
+
+  fromArray(array: Float32Array): void {
+    this.buffer = this.buffer.fromArray(array);
+    this.setBufferProperties();
+  }
+
+  fromUrl(url: string): void {
+    this.resetBufferProperties();
+
+    this.buffer.load(url).then(() => {
+      this.setBufferProperties();
+    });
+  }
+
+  resetBufferProperties(): void {
+    this.set('duration', 0);
+    this.set('length', 0);
+    this.set('n_channels', 0);
+    this.set('sample_rate', 0);
+    this.set('loaded', false);
+
+    this.set('array', null, {silent: true});
+
+    this.save_changes();
+  }
+
+  setBufferProperties(): void {
+    this.set('duration', this.buffer.duration);
+    this.set('length', this.buffer.length);
+    this.set('n_channels', this.buffer.numberOfChannels);
+    this.set('sample_rate', this.buffer.sampleRate);
+    this.set('loaded', this.buffer.loaded);
+
+    if (this.get('_sync_array')) {
+      // TODO: add array serializer and setter
+      // this.array = this.buffer.toArray();
+      // this.set('array', this.array);
+    }
+
+    this.save_changes();
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:array', () => {
+      if (this.array !== null) {
+        this.fromArray(this.array);
+      }
+    });
+    this.on('change:buffer_url', () => {
+      if (this.buffer_url !== null) {
+        this.fromUrl(this.buffer_url);
+      }
+    });
+    this.on('change:reverse', () => { this.buffer.reverse = this.get('reverse'); });
+  }
+
+  buffer: tone.ToneAudioBuffer
+
+  static serializers: ISerializers = {
+    ...ToneWidgetModel.serializers,
+    array: { serialize: serializeDataArray, deserialize: deserializeDataArray },
+  };
+
+  static model_name = 'AudioBufferModel';
 }

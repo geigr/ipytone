@@ -1,9 +1,12 @@
 import math
 
-from ipywidgets import widget_serialization
+import numpy as np
+from ipywidgets import Widget, widget_serialization
 from traitlets import Bool, Enum, Float, Instance, Int, Unicode, Union
+from traittypes import Array
 
-from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext
+from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext, ToneWidgetBase
+from .serialization import data_array_serialization
 
 UNITS = [
     "audioRange",
@@ -247,3 +250,27 @@ class Destination(AudioNode):
 
 destination = Destination()
 """Ipytone's audio main output node."""
+
+
+class AudioBuffer(ToneWidgetBase):
+    """Audio buffer loaded from an URL or an array."""
+
+    _model_name = Unicode("AudioBufferModel").tag(sync=True)
+
+    buffer_url = Unicode(help="Buffer loaded from this URL (None if an array is used)", allow_none=True).tag(sync=True)
+    array = Union((Instance(Widget), Array()), allow_none=True).tag(sync=True, **data_array_serialization)
+    _sync_array = Bool(False).tag(sync=True)
+
+    duration = Float(0, help="Buffer duration in seconds (0 if not loaded)", read_only=True).tag(sync=True)
+    length = Int(0, help="Buffer size in samples (0 if not loaded)", read_only=True).tag(sync=True)
+    n_channels = Int(0, help="Number of discrete audio channels (0 if not loaded)", read_only=True).tag(sync=True)
+    sample_rate = Int(0, help="Buffer sample rate (0 if not loaded)", read_only=True).tag(sync=True)
+    loaded = Bool(False, help="True if the audio buffer is loaded", read_only=True).tag(sync=True)
+    reverse = Bool(False, help="True if the buffer is reversed").tag(sync=True)
+
+    def __init__(self, url_or_array, sync_array=False, reverse=False):
+        if isinstance(url_or_array, str):
+            super().__init__(buffer_url=url_or_array, _sync_array=sync_array, reverse=reverse)
+        elif isinstance(url_or_array, (np.array, Widget)):
+            # _sync_array=False: no need to get array from the front-end
+            super().__init__(array=url_or_array, _sync_array=False, reverse=reverse)
