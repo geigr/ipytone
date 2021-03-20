@@ -260,16 +260,20 @@ class AudioBuffer(ToneWidgetBase):
     buffer_url = Unicode(
         help="Buffer loaded from this URL (None if an array is used)",
         allow_none=True,
-        default_value=None
+        default_value=None,
     ).tag(sync=True)
-    array = Union(
-        (Instance(Widget), Array()), allow_none=True, default_value=None
-    ).tag(sync=True, **data_array_serialization)
+    array = Union((Instance(Widget), Array()), allow_none=True, default_value=None).tag(
+        sync=True, **data_array_serialization
+    )
     _sync_array = Bool(False).tag(sync=True)
 
-    duration = Float(0, help="Buffer duration in seconds (0 if not loaded)", read_only=True).tag(sync=True)
+    duration = Float(0, help="Buffer duration in seconds (0 if not loaded)", read_only=True).tag(
+        sync=True
+    )
     length = Int(0, help="Buffer size in samples (0 if not loaded)", read_only=True).tag(sync=True)
-    n_channels = Int(0, help="Number of discrete audio channels (0 if not loaded)", read_only=True).tag(sync=True)
+    n_channels = Int(
+        0, help="Number of discrete audio channels (0 if not loaded)", read_only=True
+    ).tag(sync=True)
     sample_rate = Int(0, help="Buffer sample rate (0 if not loaded)", read_only=True).tag(sync=True)
     loaded = Bool(False, help="True if the audio buffer is loaded", read_only=True).tag(sync=True)
     reverse = Bool(False, help="True if the buffer is reversed").tag(sync=True)

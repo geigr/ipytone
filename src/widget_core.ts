@@ -1,4 +1,8 @@
-import { ISerializers, unpack_models, WidgetModel } from '@jupyter-widgets/base';
+import {
+  ISerializers,
+  unpack_models,
+  WidgetModel,
+} from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
 
@@ -289,24 +293,23 @@ export class DestinationModel extends AudioNodeModel {
 function isNDArrayWidget(obj: any): boolean {
   if (obj === null) {
     return false;
-  }
-  else {
-    return obj.hasOwnProperty('model_name') && obj.model_name == 'NDArrayModel';
+  } else {
+    return (
+      obj instanceof WidgetModel && obj.get('_model_name') == 'NDArrayModel'
+    );
   }
 }
 
-function deserializeFloat32Array (data: any, manager: any) {
-    return new Float32Array(data.data.buffer);
+function deserializeFloat32Array(value: any, manager: any) {
+  return new Float32Array(value.buffer.buffer);
 }
 
-function deserializeDataArray (value: any, manager: any) {
+function deserializeDataArray(value: any, manager: any): any {
   if (value === null) {
     return null;
-  }
-  else if (typeof value == 'string') {
+  } else if (typeof value == 'string') {
     return unpack_models(value, manager);
-  }
-  else {
+  } else {
     return deserializeFloat32Array(value, manager);
   }
 }
@@ -314,13 +317,10 @@ function deserializeDataArray (value: any, manager: any) {
 function serializeDataArray(obj: any, widget?: WidgetModel): any {
   if (obj === null) {
     return null;
+  } else if (isNDArrayWidget(obj)) {
+    return 'IPY_MODEL_' + obj.model_id;
   }
-  else if (isNDArrayWidget(obj)) {
-    return 'IPY_MODEL_' + obj.model_id
-  }
-  console.log(obj);
-  console.log({ shape: obj.size, dtype: 'float32', buffer: obj.data as Float32Array });
-  return { shape: obj.size, dtype: 'float32', buffer: obj.data as Float32Array };
+  return { shape: obj.length, dtype: 'float32', buffer: obj };
 }
 
 export class AudioBufferModel extends ToneWidgetModel {
@@ -346,42 +346,38 @@ export class AudioBufferModel extends ToneWidgetModel {
   ): void {
     super.initialize(attributes, options);
 
-    this.buffer = new tone.ToneAudioBuffer({reverse: this.get('reverse')});
+    this.buffer = new tone.ToneAudioBuffer({ reverse: this.get('reverse') });
 
     if (this.array !== null) {
       this.fromArray(this.array);
-    }
-    else if (this.buffer_url !== null) {
+    } else if (this.buffer_url !== null) {
       this.fromUrl(this.buffer_url);
     }
-
-    console.log(this.buffer_url);
   }
 
-  get buffer_url() : null | string {
+  get buffer_url(): null | string {
     return this.get('buffer_url');
   }
 
-  get array() : null | Float32Array {
+  get array(): null | Float32Array {
     const array = this.get('array');
 
     if (isNDArrayWidget(array)) {
       return new Float32Array(array.getNDArray().data);
-    }
-    else {
+    } else {
       return array;
     }
   }
 
   set array(value: null | Float32Array) {
     // avoid infinite event listener loop
-    this.set('array', value, {silent: true});
+    this.set('array', value, { silent: true });
   }
 
   fromArray(array: Float32Array): void {
+    this.set('buffer_url', null);
     this.buffer = this.buffer.fromArray(array);
     this.setBufferProperties();
-    console.log(this.buffer.toArray());
   }
 
   fromUrl(url: string): void {
@@ -389,7 +385,6 @@ export class AudioBufferModel extends ToneWidgetModel {
 
     this.buffer.load(url).then(() => {
       this.setBufferProperties();
-      console.log(this.buffer.toArray());
     });
   }
 
@@ -432,10 +427,12 @@ export class AudioBufferModel extends ToneWidgetModel {
         this.fromUrl(this.buffer_url);
       }
     });
-    this.on('change:reverse', () => { this.buffer.reverse = this.get('reverse'); });
+    this.on('change:reverse', () => {
+      this.buffer.reverse = this.get('reverse');
+    });
   }
 
-  buffer: tone.ToneAudioBuffer
+  buffer: tone.ToneAudioBuffer;
 
   static serializers: ISerializers = {
     ...ToneWidgetModel.serializers,
