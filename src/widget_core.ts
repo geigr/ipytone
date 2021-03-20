@@ -287,7 +287,12 @@ export class DestinationModel extends AudioNodeModel {
 }
 
 function isNDArrayWidget(obj: any): boolean {
-  return obj.hasOwnProperty('model_name') && obj.model_name == 'NDArrayModel';
+  if (obj === null) {
+    return false;
+  }
+  else {
+    return obj.hasOwnProperty('model_name') && obj.model_name == 'NDArrayModel';
+  }
 }
 
 function deserializeFloat32Array (data: any, manager: any) {
@@ -295,9 +300,13 @@ function deserializeFloat32Array (data: any, manager: any) {
 }
 
 function deserializeDataArray (value: any, manager: any) {
-  if (typeof value == 'string') {
+  if (value === null) {
+    return null;
+  }
+  else if (typeof value == 'string') {
     return unpack_models(value, manager);
-  } else {
+  }
+  else {
     return deserializeFloat32Array(value, manager);
   }
 }
@@ -309,6 +318,8 @@ function serializeDataArray(obj: any, widget?: WidgetModel): any {
   else if (isNDArrayWidget(obj)) {
     return 'IPY_MODEL_' + obj.model_id
   }
+  console.log(obj);
+  console.log({ shape: obj.size, dtype: 'float32', buffer: obj.data as Float32Array });
   return { shape: obj.size, dtype: 'float32', buffer: obj.data as Float32Array };
 }
 
@@ -343,9 +354,11 @@ export class AudioBufferModel extends ToneWidgetModel {
     else if (this.buffer_url !== null) {
       this.fromUrl(this.buffer_url);
     }
+
+    console.log(this.buffer_url);
   }
 
-  get buffer_url() : string {
+  get buffer_url() : null | string {
     return this.get('buffer_url');
   }
 
@@ -360,9 +373,15 @@ export class AudioBufferModel extends ToneWidgetModel {
     }
   }
 
+  set array(value: null | Float32Array) {
+    // avoid infinite event listener loop
+    this.set('array', value, {silent: true});
+  }
+
   fromArray(array: Float32Array): void {
     this.buffer = this.buffer.fromArray(array);
     this.setBufferProperties();
+    console.log(this.buffer.toArray());
   }
 
   fromUrl(url: string): void {
@@ -370,6 +389,7 @@ export class AudioBufferModel extends ToneWidgetModel {
 
     this.buffer.load(url).then(() => {
       this.setBufferProperties();
+      console.log(this.buffer.toArray());
     });
   }
 
@@ -380,7 +400,7 @@ export class AudioBufferModel extends ToneWidgetModel {
     this.set('sample_rate', 0);
     this.set('loaded', false);
 
-    this.set('array', null, {silent: true});
+    this.array = null;
 
     this.save_changes();
   }
@@ -393,9 +413,7 @@ export class AudioBufferModel extends ToneWidgetModel {
     this.set('loaded', this.buffer.loaded);
 
     if (this.get('_sync_array')) {
-      // TODO: add array serializer and setter
-      // this.array = this.buffer.toArray();
-      // this.set('array', this.array);
+      this.array = this.buffer.toArray() as Float32Array;
     }
 
     this.save_changes();

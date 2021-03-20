@@ -257,8 +257,14 @@ class AudioBuffer(ToneWidgetBase):
 
     _model_name = Unicode("AudioBufferModel").tag(sync=True)
 
-    buffer_url = Unicode(help="Buffer loaded from this URL (None if an array is used)", allow_none=True).tag(sync=True)
-    array = Union((Instance(Widget), Array()), allow_none=True).tag(sync=True, **data_array_serialization)
+    buffer_url = Unicode(
+        help="Buffer loaded from this URL (None if an array is used)",
+        allow_none=True,
+        default_value=None
+    ).tag(sync=True)
+    array = Union(
+        (Instance(Widget), Array()), allow_none=True, default_value=None
+    ).tag(sync=True, **data_array_serialization)
     _sync_array = Bool(False).tag(sync=True)
 
     duration = Float(0, help="Buffer duration in seconds (0 if not loaded)", read_only=True).tag(sync=True)
@@ -271,6 +277,6 @@ class AudioBuffer(ToneWidgetBase):
     def __init__(self, url_or_array, sync_array=False, reverse=False):
         if isinstance(url_or_array, str):
             super().__init__(buffer_url=url_or_array, _sync_array=sync_array, reverse=reverse)
-        elif isinstance(url_or_array, (np.array, Widget)):
+        elif isinstance(url_or_array, (np.ndarray, Widget)):
             # _sync_array=False: no need to get array from the front-end
             super().__init__(array=url_or_array, _sync_array=False, reverse=reverse)
