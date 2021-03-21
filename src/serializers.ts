@@ -36,7 +36,7 @@ export function getArrayProp(obj: DeserializedDataArray): ArrayProperty {
 
 function concat(arrays: Float32Array[], size: number): Float32Array {
   const array = new Float32Array(arrays.length * size);
-  var offset = 0;
+  let offset = 0;
 
   for (const arr of arrays) {
     array.set(arr, offset);
