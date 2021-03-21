@@ -8,13 +8,16 @@ from ipywidgets import Widget, widget_serialization
 def array_to_binary(value, widget, force_contiguous=True):
     if value is None:
         return None
+    # TODO: move checks to trait value validate
+    if value.ndim not in [1, 2]:
+        raise ValueError(f"Only 1-d or 2-d array is supported, got {value.ndim}")
     if value.dtype.kind not in ["f"]:
         raise ValueError(f"Only float dtype is supported, got {value.dtype}")
     if value.dtype == np.float64:  # ToneAudioBuffer does not support float64
         value = value.astype(np.float32)
     if force_contiguous and not value.flags["C_CONTIGUOUS"]:  # make sure it's contiguous
         value = np.ascontiguousarray(value)
-    return {"buffer": memoryview(value), "dtype": str(value.dtype), "shape": value.shape}
+    return {"shape": value.shape, "dtype": str(value.dtype), "buffer": memoryview(value)}
 
 
 def json_to_array(value, widget):

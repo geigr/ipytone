@@ -1,8 +1,4 @@
-import {
-  ISerializers,
-  unpack_models,
-  WidgetModel,
-} from '@jupyter-widgets/base';
+import { ISerializers, unpack_models } from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
 
@@ -15,6 +11,12 @@ import {
   NodeWithContextModel,
   ToneWidgetModel,
 } from './widget_base';
+
+import {
+  ArrayProperty,
+  dataarray_serialization,
+  getArrayProp,
+} from './serializers';
 
 export class InternalAudioNodeModel extends AudioNodeModel {
   defaults(): any {
@@ -290,39 +292,6 @@ export class DestinationModel extends AudioNodeModel {
   static model_name = 'DestinationModel';
 }
 
-function isNDArrayWidget(obj: any): boolean {
-  if (obj === null) {
-    return false;
-  } else {
-    return (
-      obj instanceof WidgetModel && obj.get('_model_name') == 'NDArrayModel'
-    );
-  }
-}
-
-function deserializeFloat32Array(value: any, manager: any) {
-  return new Float32Array(value.buffer.buffer);
-}
-
-function deserializeDataArray(value: any, manager: any): any {
-  if (value === null) {
-    return null;
-  } else if (typeof value == 'string') {
-    return unpack_models(value, manager);
-  } else {
-    return deserializeFloat32Array(value, manager);
-  }
-}
-
-function serializeDataArray(obj: any, widget?: WidgetModel): any {
-  if (obj === null) {
-    return null;
-  } else if (isNDArrayWidget(obj)) {
-    return 'IPY_MODEL_' + obj.model_id;
-  }
-  return { shape: obj.length, dtype: 'float32', buffer: obj };
-}
-
 export class AudioBufferModel extends ToneWidgetModel {
   defaults(): any {
     return {
@@ -359,22 +328,16 @@ export class AudioBufferModel extends ToneWidgetModel {
     return this.get('buffer_url');
   }
 
-  get array(): null | Float32Array {
-    const array = this.get('array');
-
-    if (isNDArrayWidget(array)) {
-      return new Float32Array(array.getNDArray().data);
-    } else {
-      return array;
-    }
+  get array(): ArrayProperty {
+    return getArrayProp(this.get('array'));
   }
 
-  set array(value: null | Float32Array) {
+  set array(value: ArrayProperty) {
     // avoid infinite event listener loop
     this.set('array', value, { silent: true });
   }
 
-  fromArray(array: Float32Array): void {
+  fromArray(array: Float32Array | Float32Array[]): void {
     this.set('buffer_url', null);
     this.buffer = this.buffer.fromArray(array);
     this.setBufferProperties();
@@ -436,7 +399,7 @@ export class AudioBufferModel extends ToneWidgetModel {
 
   static serializers: ISerializers = {
     ...ToneWidgetModel.serializers,
-    array: { serialize: serializeDataArray, deserialize: deserializeDataArray },
+    array: dataarray_serialization,
   };
 
   static model_name = 'AudioBufferModel';
