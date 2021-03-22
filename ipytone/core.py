@@ -5,7 +5,7 @@ from ipywidgets import Widget, widget_serialization
 from traitlets import Bool, Enum, Float, Instance, Int, Unicode, Union
 from traittypes import Array
 
-from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext, ToneWidgetBase
+from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext, ToneObject
 from .serialization import data_array_serialization
 
 UNITS = [
@@ -252,8 +252,22 @@ destination = Destination()
 """Ipytone's audio main output node."""
 
 
-class AudioBuffer(ToneWidgetBase):
-    """Audio buffer loaded from an URL or an array."""
+class AudioBuffer(ToneObject):
+    """Audio buffer loaded from an URL or an array.
+
+    Parameters
+    ----------
+    url_or_array : str or array-like or array widget
+        Buffer file (URL) or data.
+    sync_array : bool, optional
+        If True, the array trait will be synchronized as soon as the
+        audio buffer is loaded in the front-end (default: False). It is
+        ignored if an array is already given as buffer data or if the
+        duration of the buffer exceeds 10 seconds.
+    reverse : bool, optional
+        If True, the audio buffer is reversed (default: False).
+
+    """
 
     _model_name = Unicode("AudioBufferModel").tag(sync=True)
 
@@ -284,3 +298,11 @@ class AudioBuffer(ToneWidgetBase):
         elif isinstance(url_or_array, (np.ndarray, Widget)):
             # _sync_array=False: no need to get array from the front-end
             super().__init__(array=url_or_array, _sync_array=False, reverse=reverse)
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        if not self.disposed:
+            yield "loaded"
+            if self.loaded:
+                yield "duration"

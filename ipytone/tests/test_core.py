@@ -1,9 +1,18 @@
 import math
 
+import numpy as np
 import pytest
 
 from ipytone.base import NativeAudioNode, NativeAudioParam
-from ipytone.core import Destination, Gain, InternalAudioNode, Param, Volume, destination
+from ipytone.core import (
+    AudioBuffer,
+    Destination,
+    Gain,
+    InternalAudioNode,
+    Param,
+    Volume,
+    destination,
+)
 
 
 def test_internal_audio_node():
@@ -89,3 +98,24 @@ def test_destination():
     dest2 = Destination()
 
     assert dest1 == dest2 == destination
+
+
+def test_audio_buffer():
+    buffer = AudioBuffer("some_url")
+
+    assert buffer.buffer_url == "some_url"
+    assert buffer.array is None
+    assert buffer.duration == 0
+    assert buffer.length == 0
+    assert buffer.n_channels == 0
+    assert buffer.sample_rate == 0
+    assert buffer.loaded is False
+    assert buffer.reverse is False
+    assert repr(buffer) == "AudioBuffer(loaded=False)"
+
+    arr = np.random.uniform(low=-1, high=1, size=10)
+    buffer2 = AudioBuffer(arr, reverse=True)
+
+    assert buffer2.buffer_url is None
+    assert buffer2.array is arr
+    assert buffer2.reverse is True

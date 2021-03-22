@@ -9,7 +9,7 @@ import {
   NativeAudioNodeModel,
   NativeAudioParamModel,
   NodeWithContextModel,
-  ToneWidgetModel,
+  ToneObjectModel,
 } from './widget_base';
 
 import {
@@ -292,7 +292,7 @@ export class DestinationModel extends AudioNodeModel {
   static model_name = 'DestinationModel';
 }
 
-export class AudioBufferModel extends ToneWidgetModel {
+export class AudioBufferModel extends ToneObjectModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -315,7 +315,7 @@ export class AudioBufferModel extends ToneWidgetModel {
   ): void {
     super.initialize(attributes, options);
 
-    this.buffer = new tone.ToneAudioBuffer({ reverse: this.get('reverse') });
+    this.node = new tone.ToneAudioBuffer({ reverse: this.get('reverse') });
 
     if (this.array !== null) {
       this.fromArray(this.array);
@@ -339,14 +339,14 @@ export class AudioBufferModel extends ToneWidgetModel {
 
   fromArray(array: Float32Array | Float32Array[]): void {
     this.set('buffer_url', null);
-    this.buffer = this.buffer.fromArray(array);
+    this.node.fromArray(array);
     this.setBufferProperties();
   }
 
   fromUrl(url: string): void {
     this.resetBufferProperties();
 
-    this.buffer.load(url).then(() => {
+    this.node.load(url).then(() => {
       this.setBufferProperties();
     });
   }
@@ -364,14 +364,14 @@ export class AudioBufferModel extends ToneWidgetModel {
   }
 
   setBufferProperties(): void {
-    this.set('duration', this.buffer.duration);
-    this.set('length', this.buffer.length);
-    this.set('n_channels', this.buffer.numberOfChannels);
-    this.set('sample_rate', this.buffer.sampleRate);
-    this.set('loaded', this.buffer.loaded);
+    this.set('duration', this.node.duration);
+    this.set('length', this.node.length);
+    this.set('n_channels', this.node.numberOfChannels);
+    this.set('sample_rate', this.node.sampleRate);
+    this.set('loaded', this.node.loaded);
 
-    if (this.get('_sync_array')) {
-      this.array = this.buffer.toArray() as Float32Array;
+    if (this.get('_sync_array') && this.node.duration < 10) {
+      this.array = this.node.toArray();
     }
 
     this.save_changes();
@@ -391,14 +391,14 @@ export class AudioBufferModel extends ToneWidgetModel {
       }
     });
     this.on('change:reverse', () => {
-      this.buffer.reverse = this.get('reverse');
+      this.node.reverse = this.get('reverse');
     });
   }
 
-  buffer: tone.ToneAudioBuffer;
+  node: tone.ToneAudioBuffer;
 
   static serializers: ISerializers = {
-    ...ToneWidgetModel.serializers,
+    ...ToneObjectModel.serializers,
     array: dataarray_serialization,
   };
 
