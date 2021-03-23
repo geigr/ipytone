@@ -105,7 +105,16 @@ class Noise(Source):
 
 
 class Player(Source):
-    """Audio file or buffer player with start, loop, and stop functions."""
+    """Audio file or buffer player with start, loop, and stop functions.
+
+    Parameters
+    ----------
+    url_or_buffer : str or :class:`AudioBuffer`
+        Audio file (URL) to load or an audio buffer instance.
+    **kwargs
+        Other options.
+
+    """
 
     _model_name = Unicode("PlayerModel").tag(sync=True)
 
@@ -130,7 +139,7 @@ class Player(Source):
 
     def _validate_loop_bound(self, value):
         if value < 0 or self.buffer.loaded and value > self.buffer.duration:
-            raise TraitError("Loop start time out of audio buffer bounds")
+            raise TraitError("Loop time out of audio buffer bounds")
         return value
 
     @validate("loop_start")

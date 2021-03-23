@@ -1,7 +1,8 @@
+import numpy as np
 import pytest
 from traitlets import TraitError
 
-from ipytone import Noise, Oscillator, Volume
+from ipytone import AudioBuffer, Noise, Oscillator, Player, Volume
 from ipytone.source import Source
 
 
@@ -55,3 +56,34 @@ def test_noise():
 
     with pytest.raises(TraitError):
         noise.type = "not a valid noise type"
+
+
+def test_player():
+    player = Player("some_url")
+
+    assert player.buffer.buffer_url == "some_url"
+    assert player.autostart is False
+    assert player.loop is False
+    assert player.loop_start == 0
+    assert player.loop_end == 0
+    assert player.fade_in == 0
+    assert player.fade_out == 0
+    assert player.reverse is player.buffer.reverse is False
+    assert player.playback_rate == 1
+    assert player.loaded is player.buffer.loaded is False
+
+    with pytest.raises(TraitError, match="Loop time out of audio buffer bounds"):
+        player.loop_start = -1
+
+    # doesn't raise as buffer is not loaded (no front-end)
+    player.set_loop_points(0, 1)
+    assert player.loop_end == 1
+
+    player.dispose()
+    assert player.disposed is True
+    assert player.buffer.disposed is True
+
+    buf = AudioBuffer(np.random.uniform(low=-1, high=1, size=100))
+    player2 = Player(buf)
+
+    assert player2.buffer is buf
