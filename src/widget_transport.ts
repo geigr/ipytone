@@ -78,7 +78,13 @@ export class TransportModel extends WidgetModel {
       }
     };
     let eventID;
-    if (schedule_op === 'scheduleRepeat') {
+    if (schedule_op === 'schedule') {
+      const time = this.get('_start_time');
+      eventID = tone.Transport.schedule(callback, time);
+    } else if (schedule_op === 'scheduleOnce') {
+      const time = this.get('_start_time');
+      eventID = tone.Transport.scheduleOnce(callback, time);
+    } else if (schedule_op === 'scheduleRepeat') {
       const interval = this.get('_interval');
       const startTime = this.get('_start_time');
       let duration = this.get('_duration');
@@ -94,8 +100,10 @@ export class TransportModel extends WidgetModel {
     } else {
       return;
     }
-    const pyEventID = this.get('_py_event_id');
-    this.py2jsEventID[pyEventID] = eventID;
+    if (schedule_op !== 'scheduleOnce') {
+      const pyEventID = this.get('_py_event_id');
+      this.py2jsEventID[pyEventID] = eventID;
+    }
   }
 
   private clear_event(): void {

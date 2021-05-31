@@ -39,6 +39,32 @@ class Transport(ToneWidgetBase):
         super(Transport, self).__init__(**kwargs)
 
     @contextlib.contextmanager
+    def schedule(self, time):
+        self._is_scheduling = True
+        self._audio_nodes = []
+        self._methods = []
+        self._packed_args = []
+        yield self._py_event_id
+        self._schedule_op = "schedule"
+        self._start_time = time
+        self._toggle_schedule = not self._toggle_schedule
+        self._is_scheduling = False
+        self._all_event_id.append(self._py_event_id)
+        self._py_event_id = self._py_event_id + 1
+
+    @contextlib.contextmanager
+    def schedule_once(self, time):
+        self._is_scheduling = True
+        self._audio_nodes = []
+        self._methods = []
+        self._packed_args = []
+        yield self._py_event_id
+        self._schedule_op = "scheduleOnce"
+        self._start_time = time
+        self._toggle_schedule = not self._toggle_schedule
+        self._is_scheduling = False
+
+    @contextlib.contextmanager
     def schedule_repeat(self, interval, start_time, duration=None):
         self._is_scheduling = True
         self._audio_nodes = []
