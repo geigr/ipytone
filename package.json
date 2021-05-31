@@ -56,7 +56,7 @@
   },
   "dependencies": {
     "@jupyter-widgets/base": "^1.1 || ^2 || ^3 || ^4",
-    "lodash": "^4.17.4",
+    "lodash": "^4.17.21",
     "tone": "^14.7.77"
   },
   "devDependencies": {
