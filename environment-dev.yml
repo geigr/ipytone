@@ -8,6 +8,8 @@ dependencies:
   - isort
   - jupyter-packaging
   - jupyterlab=3
+  - numpy
   - pip
   - pytest
+  - traittypes
   - yarn

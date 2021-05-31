@@ -9,7 +9,14 @@ import {
   NativeAudioNodeModel,
   NativeAudioParamModel,
   NodeWithContextModel,
+  ToneObjectModel,
 } from './widget_base';
+
+import {
+  ArrayProperty,
+  dataarray_serialization,
+  getArrayProp,
+} from './serializers';
 
 export class InternalAudioNodeModel extends AudioNodeModel {
   defaults(): any {
@@ -283,4 +290,206 @@ export class DestinationModel extends AudioNodeModel {
   node: typeof tone.Destination;
 
   static model_name = 'DestinationModel';
+}
+
+export class AudioBufferModel extends ToneObjectModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: AudioBufferModel.model_name,
+      buffer_url: null,
+      array: null,
+      _sync_array: false,
+      duration: 0,
+      length: 0,
+      n_channels: 0,
+      sample_rate: 0,
+      loaded: false,
+      reverse: false,
+      _create_node: true,
+    };
+  }
+
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
+    super.initialize(attributes, options);
+
+    if (this.get('_create_node')) {
+      this.node = new tone.ToneAudioBuffer({ reverse: this.get('reverse') });
+
+      if (this.array !== null) {
+        this.fromArray(this.array);
+      } else if (this.buffer_url !== null) {
+        this.fromUrl(this.buffer_url);
+      }
+    }
+  }
+
+  get buffer_url(): null | string {
+    return this.get('buffer_url');
+  }
+
+  get array(): ArrayProperty {
+    return getArrayProp(this.get('array'));
+  }
+
+  set array(value: ArrayProperty) {
+    // avoid infinite event listener loop
+    this.set('array', value, { silent: true });
+  }
+
+  fromArray(array: Float32Array | Float32Array[]): void {
+    this.set('buffer_url', null);
+    this.node.fromArray(array);
+    this.setBufferProperties();
+  }
+
+  fromUrl(url: string): void {
+    this.resetBufferProperties();
+
+    this.node.load(url).then(() => {
+      this.setBufferProperties();
+    });
+  }
+
+  setNode(node: tone.ToneAudioBuffer): void {
+    this.node = node;
+    if (node.loaded) {
+      this.setBufferProperties();
+    } else {
+      node.onload = () => {
+        this.setBufferProperties();
+      };
+    }
+  }
+
+  resetBufferProperties(): void {
+    this.set('duration', 0);
+    this.set('length', 0);
+    this.set('n_channels', 0);
+    this.set('sample_rate', 0);
+    this.set('loaded', false);
+
+    this.array = null;
+
+    this.save_changes();
+  }
+
+  setBufferProperties(): void {
+    this.set('duration', this.node.duration);
+    this.set('length', this.node.length);
+    this.set('n_channels', this.node.numberOfChannels);
+    this.set('sample_rate', this.node.sampleRate);
+    this.set('loaded', this.node.loaded);
+    this.set('reverse', this.node.reverse);
+
+    if (this.get('_sync_array') && this.node.duration < 10) {
+      this.array = this.node.toArray();
+    }
+
+    this.save_changes();
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:array', () => {
+      if (this.array !== null) {
+        this.fromArray(this.array);
+      }
+    });
+    this.on('change:buffer_url', () => {
+      if (this.buffer_url !== null) {
+        this.fromUrl(this.buffer_url);
+      }
+    });
+    this.on('change:reverse', () => {
+      this.node.reverse = this.get('reverse');
+    });
+  }
+
+  node: tone.ToneAudioBuffer;
+
+  static serializers: ISerializers = {
+    ...ToneObjectModel.serializers,
+    array: dataarray_serialization,
+  };
+
+  static model_name = 'AudioBufferModel';
+}
+
+export class AudioBuffersModel extends ToneObjectModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: AudioBuffersModel.model_name,
+      _base_url: '',
+      _buffers: null,
+      _create_node: true,
+    };
+  }
+
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
+    super.initialize(attributes, options);
+
+    if (this.get('_create_node')) {
+      this.node = new tone.ToneAudioBuffers({
+        urls: this.buffer_nodes,
+        baseUrl: this.get('_base_url'),
+      });
+    }
+  }
+
+  get buffers(): Map<string, AudioBufferModel> {
+    return new Map(Object.entries(this.get('_buffers')));
+  }
+
+  get buffer_nodes(): tone.ToneAudioBuffersUrlMap {
+    const nodes: tone.ToneAudioBuffersUrlMap = {};
+
+    this.buffers.forEach((buf: AudioBufferModel, key: string) => {
+      if (buf.node === undefined) {
+        nodes[key] = buf.buffer_url as string;
+      } else {
+        nodes[key] = buf.node;
+      }
+    });
+    return nodes;
+  }
+
+  setNode(node: tone.ToneAudioBuffers): void {
+    this.node = node;
+
+    this.buffers.forEach((buf: AudioBufferModel, key: string) => {
+      buf.setNode(node.get(key));
+    });
+  }
+
+  private updateBufferNodes(): void {
+    this.buffers.forEach((buf: AudioBufferModel, key: string) => {
+      this.node.add(key, buf.node);
+    });
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:_buffers', () => {
+      this.updateBufferNodes();
+    });
+  }
+
+  node: tone.ToneAudioBuffers;
+
+  static serializers: ISerializers = {
+    ...ToneObjectModel.serializers,
+    _buffers: { deserialize: unpack_models as any },
+  };
+
+  static model_name = 'AudioBuffersModel';
 }

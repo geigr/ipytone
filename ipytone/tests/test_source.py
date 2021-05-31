@@ -1,7 +1,8 @@
+import numpy as np
 import pytest
 from traitlets import TraitError
 
-from ipytone import Noise, Oscillator, Volume
+from ipytone import AudioBuffer, Noise, Oscillator, Player, Players, Volume
 from ipytone.source import Source
 
 
@@ -55,3 +56,81 @@ def test_noise():
 
     with pytest.raises(TraitError):
         noise.type = "not a valid noise type"
+
+
+def test_player():
+    player = Player("some_url")
+
+    assert player.buffer.buffer_url == "some_url"
+    assert player.autostart is False
+    assert player.loop is False
+    assert player.loop_start == 0
+    assert player.loop_end == 0
+    assert player.fade_in == 0
+    assert player.fade_out == 0
+    assert player.reverse is player.buffer.reverse is False
+    assert player.playback_rate == 1
+    assert player.loaded is player.buffer.loaded is False
+
+    with pytest.raises(TraitError, match="Loop time out of audio buffer bounds"):
+        player.loop_start = -1
+
+    # doesn't raise as buffer is not loaded (no front-end)
+    player.set_loop_points(0, 1)
+    assert player.loop_end == 1
+
+    player.dispose()
+    assert player.disposed is True
+    assert player.buffer.disposed is True
+
+    buf = AudioBuffer(np.random.uniform(low=-1, high=1, size=100))
+    player2 = Player(buf)
+
+    assert player2.buffer is buf
+
+
+def test_players():
+    players = Players({"A": "some_url", "B": "another_url"})
+
+    assert isinstance(players.output, Volume)
+    assert players.volume is players.output.volume
+    assert players.mute is False
+    assert players.loaded is False
+    assert players.fade_in == 0
+    assert players.fade_out == 0
+    assert players.state == "stopped"
+
+    a = players.get_player("A")
+    assert isinstance(a, Player)
+    # test cache
+    a = players.get_player("A")
+    assert isinstance(a, Player)
+    assert a.buffer.buffer_url == "some_url"
+
+    b = players.get_player("B")
+    assert b.buffer.buffer_url == "another_url"
+
+    a.start()
+    assert players.state == "started"
+    b.start()
+    p = players.stop_all()
+    assert p is players
+    assert a.state == b.state == players.state == "stopped"
+
+    players.fade_in = 1
+    assert a.fade_in == b.fade_in == players.fade_in == 1
+    players.fade_out = 2
+    assert a.fade_out == b.fade_out == players.fade_out == 2
+
+    p = players.add("C", "a_3rd_url")
+    assert p is players
+    c = players.get_player("C")
+    assert c.buffer.buffer_url == "a_3rd_url"
+
+    with pytest.raises(ValueError, match=r"A buffer with name.*"):
+        players.add("C", "whatever")
+
+    p = players.dispose()
+    assert p is players
+    assert a.disposed is b.disposed is c.disposed is True
+    assert players._buffers.disposed is True

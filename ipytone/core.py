@@ -1,9 +1,12 @@
 import math
 
-from ipywidgets import widget_serialization
-from traitlets import Bool, Enum, Float, Instance, Int, Unicode, Union
+import numpy as np
+from ipywidgets import Widget, widget_serialization
+from traitlets import Bool, Dict, Enum, Float, Instance, Int, Unicode, Union
+from traittypes import Array
 
-from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext
+from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext, ToneObject
+from .serialization import data_array_serialization
 
 UNITS = [
     "audioRange",
@@ -247,3 +250,155 @@ class Destination(AudioNode):
 
 destination = Destination()
 """Ipytone's audio main output node."""
+
+
+class AudioBuffer(ToneObject):
+    """Audio buffer loaded from an URL or an array.
+
+    Parameters
+    ----------
+    url_or_array : str or array-like or array widget
+        Buffer file (URL) or data.
+    sync_array : bool, optional
+        If True, the array trait will be synchronized as soon as the
+        audio buffer is loaded in the front-end (default: False). It is
+        ignored if an array is already given as buffer data or if the
+        duration of the buffer exceeds 10 seconds.
+    reverse : bool, optional
+        If True, the audio buffer is reversed (default: False).
+
+    """
+
+    _model_name = Unicode("AudioBufferModel").tag(sync=True)
+
+    buffer_url = Unicode(
+        help="Buffer loaded from this URL (None if an array is used)",
+        allow_none=True,
+        default_value=None,
+    ).tag(sync=True)
+    array = Union((Instance(Widget), Array()), allow_none=True, default_value=None).tag(
+        sync=True, **data_array_serialization
+    )
+    _sync_array = Bool(False).tag(sync=True)
+    _create_node = Bool(True).tag(sync=True)
+
+    duration = Float(0, help="Buffer duration in seconds (0 if not loaded)", read_only=True).tag(
+        sync=True
+    )
+    length = Int(0, help="Buffer size in samples (0 if not loaded)", read_only=True).tag(sync=True)
+    n_channels = Int(
+        0, help="Number of discrete audio channels (0 if not loaded)", read_only=True
+    ).tag(sync=True)
+    sample_rate = Int(0, help="Buffer sample rate (0 if not loaded)", read_only=True).tag(sync=True)
+    loaded = Bool(False, help="True if the audio buffer is loaded", read_only=True).tag(sync=True)
+    reverse = Bool(False, help="True if the buffer is reversed").tag(sync=True)
+
+    def __init__(self, url_or_array, sync_array=False, reverse=False, **kwargs):
+        kwargs.update({"reverse": reverse})
+        if isinstance(url_or_array, str):
+            kwargs.update({"buffer_url": url_or_array, "_sync_array": sync_array})
+        elif isinstance(url_or_array, (np.ndarray, Widget)):
+            # _sync_array=False: no need to get array from the front-end
+            kwargs.update({"array": url_or_array, "_sync_array": False})
+        super().__init__(**kwargs)
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        if not self.disposed:
+            yield "loaded"
+            if self.loaded:
+                yield "duration"
+
+
+def add_buf_to_collection(buffers, key, url, base_url="", create_node=False):
+    if isinstance(url, str):
+        buf = AudioBuffer(base_url + url, _create_node=create_node)
+    elif isinstance(url, AudioBuffer):
+        buf = url
+    else:
+        raise TypeError("Invalid buffer: must be a string (url) or AudioBuffer")
+
+    buffers[key] = buf
+
+
+class AudioBuffers(ToneObject):
+    """A collection (dict-like) of audio buffers.
+
+    Parameters
+    ----------
+    urls : dict-like
+        A mapping of buffer names (str) and buffer file URLs (str) or
+        :class:`AudioBuffer` objects
+    base_url : str, optional
+        Prefix to add before all the URLs.
+
+    """
+
+    _model_name = Unicode("AudioBuffersModel").tag(sync=True)
+
+    _base_url = Unicode("").tag(sync=True)
+    _buffers = Dict(value_trait=Instance(AudioBuffer), allow_none=True).tag(
+        sync=True, **widget_serialization
+    )
+    _create_node = Bool(True).tag(sync=True)
+
+    def __init__(self, urls, base_url="", **kwargs):
+        create_buffer = kwargs.get("_create_node", True)
+        buffers = {}
+
+        for key, url in urls.items():
+            add_buf_to_collection(
+                buffers, str(key), url, base_url=base_url, create_node=create_buffer
+            )
+
+        kwargs.update({"_base_url": base_url, "_buffers": buffers})
+        super().__init__(**kwargs)
+
+    @property
+    def base_url(self):
+        return self._base_url
+
+    @property
+    def buffers(self):
+        """Returns a dictionary with all buffers."""
+        return self._buffers.copy()
+
+    @property
+    def loaded(self):
+        """Return True if all buffers are loaded."""
+        return all(buf.loaded for buf in self._buffers.values())
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            for buf in self._buffers.values():
+                buf.dispose()
+        self._buffers = {}
+
+        return self
+
+    def add(self, key, url, create_node=True):
+        """Add or replace a buffer.
+
+        Parameters
+        ----------
+        key : str
+            Buffer name.
+        url : str or :class:`AudioBuffer`.
+            Buffer file URL (str) or :class:`AudioBuffer` object.
+        create_node : bool, optional
+            Internal use only.
+
+        """
+        buffers = self._buffers.copy()
+        add_buf_to_collection(buffers, key, url, base_url=self._base_url, create_node=create_node)
+        self._buffers = buffers
+
+        return self
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        if not self.disposed:
+            yield "loaded"
