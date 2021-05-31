@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from traitlets import TraitError
 
-from ipytone import AudioBuffer, Noise, Oscillator, Player, Volume
+from ipytone import AudioBuffer, Noise, Oscillator, Player, Players, Volume
 from ipytone.source import Source
 
 
@@ -87,3 +87,50 @@ def test_player():
     player2 = Player(buf)
 
     assert player2.buffer is buf
+
+
+def test_players():
+    players = Players({"A": "some_url", "B": "another_url"})
+
+    assert isinstance(players.output, Volume)
+    assert players.volume is players.output.volume
+    assert players.mute is False
+    assert players.loaded is False
+    assert players.fade_in == 0
+    assert players.fade_out == 0
+    assert players.state == "stopped"
+
+    a = players.get_player("A")
+    assert isinstance(a, Player)
+    # test cache
+    a = players.get_player("A")
+    assert isinstance(a, Player)
+    assert a.buffer.buffer_url == "some_url"
+
+    b = players.get_player("B")
+    assert b.buffer.buffer_url == "another_url"
+
+    a.start()
+    assert players.state == "started"
+    b.start()
+    p = players.stop_all()
+    assert p is players
+    assert a.state == b.state == players.state == "stopped"
+
+    players.fade_in = 1
+    assert a.fade_in == b.fade_in == players.fade_in == 1
+    players.fade_out = 2
+    assert a.fade_out == b.fade_out == players.fade_out == 2
+
+    p = players.add("C", "a_3rd_url")
+    assert p is players
+    c = players.get_player("C")
+    assert c.buffer.buffer_url == "a_3rd_url"
+
+    with pytest.raises(ValueError, match=r"A buffer with name.*"):
+        players.add("C", "whatever")
+
+    p = players.dispose()
+    assert p is players
+    assert a.disposed is b.disposed is c.disposed is True
+    assert players._buffers.disposed is True

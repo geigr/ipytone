@@ -378,7 +378,7 @@ class AudioBuffers(ToneObject):
 
         return self
 
-    def add(self, key, url, create_node=False):
+    def add(self, key, url, create_node=True):
         """Add or replace a buffer.
 
         Parameters

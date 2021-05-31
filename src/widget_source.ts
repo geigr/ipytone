@@ -262,6 +262,7 @@ export class PlayersModel extends AudioNodeModel {
       fadeIn: this.get('fade_in'),
       fadeOut: this.get('fade_out'),
       volume: this.get('volume'),
+      mute: this.mute,
     });
 
     // Hack: allows reusing AudioBuffers widget from the Python side

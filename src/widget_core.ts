@@ -356,8 +356,13 @@ export class AudioBufferModel extends ToneObjectModel {
 
   setNode(node: tone.ToneAudioBuffer): void {
     this.node = node;
-    this.set('reverse', this.node.reverse);
-    this.setBufferProperties();
+    if (node.loaded) {
+      this.setBufferProperties();
+    } else {
+      node.onload = () => {
+        this.setBufferProperties();
+      };
+    }
   }
 
   resetBufferProperties(): void {
@@ -378,6 +383,7 @@ export class AudioBufferModel extends ToneObjectModel {
     this.set('n_channels', this.node.numberOfChannels);
     this.set('sample_rate', this.node.sampleRate);
     this.set('loaded', this.node.loaded);
+    this.set('reverse', this.node.reverse);
 
     if (this.get('_sync_array') && this.node.duration < 10) {
       this.array = this.node.toArray();

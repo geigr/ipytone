@@ -10,7 +10,7 @@ from .core import AudioBuffer, AudioBuffers, Gain, Param, Volume, destination
 from .effect import Distortion, FeedbackDelay, PingPongDelay, Reverb, Tremolo, Vibrato
 from .graph import get_audio_graph
 from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Signal, Subtract
-from .source import Noise, Oscillator, Player
+from .source import Noise, Oscillator, Player, Players
 from .transport import transport
 
 

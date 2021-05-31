@@ -205,7 +205,9 @@ class Players(AudioNode):
         if name in self._players:
             return self._players[name]
         else:
-            player = Player(self._buffers[name], fade_in=self.fade_in, fade_out=self.fade_out)
+            player = Player(
+                self._buffers.buffers[name], fade_in=self.fade_in, fade_out=self.fade_out
+            )
             player.connect(self.output)
             self._players[name] = player
             return player
@@ -216,8 +218,9 @@ class Players(AudioNode):
 
     @fade_in.setter
     def fade_in(self, value):
-        for p in self._players:
+        for p in self._players.values():
             p.fade_in = value
+        self._fade_in = value
 
     @property
     def fade_out(self):
@@ -225,13 +228,16 @@ class Players(AudioNode):
 
     @fade_out.setter
     def fade_out(self, value):
-        for p in self._players:
+        for p in self._players.values():
             p.fade_out = value
+        self._fade_out = value
 
     @property
     def state(self):
         """Returns 'started' if any of the players are playing. Otherwise returns 'stopped'."""
-        return "started" if any([p.state == "started" for p in self._players]) else "stopped"
+        return (
+            "started" if any([p.state == "started" for p in self._players.values()]) else "stopped"
+        )
 
     def add(self, name, url):
         """Add a player.
@@ -246,13 +252,23 @@ class Players(AudioNode):
         """
         if name in self._buffers.buffers:
             raise ValueError(f"A buffer with name '{name}' already exists on this object.")
+
         self._buffers.add(name, url)
 
         return self
 
     def stop_all(self, time=""):
         """Stop all of the players at the given time."""
-        for p in self._players:
+        for p in self._players.values():
             p.stop()
+
+        return self
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            for p in self._players.values():
+                p.dispose()
+            self._buffers.dispose()
 
         return self
