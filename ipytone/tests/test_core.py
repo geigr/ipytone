@@ -6,6 +6,7 @@ import pytest
 from ipytone.base import NativeAudioNode, NativeAudioParam
 from ipytone.core import (
     AudioBuffer,
+    AudioBuffers,
     Destination,
     Gain,
     InternalAudioNode,
@@ -119,3 +120,27 @@ def test_audio_buffer():
     assert buffer2.buffer_url is None
     assert buffer2.array is arr
     assert buffer2.reverse is True
+
+
+def test_audio_buffers():
+    bbuf = AudioBuffer("another_url")
+    buffers = AudioBuffers({"A": "some_url", "B": bbuf}, base_url="base/")
+
+    assert buffers.base_url == "base/"
+    assert isinstance(buffers.buffers["A"], AudioBuffer)
+    assert buffers.buffers["A"].buffer_url == "base/some_url"
+    assert buffers.buffers["B"] is bbuf
+    assert buffers.loaded is False
+    assert repr(buffers) == "AudioBuffers(loaded=False)"
+
+    buffers.add("C", "a_3rd_url")
+    assert isinstance(buffers.buffers["C"], AudioBuffer)
+    assert buffers.buffers["C"].buffer_url == "base/a_3rd_url"
+
+    with pytest.raises(TypeError, match=r"Invalid buffer.*"):
+        buffers.add("D", ["not", "a", "buffer"])
+
+    buffers.dispose()
+    assert buffers.disposed is True
+    assert bbuf.disposed is True
+    assert buffers.buffers == {}

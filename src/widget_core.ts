@@ -404,3 +404,62 @@ export class AudioBufferModel extends ToneObjectModel {
 
   static model_name = 'AudioBufferModel';
 }
+
+export class AudioBuffersModel extends ToneObjectModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: AudioBuffersModel.model_name,
+      _base_url: '',
+      _buffers: null,
+    };
+  }
+
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
+    super.initialize(attributes, options);
+
+    this.node = new tone.ToneAudioBuffers({
+      urls: this.buffer_nodes,
+      baseUrl: this.get('_base_url'),
+    });
+  }
+
+  get buffers(): Map<string, AudioBufferModel> {
+    return new Map(Object.entries(this.get('_buffers')));
+  }
+
+  get buffer_nodes(): tone.ToneAudioBuffersUrlMap {
+    const nodes: tone.ToneAudioBuffersUrlMap = {};
+
+    this.buffers.forEach((buf: AudioBufferModel, key: string) => {
+      nodes[key] = buf.node;
+    });
+    return nodes;
+  }
+
+  private updateBufferNodes(): void {
+    this.buffers.forEach((buf: AudioBufferModel, key: string) => {
+      this.node.add(key, buf.node);
+    });
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:_buffers', () => {
+      this.updateBufferNodes();
+    });
+  }
+
+  node: tone.ToneAudioBuffers;
+
+  static serializers: ISerializers = {
+    ...ToneObjectModel.serializers,
+    _buffers: { deserialize: unpack_models as any },
+  };
+
+  static model_name = 'AudioBuffersModel';
+}

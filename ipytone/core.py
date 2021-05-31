@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 from ipywidgets import Widget, widget_serialization
-from traitlets import Bool, Enum, Float, Instance, Int, Unicode, Union
+from traitlets import Bool, Dict, Enum, Float, Instance, Int, Unicode, Union
 from traittypes import Array
 
 from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext, ToneObject
@@ -306,3 +306,80 @@ class AudioBuffer(ToneObject):
             yield "loaded"
             if self.loaded:
                 yield "duration"
+
+
+def add_buf_to_collection(buffers, key, url, base_url=""):
+    if isinstance(url, str):
+        buf = AudioBuffer(base_url + url)
+    elif isinstance(url, AudioBuffer):
+        buf = url
+    else:
+        raise TypeError("Invalid buffer: must be a string (url) or AudioBuffer")
+
+    buffers[key] = buf
+
+
+class AudioBuffers(ToneObject):
+    """A collection (dict-like) of audio buffers.
+
+    Parameters
+    ----------
+    urls : dict-like
+        A mapping of buffer names (str) and buffer file URLs (str) or
+        :class:`AudioBuffer` objects
+    base_url : str, optional
+        Prefix to add before all the URLs.
+
+    """
+
+    _model_name = Unicode("AudioBuffersModel").tag(sync=True)
+
+    _base_url = Unicode("").tag(sync=True)
+    _buffers = Dict(value_trait=Instance(AudioBuffer), allow_none=True).tag(sync=True, **widget_serialization)
+
+    def __init__(self, urls, base_url=""):
+        buffers = {}
+        for key, url in urls.items():
+            add_buf_to_collection(buffers, str(key), url, base_url=base_url)
+        super().__init__(_base_url=base_url, _buffers=buffers)
+
+    @property
+    def base_url(self):
+        return self._base_url
+
+    @property
+    def buffers(self):
+        """Returns a dictionary with all buffers."""
+        return self._buffers.copy()
+
+    @property
+    def loaded(self):
+        """Return True if all buffers are loaded."""
+        return all(buf.loaded for buf in self._buffers.values())
+
+    def dispose(self):
+        super().dispose()
+        for buf in self._buffers.values():
+            buf.dispose()
+        self._buffers = {}
+
+    def add(self, key, url):
+        """Add or replace a buffer.
+
+        Parameters
+        ----------
+        key : str
+            Buffer name.
+        url : str or :class:`AudioBuffer`.
+            Buffer file URL (str) or :class:`AudioBuffer` object.
+
+        """
+        buffers = self._buffers.copy()
+        add_buf_to_collection(buffers, key, url, base_url=self._base_url)
+        self._buffers = buffers
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        if not self.disposed:
+            yield "loaded"
