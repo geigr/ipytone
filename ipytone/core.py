@@ -280,6 +280,7 @@ class AudioBuffer(ToneObject):
         sync=True, **data_array_serialization
     )
     _sync_array = Bool(False).tag(sync=True)
+    _create_node = Bool(True).tag(sync=True)
 
     duration = Float(0, help="Buffer duration in seconds (0 if not loaded)", read_only=True).tag(
         sync=True
@@ -292,12 +293,14 @@ class AudioBuffer(ToneObject):
     loaded = Bool(False, help="True if the audio buffer is loaded", read_only=True).tag(sync=True)
     reverse = Bool(False, help="True if the buffer is reversed").tag(sync=True)
 
-    def __init__(self, url_or_array, sync_array=False, reverse=False):
+    def __init__(self, url_or_array, sync_array=False, reverse=False, **kwargs):
+        kwargs.update({"reverse": reverse})
         if isinstance(url_or_array, str):
-            super().__init__(buffer_url=url_or_array, _sync_array=sync_array, reverse=reverse)
+            kwargs.update({"buffer_url": url_or_array, "_sync_array": sync_array})
         elif isinstance(url_or_array, (np.ndarray, Widget)):
             # _sync_array=False: no need to get array from the front-end
-            super().__init__(array=url_or_array, _sync_array=False, reverse=reverse)
+            kwargs.update({"array": url_or_array, "_sync_array": False})
+        super().__init__(**kwargs)
 
     def _repr_keys(self):
         for key in super()._repr_keys():
@@ -308,9 +311,9 @@ class AudioBuffer(ToneObject):
                 yield "duration"
 
 
-def add_buf_to_collection(buffers, key, url, base_url=""):
+def add_buf_to_collection(buffers, key, url, base_url="", create_node=False):
     if isinstance(url, str):
-        buf = AudioBuffer(base_url + url)
+        buf = AudioBuffer(base_url + url, _create_node=create_node)
     elif isinstance(url, AudioBuffer):
         buf = url
     else:
@@ -335,13 +338,22 @@ class AudioBuffers(ToneObject):
     _model_name = Unicode("AudioBuffersModel").tag(sync=True)
 
     _base_url = Unicode("").tag(sync=True)
-    _buffers = Dict(value_trait=Instance(AudioBuffer), allow_none=True).tag(sync=True, **widget_serialization)
+    _buffers = Dict(value_trait=Instance(AudioBuffer), allow_none=True).tag(
+        sync=True, **widget_serialization
+    )
+    _create_node = Bool(True).tag(sync=True)
 
-    def __init__(self, urls, base_url=""):
+    def __init__(self, urls, base_url="", **kwargs):
+        create_buffer = kwargs.get("_create_node", True)
         buffers = {}
+
         for key, url in urls.items():
-            add_buf_to_collection(buffers, str(key), url, base_url=base_url)
-        super().__init__(_base_url=base_url, _buffers=buffers)
+            add_buf_to_collection(
+                buffers, str(key), url, base_url=base_url, create_node=create_buffer
+            )
+
+        kwargs.update({"_base_url": base_url, "_buffers": buffers})
+        super().__init__(**kwargs)
 
     @property
     def base_url(self):
@@ -358,12 +370,15 @@ class AudioBuffers(ToneObject):
         return all(buf.loaded for buf in self._buffers.values())
 
     def dispose(self):
-        super().dispose()
-        for buf in self._buffers.values():
-            buf.dispose()
+        with self._graph.hold_state():
+            super().dispose()
+            for buf in self._buffers.values():
+                buf.dispose()
         self._buffers = {}
 
-    def add(self, key, url):
+        return self
+
+    def add(self, key, url, create_node=False):
         """Add or replace a buffer.
 
         Parameters
@@ -372,11 +387,15 @@ class AudioBuffers(ToneObject):
             Buffer name.
         url : str or :class:`AudioBuffer`.
             Buffer file URL (str) or :class:`AudioBuffer` object.
+        create_node : bool, optional
+            Internal use only.
 
         """
         buffers = self._buffers.copy()
-        add_buf_to_collection(buffers, key, url, base_url=self._base_url)
+        add_buf_to_collection(buffers, key, url, base_url=self._base_url, create_node=create_node)
         self._buffers = buffers
+
+        return self
 
     def _repr_keys(self):
         for key in super()._repr_keys():

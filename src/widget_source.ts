@@ -6,7 +6,7 @@ import * as tone from 'tone';
 
 import { AudioNodeModel } from './widget_base';
 
-import { AudioBufferModel, ParamModel } from './widget_core';
+import { AudioBufferModel, AudioBuffersModel, ParamModel } from './widget_core';
 
 import { SignalModel } from './widget_signal';
 
@@ -243,4 +243,62 @@ export class PlayerModel extends SourceModel {
   };
 
   static model_name = 'PlayerModel';
+}
+
+export class PlayersModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: PlayersModel.model_name,
+      _buffers: null,
+      _volume: undefined,
+      mute: false,
+    };
+  }
+
+  createNode(): tone.Players {
+    const players = new tone.Players({
+      urls: this.buffers.buffer_nodes,
+      fadeIn: this.get('fade_in'),
+      fadeOut: this.get('fade_out'),
+      volume: this.get('volume'),
+    });
+
+    // Hack: allows reusing AudioBuffers widget from the Python side
+    this.buffers.setNode((players as any)._buffers);
+
+    return players;
+  }
+
+  get mute(): boolean {
+    return this.get('mute');
+  }
+
+  get volume(): ParamModel<'decibels'> {
+    return this.get('_volume');
+  }
+
+  get buffers(): AudioBuffersModel {
+    return this.get('_buffers');
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:mute', () => {
+      this.node.mute = this.mute;
+      // update volume param model value
+      this.volume.value = this.node.volume.value;
+      this.volume.save_changes();
+    });
+  }
+
+  node: tone.Players;
+
+  static serializers: ISerializers = {
+    ...SourceModel.serializers,
+    _buffers: { deserialize: unpack_models as any },
+  };
+
+  static model_name = 'PlayersModel';
 }

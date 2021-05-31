@@ -2,7 +2,7 @@ from ipywidgets import widget_serialization
 from traitlets import Bool, Enum, Float, Instance, TraitError, Unicode, validate
 
 from .base import AudioNode
-from .core import AudioBuffer, Param, Volume
+from .core import AudioBuffer, AudioBuffers, Param, Volume
 from .signal import Signal
 from .transport import start_node, stop_node
 from .utils import validate_osc_type
@@ -166,5 +166,93 @@ class Player(Source):
         with self._graph.hold_state():
             super().dispose()
             self.buffer.dispose()
+
+        return self
+
+
+class Players(AudioNode):
+    """Multiple players."""
+
+    _model_name = Unicode("PlayersModel").tag(sync=True)
+
+    _buffers = Instance(AudioBuffers).tag(sync=True, **widget_serialization)
+    mute = Bool(False, help="Mute source").tag(sync=True)
+    _volume = Instance(Param).tag(sync=True, **widget_serialization)
+
+    def __init__(self, urls, base_url="", volume=0, mute=False, fade_in=0, fade_out=0, **kwargs):
+        buffers = AudioBuffers(urls, base_url=base_url, _create_node=False)
+        out_node = Volume(volume=volume, mute=mute, _create_node=False)
+
+        kwargs.update({"_buffers": buffers, "_output": out_node, "_volume": out_node.volume})
+        super().__init__(**kwargs)
+
+        self._fade_in = fade_in
+        self._fade_out = fade_out
+        self._players = {}
+
+    @property
+    def volume(self) -> Param:
+        """The volume parameter."""
+        return self._volume
+
+    @property
+    def loaded(self):
+        """Returns True if all audio buffers are loaded."""
+        return self._buffers.loaded
+
+    def get_player(self, name):
+        """Get the :class:`Player` object that corresponds to ``name``."""
+        if name in self._players:
+            return self._players[name]
+        else:
+            player = Player(self._buffers[name], fade_in=self.fade_in, fade_out=self.fade_out)
+            player.connect(self.output)
+            self._players[name] = player
+            return player
+
+    @property
+    def fade_in(self):
+        return self._fade_in
+
+    @fade_in.setter
+    def fade_in(self, value):
+        for p in self._players:
+            p.fade_in = value
+
+    @property
+    def fade_out(self):
+        return self._fade_out
+
+    @fade_out.setter
+    def fade_out(self, value):
+        for p in self._players:
+            p.fade_out = value
+
+    @property
+    def state(self):
+        """Returns 'started' if any of the players are playing. Otherwise returns 'stopped'."""
+        return "started" if any([p.state == "started" for p in self._players]) else "stopped"
+
+    def add(self, name, url):
+        """Add a player.
+
+        Parameters
+        ----------
+        key : str
+            Buffer name.
+        url : str or :class:`AudioBuffer`.
+            Buffer file URL (str) or :class:`AudioBuffer` object.
+
+        """
+        if name in self._buffers.buffers:
+            raise ValueError(f"A buffer with name '{name}' already exists on this object.")
+        self._buffers.add(name, url)
+
+        return self
+
+    def stop_all(self, time=""):
+        """Stop all of the players at the given time."""
+        for p in self._players:
+            p.stop()
 
         return self

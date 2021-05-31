@@ -306,6 +306,7 @@ export class AudioBufferModel extends ToneObjectModel {
       sample_rate: 0,
       loaded: false,
       reverse: false,
+      _create_node: true,
     };
   }
 
@@ -315,12 +316,14 @@ export class AudioBufferModel extends ToneObjectModel {
   ): void {
     super.initialize(attributes, options);
 
-    this.node = new tone.ToneAudioBuffer({ reverse: this.get('reverse') });
+    if (this.get('_create_node')) {
+      this.node = new tone.ToneAudioBuffer({ reverse: this.get('reverse') });
 
-    if (this.array !== null) {
-      this.fromArray(this.array);
-    } else if (this.buffer_url !== null) {
-      this.fromUrl(this.buffer_url);
+      if (this.array !== null) {
+        this.fromArray(this.array);
+      } else if (this.buffer_url !== null) {
+        this.fromUrl(this.buffer_url);
+      }
     }
   }
 
@@ -349,6 +352,12 @@ export class AudioBufferModel extends ToneObjectModel {
     this.node.load(url).then(() => {
       this.setBufferProperties();
     });
+  }
+
+  setNode(node: tone.ToneAudioBuffer): void {
+    this.node = node;
+    this.set('reverse', this.node.reverse);
+    this.setBufferProperties();
   }
 
   resetBufferProperties(): void {
@@ -412,6 +421,7 @@ export class AudioBuffersModel extends ToneObjectModel {
       _model_name: AudioBuffersModel.model_name,
       _base_url: '',
       _buffers: null,
+      _create_node: true,
     };
   }
 
@@ -421,10 +431,12 @@ export class AudioBuffersModel extends ToneObjectModel {
   ): void {
     super.initialize(attributes, options);
 
-    this.node = new tone.ToneAudioBuffers({
-      urls: this.buffer_nodes,
-      baseUrl: this.get('_base_url'),
-    });
+    if (this.get('_create_node')) {
+      this.node = new tone.ToneAudioBuffers({
+        urls: this.buffer_nodes,
+        baseUrl: this.get('_base_url'),
+      });
+    }
   }
 
   get buffers(): Map<string, AudioBufferModel> {
@@ -435,9 +447,21 @@ export class AudioBuffersModel extends ToneObjectModel {
     const nodes: tone.ToneAudioBuffersUrlMap = {};
 
     this.buffers.forEach((buf: AudioBufferModel, key: string) => {
-      nodes[key] = buf.node;
+      if (buf.node === undefined) {
+        nodes[key] = buf.buffer_url as string;
+      } else {
+        nodes[key] = buf.node;
+      }
     });
     return nodes;
+  }
+
+  setNode(node: tone.ToneAudioBuffers): void {
+    this.node = node;
+
+    this.buffers.forEach((buf: AudioBufferModel, key: string) => {
+      buf.setNode(node.get(key));
+    });
   }
 
   private updateBufferNodes(): void {

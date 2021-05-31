@@ -140,7 +140,8 @@ def test_audio_buffers():
     with pytest.raises(TypeError, match=r"Invalid buffer.*"):
         buffers.add("D", ["not", "a", "buffer"])
 
-    buffers.dispose()
+    b = buffers.dispose()
+    assert b is buffers
     assert buffers.disposed is True
     assert bbuf.disposed is True
     assert buffers.buffers == {}
