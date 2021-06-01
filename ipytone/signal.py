@@ -343,3 +343,24 @@ class Pow(SignalOperator):
         node = InternalAudioNode(type="WaveShaper")
         kwargs.update({"_input": node, "_output": node})
         super().__init__(*args, **kwargs)
+
+
+class Scale(SignalOperator):
+    """A node that applies linear scaling on the incoming signal.
+
+    The incoming signal must be normal range [0, 1].
+    """
+
+    _model_name = Unicode("ScaleModel").tag(sync=True)
+
+    min_out = Float(0.0, help="min output value").tag(sync=True)
+    max_out = Float(1.0, help="max output value").tag(sync=True)
+
+    def __init__(self, min_out=0.0, max_out=1.0, **kwargs):
+        kwargs.update({"min_out": min_out, "max_out": max_out})
+
+        in_node = Multiply(value=max_out - min_out, _create_node=False)
+        out_node = Add(value=min_out, _create_node=False)
+        kwargs.update({"_input": in_node, "_output": out_node})
+
+        super().__init__(**kwargs)

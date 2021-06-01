@@ -3,7 +3,7 @@ import operator
 
 import pytest
 
-from ipytone import Abs, Add, GreaterThan, Multiply, Negate, Param, Pow, Signal, Subtract
+from ipytone import Abs, Add, GreaterThan, Multiply, Negate, Param, Pow, Scale, Signal, Subtract
 from ipytone.core import InternalAudioNode
 
 
@@ -93,6 +93,14 @@ def test_simple_signal_operator(op, op_cls, audio_graph):
     op_sig = op(sig)
     assert isinstance(op_sig, op_cls)
     assert (sig, op_sig, 0, 0) in audio_graph.connections
+
+
+def test_scale():
+    sc = Scale(min_out=0.2, max_out=1.2)
+    assert sc.min_out == 0.2
+    assert sc.max_out == 1.2
+    assert sc.input.value == 1.0
+    assert sc.output.value == 0.2
 
 
 def test_complex_signal_expression(audio_graph):

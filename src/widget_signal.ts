@@ -260,3 +260,33 @@ export class PowModel extends SignalOperatorModel {
 
   static model_name = 'PowModel';
 }
+
+export class ScaleModel extends SignalOperatorModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: ScaleModel.model_name,
+      min_out: 0.0,
+      max_out: 1.0,
+    };
+  }
+
+  createNode(): tone.Scale {
+    return new tone.Scale(this.get('min_out'), this.get('max_out'));
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:min_out', () => {
+      this.node.min = this.get('min_out');
+    });
+    this.on('change:max_out', () => {
+      this.node.min = this.get('max_out');
+    });
+  }
+
+  node: tone.Scale;
+
+  static model_name = 'ScaleModel';
+}
