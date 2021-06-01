@@ -35,8 +35,10 @@ class Envelope(AudioNode):
     sync_array = Bool(False, help="If True, synchronize envelope data").tag(sync=True)
 
     def __init__(self, **kwargs):
-        out_node = Signal(units="normalRange", _create_node=False)
-        kwargs.update({"_output": out_node})
+        if "_output" not in kwargs:
+            out_node = Signal(units="normalRange", _create_node=False)
+            kwargs.update({"_output": out_node})
+
         super().__init__(**kwargs)
 
     def trigger_attack(self, time=""):

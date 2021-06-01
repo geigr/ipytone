@@ -357,7 +357,10 @@ class Scale(SignalOperator):
     max_out = Float(1.0, help="max output value").tag(sync=True)
 
     def __init__(self, min_out=0.0, max_out=1.0, **kwargs):
+        kwargs.update({"min_out": min_out, "max_out": max_out})
+
         in_node = Multiply(value=max_out - min_out, _create_node=False)
         out_node = Add(value=min_out, _create_node=False)
         kwargs.update({"_input": in_node, "_output": out_node})
+
         super().__init__(**kwargs)
