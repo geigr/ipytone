@@ -147,3 +147,48 @@ export class AmplitudeEnvelopeModel extends EnvelopeModel {
 
   static model_name = 'AmplitudeEnvelopeModel';
 }
+
+export class FrequencyEnvelopeModel extends EnvelopeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: FrequencyEnvelopeModel.model_name,
+      base_frequency: 200.0,
+      octaves: 4,
+      exponent: 1,
+    };
+  }
+
+  createNode(): tone.FrequencyEnvelope {
+    return new tone.FrequencyEnvelope({
+      attack: this.get('attack'),
+      decay: this.get('decay'),
+      sustain: this.get('sustain'),
+      release: this.get('release'),
+      attackCurve: this.get('attack_curve'),
+      decayCurve: this.get('decay_curve'),
+      releaseCurve: this.get('release_curve'),
+      baseFrequency: this.get('base_frequency'),
+      octaves: this.get('octaves'),
+      exponent: this.get('exponent'),
+    });
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:base_frequency', () => {
+      this.node.baseFrequency = this.get('base_frequency');
+    });
+    this.on('change:octaves', () => {
+      this.node.octaves = this.get('octaves');
+    });
+    this.on('change:exponent', () => {
+      this.node.exponent = this.get('exponent');
+    });
+  }
+
+  node: tone.FrequencyEnvelope;
+
+  static model_name = 'FrequencyEnvelopeModel';
+}

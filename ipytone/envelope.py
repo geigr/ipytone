@@ -4,7 +4,7 @@ from traittypes import Array
 from .base import AudioNode
 from .core import Gain
 from .serialization import data_array_serialization
-from .signal import Signal
+from .signal import Pow, Scale, Signal
 
 BASIC_CURVES = ["linear", "exponential"]
 CURVES = BASIC_CURVES + ["sine", "cosine", "bounce", "ripple", "step"]
@@ -68,5 +68,24 @@ class AmplitudeEnvelope(Envelope):
 
     def __init__(self, **kwargs):
         gain_node = Gain(gain=0, _create_node=False)
-        kwargs.update({'_input': gain_node, '_output': gain_node})
+        kwargs.update({"_input": gain_node, "_output": gain_node})
+        super().__init__(**kwargs)
+
+
+class FrequencyEnvelope(Envelope):
+    """Envelope which may be used to control a frequency signal. """
+
+    _model_name = Unicode("FrequencyEnvelopeModel").tag(sync=True)
+
+    base_frequency = Float(200.0, help="Envelope min output (start) value").tag(sync=True)
+    octaves = Int(4, help="Envelope range in number of octaves").tag(sync=True)
+    exponent = Int(1, help="May be used to control the envelope (non)linearity").tag(sync=True)
+
+    def __init__(self, base_frequency=200.0, octaves=4, exponent=1, **kwargs):
+        kwargs.update({"base_frequency": base_frequency, "octaves": octaves, "exponent": exponent})
+
+        in_node = Pow(value=exponent)
+        out_node = Scale(min_out=base_frequency, max_out=base_frequency * 2 ** octaves)
+        kwargs.update({"_input": in_node, "_output": out_node})
+
         super().__init__(**kwargs)
