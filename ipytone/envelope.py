@@ -75,7 +75,7 @@ class AmplitudeEnvelope(Envelope):
 
 
 class FrequencyEnvelope(Envelope):
-    """Envelope which may be used to control a frequency signal. """
+    """Envelope which may be used to control a frequency signal."""
 
     _model_name = Unicode("FrequencyEnvelopeModel").tag(sync=True)
 
