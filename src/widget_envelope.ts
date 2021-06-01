@@ -122,3 +122,28 @@ export class EnvelopeModel extends AudioNodeModel {
 
   static model_name = 'EnvelopeModel';
 }
+
+export class AmplitudeEnvelopeModel extends EnvelopeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: AmplitudeEnvelopeModel.model_name,
+    };
+  }
+
+  createNode(): tone.AmplitudeEnvelope {
+    return new tone.AmplitudeEnvelope({
+      attack: this.get('attack'),
+      decay: this.get('decay'),
+      sustain: this.get('sustain'),
+      release: this.get('release'),
+      attackCurve: this.get('attack_curve'),
+      decayCurve: this.get('decay_curve'),
+      releaseCurve: this.get('release_curve'),
+    });
+  }
+
+  node: tone.AmplitudeEnvelope;
+
+  static model_name = 'AmplitudeEnvelopeModel';
+}

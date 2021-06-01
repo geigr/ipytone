@@ -2,6 +2,7 @@ from traitlets import Bool, Enum, Float, Int, List, Unicode, Union
 from traittypes import Array
 
 from .base import AudioNode
+from .core import Gain
 from .serialization import data_array_serialization
 from .signal import Signal
 
@@ -33,10 +34,10 @@ class Envelope(AudioNode):
     array_length = Int(1024, help="Envelope data resolution (array length)").tag(sync=True)
     sync_array = Bool(False, help="If True, synchronize envelope data").tag(sync=True)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         out_node = Signal(units="normalRange", _create_node=False)
         kwargs.update({"_output": out_node})
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
     def trigger_attack(self, time=""):
         self.send({"event": "triggerAttack"})
@@ -49,3 +50,23 @@ class Envelope(AudioNode):
     def trigger_attack_release(self, duration, time=""):
         self.send({"event": "triggerAttackRelease", "duration": duration})
         return self
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        for key in ["attack", "decay", "sustain", "release"]:
+            yield key
+
+
+class AmplitudeEnvelope(Envelope):
+    """Envelope which, applied to an input audio signal, control the gain
+    of the output signal.
+
+    """
+
+    _model_name = Unicode("AmplitudeEnvelopeModel").tag(sync=True)
+
+    def __init__(self, **kwargs):
+        gain_node = Gain(gain=0, _create_node=False)
+        kwargs.update({'_input': gain_node, '_output': gain_node})
+        super().__init__(**kwargs)

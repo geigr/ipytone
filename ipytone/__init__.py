@@ -8,7 +8,7 @@ from ._version import __version__, version_info
 from .channel import CrossFade
 from .core import AudioBuffer, AudioBuffers, Gain, Param, Volume, destination
 from .effect import Distortion, FeedbackDelay, PingPongDelay, Reverb, Tremolo, Vibrato
-from .envelope import Envelope
+from .envelope import AmplitudeEnvelope, Envelope
 from .graph import get_audio_graph
 from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Signal, Subtract
 from .source import Noise, Oscillator, Player, Players
