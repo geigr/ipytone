@@ -6,6 +6,28 @@ from traitlets import Bool, Enum, Instance, Int, List, Unicode
 from .base import ToneWidgetBase
 
 
+class BaseCallbackArg:
+    """Base class internally used as a placeholder for any tone event or
+    scheduling callback argument.
+
+    """
+
+    def __init__(self, call_id, caller_widget, value=None):
+        self.call_id = call_id
+        self.caller_widget = caller_widget
+        self.value = value
+
+
+class ScheduleCallbackArg(BaseCallbackArg):
+
+    def __init__(self, *args, value="time"):
+        super().__init__(*args, value=value)
+
+    def __add__(self, other):
+        return ScheduleCallbackArg(self.call_id, self.caller_widget, value=f"{self.value} + {other}")
+
+
+
 class Transport(ToneWidgetBase):
     """Transport for timing musical events."""
 
@@ -37,6 +59,13 @@ class Transport(ToneWidgetBase):
         self._is_scheduling = False
         self._all_event_id = []
         super(Transport, self).__init__(**kwargs)
+
+    def schedule_alt(self, callback, time):
+        call_id = "a-random-id"
+        callback_arg = ScheduleCallbackArg(call_id, self)
+        callback(callback_arg)
+
+        self.send({'event': 'schedule', 'call_id': call_id, 'time': time})
 
     @contextlib.contextmanager
     def schedule(self, time):

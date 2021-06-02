@@ -39,6 +39,7 @@ export class TransportModel extends WidgetModel {
   ): void {
     super.initialize(attributes, options);
     this.py2jsEventID = {};
+    this.event_callbacks = {};
     this.initEventListeners();
   }
 
@@ -46,6 +47,8 @@ export class TransportModel extends WidgetModel {
     this.on('change:state', this.startStopTransport, this);
     this.on('change:_toggle_schedule', this.schedule, this);
     this.on('change:_toggle_clear', this.clear_event, this);
+
+    this.on('msg:custom', this.handleMsg.bind(this));
   }
 
   private startStopTransport(): void {
@@ -53,6 +56,24 @@ export class TransportModel extends WidgetModel {
       tone.Transport.start();
     } else {
       tone.Transport.stop();
+    }
+  }
+
+  appendCallback(call_id: string, callback: {(time: number): void;}): void {
+    if (!(call_id in this.event_callbacks)) {
+      this.event_callbacks[call_id] = [];
+    }
+    this.event_callbacks[call_id].push(callback);
+  }
+
+  handleMsg(command: any, buffers: any): void {
+    if (command.event === 'schedule') {
+      const callbacks = this.event_callbacks[command.call_id];
+      console.log(callbacks);
+      const schedule_callback = (time: number) => {
+        callbacks.forEach((clb) => clb(time));
+      }
+      tone.Transport.schedule(schedule_callback, command.time)
     }
   }
 
@@ -113,6 +134,7 @@ export class TransportModel extends WidgetModel {
   }
 
   py2jsEventID: { [id: number]: number };
+  event_callbacks: { [id: string]: {(time: number): void; }[]};
 
   static model_name = 'TransportModel';
 }
