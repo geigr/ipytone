@@ -88,18 +88,7 @@ export class EnvelopeModel extends AudioNodeModel {
         this.node.triggerRelease();
         break;
       case 'triggerAttackRelease':
-        console.log(command);
-        if (command.schedule) {
-          const callback = (time: number) => {
-            this.node.triggerAttackRelease(command.duration, time);
-          };
-          Promise.resolve(this.widget_manager.get_model(command.caller_widget)).then((model: any) => {
-            console.log(model);
-            model.appendCallback(command.call_id, callback);
-          });
-        } else {
-          this.node.triggerAttackRelease(command.duration);
-        }
+        this.node.triggerAttackRelease(command.duration);
         break;
     }
   }
@@ -121,7 +110,7 @@ export class EnvelopeModel extends AudioNodeModel {
       this.updateEnvelope('release_curve', 'releaseCurve')
     );
 
-    this.on('msg:custom', this.handleMsg.bind(this));
+    this.on('msg:custom', this.handleMsg, this);
   }
 
   node: tone.Envelope;

@@ -1,9 +1,6 @@
-import contextlib
+from traitlets import Enum, Unicode
 
-from ipywidgets import Widget, widget_serialization
-from traitlets import Bool, Enum, Instance, Int, List, Unicode
-
-from .base import ToneWidgetBase
+from .base import ToneObject
 
 
 class BaseCallbackArg:
@@ -12,41 +9,38 @@ class BaseCallbackArg:
 
     """
 
-    def __init__(self, call_id, caller_widget, value=None):
-        self.call_id = call_id
-        self.caller_widget = caller_widget
+    def __init__(self, caller, value=None, parent=None):
+        self.caller = caller
         self.value = value
+        self.parent = parent
+        self._items = []
+
+    @property
+    def items(self):
+        items = self._items
+
+        parent = self.parent
+        while parent is not None:
+            items = parent._items
+            parent = parent.parent
+
+        return items
 
 
 class ScheduleCallbackArg(BaseCallbackArg):
-
-    def __init__(self, *args, value="time"):
-        super().__init__(*args, value=value)
+    def __init__(self, *args, value="time", **kwargs):
+        super().__init__(*args, value=value, **kwargs)
 
     def __add__(self, other):
-        return ScheduleCallbackArg(self.call_id, self.caller_widget, value=f"{self.value} + {other}")
+        return ScheduleCallbackArg(self.caller, value=f"{self.value} + {other}", parent=self)
 
 
-
-class Transport(ToneWidgetBase):
+class Transport(ToneObject):
     """Transport for timing musical events."""
 
     _singleton = None
 
     _model_name = Unicode("TransportModel").tag(sync=True)
-
-    _schedule_op = Unicode().tag(sync=True)
-    _audio_nodes = List(Instance(Widget)).tag(sync=True, **widget_serialization)
-    _methods = List(Unicode()).tag(sync=True)
-    _packed_args = List(Unicode()).tag(sync=True)
-    _toggle_schedule = Bool().tag(sync=True)
-    _toggle_clear = Bool().tag(sync=True)
-
-    _interval = Unicode().tag(sync=True)
-    _start_time = Unicode().tag(sync=True)
-    _duration = Unicode(allow_none=True).tag(sync=True)
-    _py_event_id = Int().tag(sync=True).tag(sync=True)
-    _clear_event_id = Int().tag(sync=True)
 
     state = Enum(["started", "stopped"], allow_none=False, default_value="stopped").tag(sync=True)
 
@@ -56,66 +50,58 @@ class Transport(ToneWidgetBase):
         return Transport._singleton
 
     def __init__(self, **kwargs):
-        self._is_scheduling = False
+        self._py_event_id = 0
         self._all_event_id = []
         super(Transport, self).__init__(**kwargs)
 
-    def schedule_alt(self, callback, time):
-        call_id = "a-random-id"
-        callback_arg = ScheduleCallbackArg(call_id, self)
+    def _get_callback_items(self, callback):
+        callback_arg = ScheduleCallbackArg(self)
         callback(callback_arg)
+        return callback_arg.items
 
-        self.send({'event': 'schedule', 'call_id': call_id, 'time': time})
+    def _get_event_id_and_inc(self):
+        event_id = self._py_event_id
+        self._all_event_id.append(event_id)
+        self._py_event_id += 1
+        return event_id
 
-    @contextlib.contextmanager
-    def schedule(self, time):
-        self._is_scheduling = True
-        self._audio_nodes = []
-        self._methods = []
-        self._packed_args = []
-        yield self._py_event_id
-        self._schedule_op = "schedule"
-        self._start_time = time
-        self._toggle_schedule = not self._toggle_schedule
-        self._is_scheduling = False
-        self._all_event_id.append(self._py_event_id)
-        self._py_event_id = self._py_event_id + 1
+    def schedule(self, callback, time):
+        items = self._get_callback_items(callback)
+        event_id = self._get_event_id_and_inc()
+        self.send({"event": "schedule", "op": "", "id": event_id, "items": items, "time": time})
+        return event_id
 
-    @contextlib.contextmanager
-    def schedule_once(self, time):
-        self._is_scheduling = True
-        self._audio_nodes = []
-        self._methods = []
-        self._packed_args = []
-        yield self._py_event_id
-        self._schedule_op = "scheduleOnce"
-        self._start_time = time
-        self._toggle_schedule = not self._toggle_schedule
-        self._is_scheduling = False
+    def schedule_repeat(self, callback, interval, start_time=0, duration=None):
+        items = self._get_callback_items(callback)
+        event_id = self._get_event_id_and_inc()
+        self.send(
+            {
+                "event": "schedule",
+                "op": "repeat",
+                "id": event_id,
+                "items": items,
+                "interval": interval,
+                "start_time": start_time,
+                "duration": duration,
+            }
+        )
+        return event_id
 
-    @contextlib.contextmanager
-    def schedule_repeat(self, interval, start_time, duration=None):
-        self._is_scheduling = True
-        self._audio_nodes = []
-        self._methods = []
-        self._packed_args = []
-        yield self._py_event_id
-        self._schedule_op = "scheduleRepeat"
-        self._interval = interval
-        self._start_time = start_time
-        self._duration = duration
-        self._toggle_schedule = not self._toggle_schedule
-        self._is_scheduling = False
-        self._all_event_id.append(self._py_event_id)
-        self._py_event_id = self._py_event_id + 1
+    def schedule_once(self, callback, time):
+        items = self._get_callback_items(callback)
+        event_id = self._get_event_id_and_inc()
+        self.send(
+            {"event": "schedule_once", "op": "once", "id": event_id, "items": items, "time": time}
+        )
+        return event_id
 
     def clear(self, event_id):
         if event_id not in self._all_event_id:
-            raise RuntimeError(f"Scheduled event ID not found: {event_id}")
-        self._clear_event_id = event_id
-        self._toggle_clear = not self._toggle_clear
+            raise ValueError(f"Scheduled event ID not found: {event_id}")
+        self.send({"event": "clear", "id": event_id})
         id_idx = self._all_event_id.index(event_id)
         del self._all_event_id[id_idx]
+        return self
 
     def start(self):
         self.state = "started"
@@ -135,12 +121,12 @@ def start_node(node, time=""):
     function is called within a transport scheduling context.
 
     """
-    if transport._is_scheduling:
-        transport._audio_nodes = transport._audio_nodes + [node]
-        transport._methods = transport._methods + ["start"]
-        transport._packed_args = transport._packed_args + [time + " *** "]
-    else:
-        node.state = "started"
+    #if transport._is_scheduling:
+    #    transport._audio_nodes = transport._audio_nodes + [node]
+    #    transport._methods = transport._methods + ["start"]
+    #    transport._packed_args = transport._packed_args + [time + " *** "]
+    #else:
+    node.state = "started"
 
     return node
 
@@ -152,12 +138,12 @@ def stop_node(node, time=""):
     function is called within a transport scheduling context.
 
     """
-    if transport._is_scheduling:
-        transport._audio_nodes = transport._audio_nodes + [node]
-        transport._methods = transport._methods + ["stop"]
-        transport._packed_args = transport._packed_args + [time + " *** "]
-    else:
-        if node.state == "started":
-            node.state = "stopped"
+    #if transport._is_scheduling:
+    #    transport._audio_nodes = transport._audio_nodes + [node]
+    #    transport._methods = transport._methods + ["stop"]
+    #    transport._packed_args = transport._packed_args + [time + " *** "]
+    #else:
+    if node.state == "started":
+        node.state = "stopped"
 
     return node

@@ -50,17 +50,18 @@ class Envelope(AudioNode):
         self.send({"event": "triggerRelease"})
         return self
 
-    def trigger_attack_release(self, duration, time=""):
+    def trigger_attack_release(self, duration, time="", velocity=1):
         event_args = {"event": "triggerAttackRelease", "duration": duration, "schedule": False}
         if isinstance(time, BaseCallbackArg):
-            extra_args = {
-                "schedule": True,
-                "time": time.value,
-                "call_id": time.call_id,
-                "caller_widget": time.caller_widget.model_id,
+            item = {
+                "method": "triggerAttackRelease",
+                "callee": self.model_id,
+                "args": {"duration": duration, "time": time.value, "velocity": velocity},
+                "arg_keys": ["duration", "time", "velocity"],
             }
-            event_args.update(extra_args)
-        self.send(event_args)
+            time.items.append(item)
+        else:
+            self.send(event_args)
         return self
 
     def _repr_keys(self):
