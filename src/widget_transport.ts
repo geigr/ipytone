@@ -1,9 +1,8 @@
-import {
-  WidgetModel,
-  ISerializers,
-} from '@jupyter-widgets/base';
+import { WidgetModel, ISerializers } from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
+
+import { normalizeArguments } from './utils';
 
 import { ToneObjectModel } from './widget_base';
 
@@ -57,14 +56,9 @@ export class TransportModel extends ToneObjectModel {
     return Promise.all(itemsModel).then((items) => {
       const callback = (time: number) => {
         items.forEach((item: any) => {
-          const argsArray = item.arg_keys.map((name: string) => {
-            if (name === 'time') {
-              return eval(item.args[name]);
-            } else {
-              return item.args[name];
-            }
-          });
-
+          const args = { ...item.args };
+          args.time = eval(args.time);
+          const argsArray = normalizeArguments(args, item.arg_keys);
           item.model.node[item.method](...argsArray);
         });
       };

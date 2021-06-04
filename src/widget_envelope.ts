@@ -2,6 +2,8 @@ import { ISerializers } from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
 
+import { normalizeArguments } from './utils';
+
 import { AudioNodeModel } from './widget_base';
 
 import {
@@ -80,16 +82,9 @@ export class EnvelopeModel extends AudioNodeModel {
   }
 
   handleMsg(command: any, buffers: any): void {
-    switch (command.event) {
-      case 'triggerAttack':
-        this.node.triggerAttack();
-        break;
-      case 'triggerRelease':
-        this.node.triggerRelease();
-        break;
-      case 'triggerAttackRelease':
-        this.node.triggerAttackRelease(command.duration);
-        break;
+    if (command.event === 'trigger') {
+      const argsArray = normalizeArguments(command.args, command.arg_keys);
+      (this.node as any)[command.method](...argsArray);
     }
   }
 

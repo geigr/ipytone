@@ -35,6 +35,24 @@ class ScheduleCallbackArg(BaseCallbackArg):
         return ScheduleCallbackArg(self.caller, value=f"{self.value} + {other}", parent=self)
 
 
+def add_or_send_event(name, callee, args):
+    """Add a specific event (i.e., Tone object method call + args) for scheduling or
+    send it directly to the front-end.
+
+    """
+    time = args["time"]
+    data = {"method": name, "args": args.copy(), "arg_keys": list(args.keys())}
+
+    if isinstance(time, BaseCallbackArg):
+        data["args"]["time"] = time.value
+        data["callee"] = callee.model_id
+        time.items.append(data)
+    else:
+        data["event"] = "trigger"
+        data.update(args)
+        callee.send(data)
+
+
 class Transport(ToneObject):
     """Transport for timing musical events."""
 
@@ -91,9 +109,7 @@ class Transport(ToneObject):
     def schedule_once(self, callback, time):
         items = self._get_callback_items(callback)
         event_id = self._get_event_id_and_inc(append=False)
-        self.send(
-            {"event": "schedule", "op": "once", "id": event_id, "items": items, "time": time}
-        )
+        self.send({"event": "schedule", "op": "once", "id": event_id, "items": items, "time": time})
         return event_id
 
     def clear(self, event_id):
@@ -122,11 +138,11 @@ def start_node(node, time=""):
     function is called within a transport scheduling context.
 
     """
-    #if transport._is_scheduling:
+    # if transport._is_scheduling:
     #    transport._audio_nodes = transport._audio_nodes + [node]
     #    transport._methods = transport._methods + ["start"]
     #    transport._packed_args = transport._packed_args + [time + " *** "]
-    #else:
+    # else:
     node.state = "started"
 
     return node
@@ -139,11 +155,11 @@ def stop_node(node, time=""):
     function is called within a transport scheduling context.
 
     """
-    #if transport._is_scheduling:
+    # if transport._is_scheduling:
     #    transport._audio_nodes = transport._audio_nodes + [node]
     #    transport._methods = transport._methods + ["stop"]
     #    transport._packed_args = transport._packed_args + [time + " *** "]
-    #else:
+    # else:
     if node.state == "started":
         node.state = "stopped"
 
