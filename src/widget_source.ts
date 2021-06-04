@@ -4,6 +4,8 @@ import * as tone from 'tone';
 
 // import * as source from 'tone/Tone/source/Source';
 
+import { normalizeArguments } from './utils';
+
 import { AudioNodeModel } from './widget_base';
 
 import { AudioBufferModel, AudioBuffersModel, ParamModel } from './widget_core';
@@ -39,6 +41,17 @@ abstract class SourceModel extends AudioNodeModel {
       this.volume.save_changes();
     });
     this.on('change:state', this.startStopNode, this);
+    this.on('msg:custom', this.handleMsg, this);
+  }
+
+  private handleMsg(command: any, buffers: any): void {
+    if (command.event === 'trigger') {
+      const argsArray = normalizeArguments(command.args, command.arg_keys);
+      (this.node as any)[command.method](...argsArray);
+      // TODO: state will not be properly updated if time offset/duration is defined
+      // maybe we compute when it should be sync again in the future and use setTimeout
+      this.set('state', this.node.state, { silent: true });
+    }
   }
 
   private startStopNode(): void {

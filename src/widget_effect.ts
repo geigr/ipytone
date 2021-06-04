@@ -230,6 +230,26 @@ export class TremoloModel extends AudioNodeModel {
       this.node.type = this.type;
     });
     this.on('change:state', this.startStopNode, this);
+    this.on('msg:custom', this.handleMsg, this);
+  }
+
+  private handleMsg(command: any, buffers: any): void {
+    if (command.event === 'trigger') {
+      let time = command.args.time;
+      if (time === null) {
+        time = undefined;
+      }
+      // TODO: state will not be properly updated if time offset is defined
+      // maybe we compute when it should be sync again in the future and use setTimeout
+      if (command.method === 'start') {
+        this.node.start(time);
+        this.set('state', 'started', { silent: true });
+      }
+      else if (command.method === 'stop') {
+        this.node.stop(time);
+        this.set('state', 'stopped', { silent: true });
+      }
+    }
   }
 
   private startStopNode(): void {

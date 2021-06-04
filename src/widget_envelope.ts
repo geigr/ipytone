@@ -81,7 +81,7 @@ export class EnvelopeModel extends AudioNodeModel {
     this.maybeSetArray();
   }
 
-  handleMsg(command: any, buffers: any): void {
+  private handleMsg(command: any, buffers: any): void {
     if (command.event === 'trigger') {
       const argsArray = normalizeArguments(command.args, command.arg_keys);
       (this.node as any)[command.method](...argsArray);

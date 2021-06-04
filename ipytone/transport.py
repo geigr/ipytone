@@ -129,38 +129,3 @@ class Transport(ToneObject):
 
 
 transport = Transport()
-
-
-def start_node(node, time=""):
-    """Start an audio node.
-
-    The node will either start immediately or as specified by ``time`` if this
-    function is called within a transport scheduling context.
-
-    """
-    # if transport._is_scheduling:
-    #    transport._audio_nodes = transport._audio_nodes + [node]
-    #    transport._methods = transport._methods + ["start"]
-    #    transport._packed_args = transport._packed_args + [time + " *** "]
-    # else:
-    node.state = "started"
-
-    return node
-
-
-def stop_node(node, time=""):
-    """Stop an audio node.
-
-    The node will either stop immediately or as specified by ``time`` if this
-    function is called within a transport scheduling context.
-
-    """
-    # if transport._is_scheduling:
-    #    transport._audio_nodes = transport._audio_nodes + [node]
-    #    transport._methods = transport._methods + ["stop"]
-    #    transport._packed_args = transport._packed_args + [time + " *** "]
-    # else:
-    if node.state == "started":
-        node.state = "stopped"
-
-    return node
