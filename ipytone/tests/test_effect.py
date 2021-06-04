@@ -97,7 +97,6 @@ def test_tremolo():
     assert tre.state == "stopped"
 
     e = tre.start()
-    assert tre.state == "started"
     assert e is tre
 
     e = tre.stop()

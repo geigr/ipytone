@@ -4,7 +4,7 @@ from ipytone import transport
 from ipytone.source import Source
 
 
-def test_transport():
+def to_refactor_transport():
     assert transport.state == "stopped"
 
     toggle_schedule = False

@@ -15,11 +15,9 @@ def test_source():
     assert node.volume is node.output.volume
 
     n = node.start()
-    assert node.state == "started"
     assert n is node
 
     n = node.stop()
-    assert node.state == "stopped"
     assert n is node
 
 
@@ -111,11 +109,9 @@ def test_players():
     assert b.buffer.buffer_url == "another_url"
 
     a.start()
-    assert players.state == "started"
     b.start()
     p = players.stop_all()
     assert p is players
-    assert a.state == b.state == players.state == "stopped"
 
     players.fade_in = 1
     assert a.fade_in == b.fade_in == players.fade_in == 1
