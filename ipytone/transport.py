@@ -59,9 +59,10 @@ class Transport(ToneObject):
         callback(callback_arg)
         return callback_arg.items
 
-    def _get_event_id_and_inc(self):
+    def _get_event_id_and_inc(self, append=True):
         event_id = self._py_event_id
-        self._all_event_id.append(event_id)
+        if append:
+            self._all_event_id.append(event_id)
         self._py_event_id += 1
         return event_id
 
@@ -89,9 +90,9 @@ class Transport(ToneObject):
 
     def schedule_once(self, callback, time):
         items = self._get_callback_items(callback)
-        event_id = self._get_event_id_and_inc()
+        event_id = self._get_event_id_and_inc(append=False)
         self.send(
-            {"event": "schedule_once", "op": "once", "id": event_id, "items": items, "time": time}
+            {"event": "schedule", "op": "once", "id": event_id, "items": items, "time": time}
         )
         return event_id
 
