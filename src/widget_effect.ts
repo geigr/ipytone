@@ -244,8 +244,7 @@ export class TremoloModel extends AudioNodeModel {
       if (command.method === 'start') {
         this.node.start(time);
         this.set('state', 'started', { silent: true });
-      }
-      else if (command.method === 'stop') {
+      } else if (command.method === 'stop') {
         this.node.stop(time);
         this.set('state', 'stopped', { silent: true });
       }
