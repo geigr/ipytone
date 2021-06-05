@@ -85,12 +85,54 @@ class Transport(ToneObject):
         return event_id
 
     def schedule(self, callback, time):
+        """Schedule an event along the transport timeline.
+
+        Parameters
+        ----------
+        callback : callable
+            The callback to be invoked at the scheduled time. It must accept exactly
+            one argument that corresponds to the time value (in seconds).
+        time : str or float
+            The time to invoke the callback at (any value/units supported by
+            Tone.js ``Time``).
+
+        Returns
+        -------
+        event_id : int
+            The id of the event which can be used for canceling the event.
+
+        """
         items = self._get_callback_items(callback)
         event_id = self._get_event_id_and_inc()
         self.send({"event": "schedule", "op": "", "id": event_id, "items": items, "time": time})
         return event_id
 
     def schedule_repeat(self, callback, interval, start_time=0, duration=None):
+        """Schedule a repeated event along the transport timeline.
+
+        The event may start at a given time and may be repeated only for a
+        specified duration.
+
+        Parameters
+        ----------
+        callback : callable
+            The callback to be invoked at the scheduled time. It must accept exactly
+            one argument that corresponds to the time value (in seconds).
+        interval : str or float
+            The duration between successive callbacks (any value/units supported by
+            Tone.js ``Time`` but must be positive).
+        start_time : str or float, optional
+            When along the timeline the events should start being invoked (default: at the
+            beginning of the timeline).
+        duration : str or float, optional
+            How long the event should repeat (default: indefinitely).
+
+        Returns
+        -------
+        event_id : int
+            The id of the event which can be used for canceling the event.
+
+        """
         items = self._get_callback_items(callback)
         event_id = self._get_event_id_and_inc()
         self.send(
@@ -107,12 +149,39 @@ class Transport(ToneObject):
         return event_id
 
     def schedule_once(self, callback, time):
+        """Schedule an event along the transport timeline.
+
+        After being invoked, the event is removed.
+
+        Parameters
+        ----------
+        callback : callable
+            The callback to be invoked at the scheduled time. It must accept exactly
+            one argument that corresponds to the time value (in seconds).
+        time : str or float
+            The time to invoke the callback at (any value/units supported by
+            Tone.js ``Time``).
+
+        Returns
+        -------
+        event_id : int
+            The id of the event which can be used for canceling the event.
+
+        """
         items = self._get_callback_items(callback)
         event_id = self._get_event_id_and_inc(append=False)
         self.send({"event": "schedule", "op": "once", "id": event_id, "items": items, "time": time})
         return event_id
 
     def clear(self, event_id):
+        """Clear an event from the timeline.
+
+        Parameters
+        ----------
+        event_id : int
+            The id of the event to clear.
+
+        """
         if event_id not in self._all_event_id:
             raise ValueError(f"Scheduled event ID not found: {event_id}")
         self.send({"event": "clear", "id": event_id})
