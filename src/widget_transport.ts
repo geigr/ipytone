@@ -13,7 +13,6 @@ export class TransportModel extends ToneObjectModel {
     return {
       ...super.defaults(),
       _model_name: TransportModel.model_name,
-      state: 'stopped',
     };
   }
 
@@ -30,16 +29,7 @@ export class TransportModel extends ToneObjectModel {
   }
 
   initEventListeners(): void {
-    this.on('change:state', this.startStopTransport, this);
     this.on('msg:custom', this.handleMsg, this);
-  }
-
-  private startStopTransport(): void {
-    if (this.get('state') === 'started') {
-      tone.Transport.start();
-    } else {
-      tone.Transport.stop();
-    }
   }
 
   private getToneCallback(items: any): Promise<transportCallback> {
@@ -100,9 +90,16 @@ export class TransportModel extends ToneObjectModel {
     }
   }
 
-  handleMsg(command: any, buffers: any): void {
+  private play(command: any): void {
+    const argsArray = normalizeArguments(command.args, command.arg_keys);
+    (tone.Transport as any)[command.method](...argsArray);
+  }
+
+  private handleMsg(command: any, buffers: any): void {
     if (command.event === 'schedule') {
       this.schedule(command);
+    } else if (command.event === 'play') {
+      this.play(command);
     } else if (command.event === 'clear') {
       this.clearEvent(command.id);
     }

@@ -10,7 +10,6 @@ def test_source():
     node = Source()
 
     assert node.mute is False
-    assert node.state == "stopped"
     assert isinstance(node.output, Volume)
     assert node.volume is node.output.volume
 
@@ -96,7 +95,6 @@ def test_players():
     assert players.loaded is False
     assert players.fade_in == 0
     assert players.fade_out == 0
-    assert players.state == "stopped"
 
     a = players.get_player("A")
     assert isinstance(a, Player)

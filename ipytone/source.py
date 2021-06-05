@@ -14,7 +14,6 @@ class Source(AudioNode):
     _model_name = Unicode("SourceModel").tag(sync=True)
 
     mute = Bool(False, help="Mute source").tag(sync=True)
-    state = Enum(["started", "stopped"], allow_none=False, default_value="stopped").tag(sync=True)
     _volume = Instance(Param).tag(sync=True, **widget_serialization)
 
     def __init__(self, volume=0, mute=False, **kwargs):

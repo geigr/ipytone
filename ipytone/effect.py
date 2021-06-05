@@ -164,7 +164,6 @@ class Tremolo(StereoEffect):
 
     type = Unicode("sine", help="Tremolo LFO type").tag(sync=True)
     spread = Float(180, help="Tremolo stereo spread (degrees)").tag(sync=True)
-    state = Enum(["started", "stopped"], allow_none=False, default_value="stopped").tag(sync=True)
     _frequency = Instance(Signal).tag(sync=True, **widget_serialization)
     _depth = Instance(Signal).tag(sync=True, **widget_serialization)
 

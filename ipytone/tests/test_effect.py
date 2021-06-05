@@ -94,13 +94,11 @@ def test_tremolo():
     assert tre.depth.value == 0.5
     assert tre.depth.units == "normalRange"
     assert tre.spread == 180
-    assert tre.state == "stopped"
 
     e = tre.start()
     assert e is tre
 
     e = tre.stop()
-    assert tre.state == "stopped"
     assert e is tre
 
     with pytest.raises(TraitError, match="Invalid oscillator type"):

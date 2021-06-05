@@ -1,4 +1,4 @@
-from traitlets import Enum, Unicode
+from traitlets import Unicode
 
 from .base import ToneObject
 
@@ -35,7 +35,7 @@ class ScheduleCallbackArg(BaseCallbackArg):
         return ScheduleCallbackArg(self.caller, value=f"{self.value} + {other}", parent=self)
 
 
-def add_or_send_event(name, callee, args):
+def add_or_send_event(name, callee, args, event="trigger"):
     """Add a specific event (i.e., Tone object method call + args) for scheduling or
     send it directly to the front-end.
 
@@ -48,7 +48,7 @@ def add_or_send_event(name, callee, args):
         data["callee"] = callee.model_id
         time.items.append(data)
     else:
-        data["event"] = "trigger"
+        data["event"] = event
         data.update(args)
         callee.send(data)
 
@@ -60,8 +60,6 @@ class Transport(ToneObject):
 
     _model_name = Unicode("TransportModel").tag(sync=True)
 
-    state = Enum(["started", "stopped"], allow_none=False, default_value="stopped").tag(sync=True)
-
     def __new__(cls):
         if Transport._singleton is None:
             Transport._singleton = super(Transport, cls).__new__(cls)
@@ -69,7 +67,7 @@ class Transport(ToneObject):
 
     def __init__(self, **kwargs):
         self._py_event_id = 0
-        self._all_event_id = []
+        self._all_event_id = set()
         super(Transport, self).__init__(**kwargs)
 
     def _get_callback_items(self, callback):
@@ -80,7 +78,7 @@ class Transport(ToneObject):
     def _get_event_id_and_inc(self, append=True):
         event_id = self._py_event_id
         if append:
-            self._all_event_id.append(event_id)
+            self._all_event_id.add(event_id)
         self._py_event_id += 1
         return event_id
 
@@ -185,16 +183,24 @@ class Transport(ToneObject):
         if event_id not in self._all_event_id:
             raise ValueError(f"Scheduled event ID not found: {event_id}")
         self.send({"event": "clear", "id": event_id})
-        id_idx = self._all_event_id.index(event_id)
-        del self._all_event_id[id_idx]
+        self._all_event_id.remove(event_id)
         return self
 
-    def start(self):
-        self.state = "started"
+    def start(self, time=None, offset=None):
+        add_or_send_event("start", self, {"time": time, "offset": offset}, event="play")
+        return self
 
-    def stop(self):
-        if self.state == "started":
-            self.state = "stopped"
+    def stop(self, time=None):
+        add_or_send_event("stop", self, {"time": time}, event="play")
+        return self
+
+    def pause(self, time=None):
+        add_or_send_event("pause", self, {"time": time}, event="play")
+        return self
+
+    def toggle(self, time=None):
+        add_or_send_event("toggle", self, {"time": time}, event="play")
+        return self
 
 
 transport = Transport()

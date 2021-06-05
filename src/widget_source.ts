@@ -17,7 +17,6 @@ abstract class SourceModel extends AudioNodeModel {
     return {
       ...super.defaults(),
       _model_name: SourceModel.model_name,
-      state: 'stopped',
       _volume: undefined,
       mute: false,
     };
@@ -40,7 +39,6 @@ abstract class SourceModel extends AudioNodeModel {
       this.volume.value = this.node.volume.value;
       this.volume.save_changes();
     });
-    this.on('change:state', this.startStopNode, this);
     this.on('msg:custom', this.handleMsg, this);
   }
 
@@ -48,17 +46,6 @@ abstract class SourceModel extends AudioNodeModel {
     if (command.event === 'trigger') {
       const argsArray = normalizeArguments(command.args, command.arg_keys);
       (this.node as any)[command.method](...argsArray);
-      // TODO: state will not be properly updated if time offset/duration is defined
-      // maybe we compute when it should be sync again in the future and use setTimeout
-      this.set('state', this.node.state, { silent: true });
-    }
-  }
-
-  private startStopNode(): void {
-    if (this.get('state') === 'started') {
-      this.node.start(0);
-    } else {
-      this.node.stop(0);
     }
   }
 

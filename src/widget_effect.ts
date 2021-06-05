@@ -189,7 +189,6 @@ export class TremoloModel extends AudioNodeModel {
       _depth: undefined,
       type: 'sine',
       spread: 180,
-      state: 'stopped',
     };
   }
 
@@ -229,7 +228,6 @@ export class TremoloModel extends AudioNodeModel {
     this.on('change:type', () => {
       this.node.type = this.type;
     });
-    this.on('change:state', this.startStopNode, this);
     this.on('msg:custom', this.handleMsg, this);
   }
 
@@ -239,23 +237,11 @@ export class TremoloModel extends AudioNodeModel {
       if (time === null) {
         time = undefined;
       }
-      // TODO: state will not be properly updated if time offset is defined
-      // maybe we compute when it should be sync again in the future and use setTimeout
       if (command.method === 'start') {
         this.node.start(time);
-        this.set('state', 'started', { silent: true });
       } else if (command.method === 'stop') {
         this.node.stop(time);
-        this.set('state', 'stopped', { silent: true });
       }
-    }
-  }
-
-  private startStopNode(): void {
-    if (this.get('state') === 'started') {
-      this.node.start(0);
-    } else {
-      this.node.stop(0);
     }
   }
 
