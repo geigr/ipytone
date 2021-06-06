@@ -91,6 +91,7 @@ setup_args = dict(
         "test": [
             "pytest>=4.6",
             "pytest-cov",
+            "pytest-mock",
         ],
     },
     entry_points={},
