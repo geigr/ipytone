@@ -11,5 +11,6 @@ dependencies:
   - numpy
   - pip
   - pytest
+  - pytest-mock
   - traittypes
   - yarn

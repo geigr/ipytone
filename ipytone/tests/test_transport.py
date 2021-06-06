@@ -1,94 +1,87 @@
 import pytest
 
 from ipytone import transport
-from ipytone.source import Source
+from ipytone.source import Oscillator
+from ipytone.transport import Transport
 
 
-def to_refactor_transport():
-    assert transport.state == "stopped"
+def test_transport():
+    # signleton
+    assert Transport() is transport
 
-    toggle_schedule = False
-    py_event_id = 0
-    node = Source()
 
-    # schedule_repeat
-    interval = "8n"
-    start_time = "1m"
-    start = "time"
-    stop = "time + 0.1"
-    with transport.schedule_repeat(interval, start_time) as event_id:
-        assert transport._is_scheduling is True
-        assert transport._py_event_id == py_event_id
-        assert transport._audio_nodes == []
-        assert transport._methods == []
-        assert transport._packed_args == []
-        assert transport._toggle_schedule == toggle_schedule
-        node.start(start).stop(stop)
-        assert transport._audio_nodes == [node, node]
-        assert transport._methods == ["start", "stop"]
-        assert transport._packed_args == [f"{start} *** ", f"{stop} *** "]
-    toggle_schedule = not toggle_schedule
-    py_event_id += 1
-    assert transport._schedule_op == "scheduleRepeat"
-    assert transport._interval == interval
-    assert transport._start_time == start_time
-    assert transport._duration is None
-    assert transport._toggle_schedule == toggle_schedule
-    assert transport._is_scheduling is False
-    assert transport._py_event_id == py_event_id
+@pytest.mark.parametrize(
+    "op,func,expected_id,args,kwargs",
+    [
+        ("", transport.schedule, 0, {"time": "1m"}, {}),
+        (
+            "repeat",
+            transport.schedule_repeat,
+            1,
+            {"interval": "2"},
+            {"start_time": 0, "duration": None},
+        ),
+        ("once", transport.schedule_once, 2, {"time": "1m"}, {}),
+    ],
+)
+def test_transport_schedule(mocker, op, func, expected_id, args, kwargs):
+    mocker.patch.object(transport, "send")
 
-    transport.start()
-    assert transport.state == "started"
+    osc = Oscillator()
 
-    assert transport._toggle_clear is False
-    transport.clear(event_id)
-    assert transport._toggle_clear is True
-    assert transport._clear_event_id == event_id
-    with pytest.raises(RuntimeError):
-        transport.clear(event_id)
+    def clb(time):
+        osc.start(time).stop(time + 1)
 
-    transport.stop()
-    assert transport.state == "stopped"
+    eid = func(clb, *args.values(), **kwargs)
+    assert eid == expected_id
 
-    # schedule
-    time = "2m"
-    start = "time + 0.2"
-    stop = "time + 0.3"
-    with transport.schedule(time) as event_id:
-        assert transport._is_scheduling is True
-        assert transport._py_event_id == py_event_id
-        assert transport._audio_nodes == []
-        assert transport._methods == []
-        assert transport._packed_args == []
-        assert transport._toggle_schedule == toggle_schedule
-        node.start(start).stop(stop)
-        assert transport._audio_nodes == [node, node]
-        assert transport._methods == ["start", "stop"]
-        assert transport._packed_args == [f"{start} *** ", f"{stop} *** "]
-    toggle_schedule = not toggle_schedule
-    py_event_id += 1
-    assert transport._schedule_op == "schedule"
-    assert transport._start_time == time
-    assert transport._toggle_schedule == toggle_schedule
-    assert transport._is_scheduling is False
-    assert transport._py_event_id == py_event_id
+    expected = {
+        "event": "schedule",
+        "op": op,
+        "id": expected_id,
+        "items": [
+            {
+                "method": "start",
+                "callee": osc.model_id,
+                "args": {"time": "time", "offset": None, "duration": None},
+                "arg_keys": ["time", "offset", "duration"],
+            },
+            {
+                "method": "stop",
+                "callee": osc.model_id,
+                "args": {"time": "time + 1"},
+                "arg_keys": ["time"],
+            },
+        ],
+    }
+    expected.update(args)
+    expected.update(kwargs)
 
-    # schedule_once
-    time = "3m"
-    start = "time + 0.4"
-    stop = "time + 0.5"
-    with transport.schedule_once(time) as event_id:
-        assert transport._is_scheduling is True
-        assert transport._audio_nodes == []
-        assert transport._methods == []
-        assert transport._packed_args == []
-        assert transport._toggle_schedule == toggle_schedule
-        node.start(start).stop(stop)
-        assert transport._audio_nodes == [node, node]
-        assert transport._methods == ["start", "stop"]
-        assert transport._packed_args == [f"{start} *** ", f"{stop} *** "]
-    toggle_schedule = not toggle_schedule
-    assert transport._schedule_op == "scheduleOnce"
-    assert transport._start_time == time
-    assert transport._toggle_schedule == toggle_schedule
-    assert transport._is_scheduling is False
+    transport.send.assert_called_with(expected)
+
+    if op != "once":
+        t = transport.clear(eid)
+        assert t is transport
+        transport.send.assert_called_with({"event": "clear", "id": eid})
+
+    with pytest.raises(ValueError, match=".*event ID not found.*"):
+        transport.clear(eid)
+
+
+@pytest.mark.parametrize(
+    "method,args",
+    [
+        ("start", {"time": None, "offset": None}),
+        ("stop", {"time": None}),
+        ("pause", {"time": None}),
+        ("toggle", {"time": None}),
+    ],
+)
+def test_transport_play(mocker, method, args):
+    mocker.patch.object(transport, "send")
+
+    expected = {"event": "play", "method": method, "args": args, "arg_keys": list(args)}
+
+    t = getattr(transport, method)(*args.values())
+    assert t is transport
+    transport.send.assert_called_once_with(expected)

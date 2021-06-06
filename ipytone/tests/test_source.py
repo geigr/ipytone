@@ -6,8 +6,9 @@ from ipytone import AudioBuffer, Noise, Oscillator, Player, Players, Volume
 from ipytone.source import Source
 
 
-def test_source():
+def test_source(mocker):
     node = Source()
+    mocker.patch.object(node, "send")
 
     assert node.mute is False
     assert isinstance(node.output, Volume)
@@ -15,8 +16,19 @@ def test_source():
 
     n = node.start()
     assert n is node
+    node.send.assert_called_with(
+        {
+            "event": "trigger",
+            "method": "start",
+            "args": {"time": None, "offset": None, "duration": None},
+            "arg_keys": ["time", "offset", "duration"],
+        }
+    )
 
     n = node.stop()
+    node.send.assert_called_with(
+        {"event": "trigger", "method": "stop", "args": {"time": None}, "arg_keys": ["time"]}
+    )
     assert n is node
 
 

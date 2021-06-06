@@ -85,8 +85,9 @@ def test_reverb():
         rv.pre_delay = -1
 
 
-def test_tremolo():
+def test_tremolo(mocker):
     tre = Tremolo()
+    mocker.patch.object(tre, "send")
 
     assert tre.type == "sine"
     assert tre.frequency.value == 10
@@ -96,9 +97,15 @@ def test_tremolo():
     assert tre.spread == 180
 
     e = tre.start()
+    tre.send.assert_called_with(
+        {"event": "trigger", "method": "start", "args": {"time": None}, "arg_keys": ["time"]}
+    )
     assert e is tre
 
     e = tre.stop()
+    tre.send.assert_called_with(
+        {"event": "trigger", "method": "stop", "args": {"time": None}, "arg_keys": ["time"]}
+    )
     assert e is tre
 
     with pytest.raises(TraitError, match="Invalid oscillator type"):

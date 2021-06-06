@@ -49,7 +49,6 @@ def add_or_send_event(name, callee, args, event="trigger"):
         time.items.append(data)
     else:
         data["event"] = event
-        data.update(args)
         callee.send(data)
 
 
