@@ -1,8 +1,11 @@
 import contextlib
 
-from traitlets import Unicode
+from ipywidgets import widget_serialization
+from traitlets import Bool, Float, Instance, Int, List, Unicode, Union
 
 from .base import ToneObject
+from .core import Param
+from .signal import Signal
 
 
 class BaseCallbackArg:
@@ -70,11 +73,41 @@ def add_or_send_event(name, callee, args, event="trigger"):
 
 
 class Transport(ToneObject):
-    """Transport for timing musical events."""
+    """Transport for timing musical events.
+
+    Note: the transport position is not updated until changing the playback state
+    (play/pause/stop) or explicitly setting a new position.
+
+    """
 
     _singleton = None
 
     _model_name = Unicode("TransportModel").tag(sync=True)
+
+    _bpm = Instance(Param).tag(sync=True, **widget_serialization)
+    time_signature = Union(
+        [Int(), List(trait=Int(), minlen=2, maxlen=2)],
+        default_value=4,
+        help="transport time signature",
+    ).tag(sync=True)
+
+    loop_start = Union(
+        [Float(), Unicode()], default_value=0, help="starting position of transport loop"
+    ).tag(sync=True)
+    loop_end = Union(
+        [Float(), Unicode()], default_value="4m", help="ending position of transport loop"
+    ).tag(sync=True)
+    loop = Bool(False, help="whether the transport loops or not").tag(sync=True)
+
+    swing = Float(0, help="transport swing").tag(sync=True)
+    swing_subdivision = Unicode("8n", help="transport swing subdivision").tag(sync=True)
+
+    position = Union([Float(), Unicode()], default_value=0, help="transport position").tag(
+        sync=True
+    )
+    seconds = Float(0, help="transport position in seconds").tag(sync=True)
+    progress = Float(0, help="transport loop relative position", read_only=True).tag(sync=True)
+    ticks = Int(0, help="transport position in ticks").tag(sync=True)
 
     def __new__(cls):
         if Transport._singleton is None:
@@ -82,9 +115,25 @@ class Transport(ToneObject):
         return Transport._singleton
 
     def __init__(self, **kwargs):
+        bpm_param = Param(value=120, units="bpm", _create_node=False)
+        kwargs.update({"_bpm": bpm_param})
+
         self._py_event_id = 0
         self._all_event_id = set()
+        self._synced_signals = {}
+
         super(Transport, self).__init__(**kwargs)
+
+    @property
+    def bpm(self) -> Param:
+        """Transport tempo parameter (beats per minute)."""
+        return self._bpm
+
+    def set_loop_points(self, start, end):
+        """Set the transport loop start and stop positions."""
+        self.loop_start = start
+        self.loop_end = end
+        return self
 
     def _get_callback_items(self, callback):
         callback_arg = ScheduleCallbackArg(self)
@@ -204,27 +253,122 @@ class Transport(ToneObject):
         self._all_event_id.remove(event_id)
         return self
 
+    def cancel(self, after=0):
+        """Clear all scheduled events on the timeline that would
+        start after a given time.
+
+        Parameters
+        ----------
+        after : str or float
+            The time threshold along the transport timeline.
+
+        """
+        self.send({"event": "cancel", "after": after})
+        return self
+
     def start(self, time=None, offset=None):
+        """Start the transport and all sources synced to the transport.
+
+        Parameters
+        ----------
+        time : str or float
+            The time time when the transport should start.
+        offset : str or float
+            The timeline offset (position) to start the transport.
+
+        """
         add_or_send_event("start", self, {"time": time, "offset": offset}, event="play")
         return self
 
     def stop(self, time=None):
+        """Stop the transport and all sources synced to the transport.
+
+        Parameters
+        ----------
+        time : str or float
+            The time time when the transport should stop.
+
+        """
         add_or_send_event("stop", self, {"time": time}, event="play")
         return self
 
     def pause(self, time=None):
+        """Pause the transport and all sources synced to the transport.
+
+        Parameters
+        ----------
+        time : str or float
+            The time time when the transport should pause.
+
+        """
         add_or_send_event("pause", self, {"time": time}, event="play")
         return self
 
     def toggle(self, time=None):
+        """Toggle the current playback state of the transport.
+
+        Parameters
+        ----------
+        time : str or float
+            The time of the event.
+
+        """
         add_or_send_event("toggle", self, {"time": time}, event="play")
         return self
 
-    def dispose(self):
-        for eid in list(self._all_event_id):
-            self.clear(eid)
+    def sync_signal(self, signal, ratio=None):
+        """Attach a signal to the tempo so that any change in the tempo
+        will change the signal in the same ratio.
 
+        Parameters
+        ----------
+        signal : :class:`ipytone.Signal`
+            The audio signal object to sync with the tempo.
+        ratio : float, optional
+            Ratio between the signal value and the tempo BPM value. By default
+            computed from their current values.
+
+        """
+        if not isinstance(signal, Signal):
+            raise TypeError("signal must be an ipytone.Signal object")
+
+        self.send({"event": "sync_signal", "op": "sync", "signal": signal.model_id, "ratio": ratio})
+        self._synced_signals[signal.model_id] = ratio
+
+        return self
+
+    def unsync_signal(self, signal):
+        """Unsync a previously synced signal.
+
+        Parameters
+        ----------
+        signal : :class:`ipytone.Signal`
+            The audio signal object to unsync with the tempo.
+
+        """
+        if not isinstance(signal, Signal):
+            raise TypeError("signal must be an ipytone.Signal object")
+        if signal.model_id not in self._synced_signals:
+            raise KeyError(f"signal {signal!r} is not synced with transport")
+
+        self.send({"event": "sync_signal", "op": "unsync", "signal": signal.model_id})
+        del self._synced_signals[signal.model_id]
+
+        return self
+
+    def dispose(self):
+        self.cancel()
+        self._all_event_id.clear()
+        self.bpm.dispose()
         super().dispose()
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        if self.loop:
+            yield "loop"
+            yield "loop_start"
+            yield "loop_end"
 
 
 transport = Transport()

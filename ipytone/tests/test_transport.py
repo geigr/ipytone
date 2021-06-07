@@ -1,15 +1,44 @@
 import pytest
 
 from ipytone import transport
+from ipytone.core import Param
+from ipytone.signal import Signal
 from ipytone.source import Oscillator
 from ipytone.transport import Transport, schedule, schedule_once, schedule_repeat
 
 
 def test_transport():
-    # signleton
+    # singleton
     assert Transport() is transport
 
+    assert isinstance(transport.bpm, Param)
+    assert transport.bpm.value == 120
+    assert transport.bpm.units == "bpm"
+
+    assert transport.time_signature == 4
+
+    assert transport.loop is False
+    assert transport.loop_start == 0
+    assert transport.loop_end == "4m"
+    t = transport.set_loop_points(0, 2)
+    assert t is transport
+    assert transport.loop_start == 0
+    assert transport.loop_end == 2
+
+    assert repr(transport) == "Transport()"
+    transport.loop = True
+    assert repr(transport) == "Transport(loop=True, loop_start=0.0, loop_end=2.0)"
+
+    assert transport.swing == 0
+    assert transport.swing_subdivision == "8n"
+
+    assert transport.position == 0
+    assert transport.seconds == 0
+    assert transport.progress == 0
+    assert transport.ticks == 0
+
     transport.dispose()
+    assert transport.bpm.disposed is True
     assert len(transport._all_event_id) == 0
 
 
@@ -71,6 +100,13 @@ def test_transport_schedule(mocker, op, func, expected_id, args, kwargs):
         transport.clear(eid)
 
 
+def test_transport_cancel(mocker):
+    mocker.patch.object(transport, "send")
+    t = transport.cancel()
+    assert t is transport
+    transport.send.assert_called_once_with({"event": "cancel", "after": 0})
+
+
 @pytest.mark.parametrize(
     "method,args",
     [
@@ -88,6 +124,29 @@ def test_transport_play(mocker, method, args):
     t = getattr(transport, method)(*args.values())
     assert t is transport
     transport.send.assert_called_once_with(expected)
+
+
+def test_transport_sync_signal(mocker):
+    mocker.patch.object(transport, "send")
+
+    sig = Signal()
+
+    transport.sync_signal(sig)
+    expected = {"event": "sync_signal", "op": "sync", "signal": sig.model_id, "ratio": None}
+    transport.send.assert_called_with(expected)
+
+    transport.unsync_signal(sig)
+    expected = {"event": "sync_signal", "op": "unsync", "signal": sig.model_id}
+    transport.send.assert_called_with(expected)
+
+    with pytest.raises(KeyError, match=r".*not synced with transport"):
+        transport.unsync_signal(sig)
+
+    with pytest.raises(TypeError, match="signal must be an ipytone.Signal object"):
+        transport.sync_signal("not a signal")
+
+    with pytest.raises(TypeError, match="signal must be an ipytone.Signal object"):
+        transport.unsync_signal("not a signal")
 
 
 @pytest.mark.parametrize(
