@@ -1,3 +1,5 @@
+import contextlib
+
 from traitlets import Unicode
 
 from .base import ToneObject
@@ -9,22 +11,37 @@ class BaseCallbackArg:
 
     """
 
-    def __init__(self, caller, value=None, parent=None):
+    def __init__(self, caller, value=None):
         self.caller = caller
         self.value = value
-        self.parent = parent
+        self._parent = None
+        self._disposed = False
         self._items = []
+
+    def derive(self, value):
+        new_obj = type(self)(self.caller, value=value)
+        new_obj._disposed = self._disposed
+        new_obj._parent = self
+        return new_obj
 
     @property
     def items(self):
+        if self._disposed:
+            raise RuntimeError(
+                f"Callback argument placeholder {self!r} is used outside of its context."
+            )
+
         items = self._items
 
-        parent = self.parent
+        parent = self._parent
         while parent is not None:
             items = parent._items
-            parent = parent.parent
+            parent = parent._parent
 
         return items
+
+    def __repr__(self):
+        return f"{type(self).__name__}(value={self.value!r})"
 
 
 class ScheduleCallbackArg(BaseCallbackArg):
@@ -32,7 +49,7 @@ class ScheduleCallbackArg(BaseCallbackArg):
         super().__init__(*args, value=value, **kwargs)
 
     def __add__(self, other):
-        return ScheduleCallbackArg(self.caller, value=f"{self.value} + {other}", parent=self)
+        return self.derive(f"{self.value} + {other}")
 
 
 def add_or_send_event(name, callee, args, event="trigger"):
@@ -72,7 +89,9 @@ class Transport(ToneObject):
     def _get_callback_items(self, callback):
         callback_arg = ScheduleCallbackArg(self)
         callback(callback_arg)
-        return callback_arg.items
+        items = callback_arg.items
+        callback_arg._disposed = True
+        return items
 
     def _get_event_id_and_inc(self, append=True):
         event_id = self._py_event_id
@@ -201,5 +220,85 @@ class Transport(ToneObject):
         add_or_send_event("toggle", self, {"time": time}, event="play")
         return self
 
+    def dispose(self):
+        for eid in list(self._all_event_id):
+            self.clear(eid)
+
+        super().dispose()
+
 
 transport = Transport()
+
+
+@contextlib.contextmanager
+def schedule(time):
+    """Like :meth:`ipytone.transport.schedule` but used as a context manager.
+
+    Examples
+    --------
+
+    >>> osc = ipytone.Oscillator().to_destination()
+    >>> with ipytone.schedule("1m") as (time, event_id):
+    ...     osc.start(time).stop(time + 1)
+    >>> ipytone.transport.start()
+
+    """
+    time_arg = ScheduleCallbackArg(transport)
+    event_id = transport._get_event_id_and_inc()
+    yield time_arg, event_id
+    transport.send(
+        {"event": "schedule", "op": "", "id": event_id, "items": time_arg.items, "time": time}
+    )
+    time_arg._disposed = True
+
+
+@contextlib.contextmanager
+def schedule_repeat(interval, start_time=0, duration=None):
+    """Like :meth:`ipytone.transport.schedule_repeat` but used as a context manager.
+
+    Examples
+    --------
+
+    >>> osc = ipytone.Oscillator().to_destination()
+    >>> with ipytone.schedule_repeat("1m", "1m") as (time, event_id):
+    ...     osc.start(time).stop(time + 1)
+    >>> ipytone.transport.start()
+
+    """
+    time_arg = ScheduleCallbackArg(transport)
+    event_id = transport._get_event_id_and_inc()
+    yield time_arg, event_id
+    transport.send(
+        {
+            "event": "schedule",
+            "op": "repeat",
+            "id": event_id,
+            "items": time_arg.items,
+            "interval": interval,
+            "start_time": start_time,
+            "duration": duration,
+        }
+    )
+    time_arg._disposed = True
+
+
+@contextlib.contextmanager
+def schedule_once(time):
+    """Like :meth:`ipytone.transport.schedule_once` but used as a context manager.
+
+    Examples
+    --------
+
+    >>> osc = ipytone.Oscillator().to_destination()
+    >>> with ipytone.schedule_once("1m") as (time, event_id):
+    ...     osc.start(time).stop(time + 1)
+    >>> ipytone.transport.start()
+
+    """
+    time_arg = ScheduleCallbackArg(transport)
+    event_id = transport._get_event_id_and_inc(append=False)
+    yield time_arg, event_id
+    transport.send(
+        {"event": "schedule", "op": "once", "id": event_id, "items": time_arg.items, "time": time}
+    )
+    time_arg._disposed = True
