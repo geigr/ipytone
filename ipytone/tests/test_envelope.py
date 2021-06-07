@@ -40,6 +40,29 @@ def test_envelope():
         env.decay_curve = "sine"
 
 
+@pytest.mark.parametrize(
+    "method,js_method,kwargs",
+    [
+        ("trigger_attack", "triggerAttack", {"time": None, "velocity": 1}),
+        ("trigger_release", "triggerRelease", {"time": None}),
+        (
+            "trigger_attack_release",
+            "triggerAttackRelease",
+            {"duration": 1, "time": None, "velocity": 1},
+        ),
+    ],
+)
+def test_enveloppe_trigger(mocker, method, js_method, kwargs):
+    env = Envelope()
+    mocker.patch.object(env, "send")
+
+    expected = {"event": "trigger", "method": js_method, "args": kwargs, "arg_keys": list(kwargs)}
+
+    e = getattr(env, method)(**kwargs)
+    assert e is env
+    env.send.assert_called_once_with(expected)
+
+
 def test_amplitude_envelope():
     env = AmplitudeEnvelope()
 

@@ -5,6 +5,7 @@ from .base import AudioNode
 from .core import Gain
 from .serialization import data_array_serialization
 from .signal import Pow, Scale, Signal
+from .transport import add_or_send_event
 
 BASIC_CURVES = ["linear", "exponential"]
 CURVES = BASIC_CURVES + ["sine", "cosine", "bounce", "ripple", "step"]
@@ -41,16 +42,17 @@ class Envelope(AudioNode):
 
         super().__init__(**kwargs)
 
-    def trigger_attack(self, time=""):
-        self.send({"event": "triggerAttack"})
+    def trigger_attack(self, time=None, velocity=1):
+        add_or_send_event("triggerAttack", self, {"time": time, "velocity": velocity})
         return self
 
-    def trigger_release(self, time=""):
-        self.send({"event": "triggerRelease"})
+    def trigger_release(self, time=None):
+        add_or_send_event("triggerRelease", self, {"time": time})
         return self
 
-    def trigger_attack_release(self, duration, time=""):
-        self.send({"event": "triggerAttackRelease", "duration": duration})
+    def trigger_attack_release(self, duration, time=None, velocity=1):
+        args = {"duration": duration, "time": time, "velocity": velocity}
+        add_or_send_event("triggerAttackRelease", self, args)
         return self
 
     def _repr_keys(self):

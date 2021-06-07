@@ -189,7 +189,6 @@ export class TremoloModel extends AudioNodeModel {
       _depth: undefined,
       type: 'sine',
       spread: 180,
-      state: 'stopped',
     };
   }
 
@@ -229,14 +228,20 @@ export class TremoloModel extends AudioNodeModel {
     this.on('change:type', () => {
       this.node.type = this.type;
     });
-    this.on('change:state', this.startStopNode, this);
+    this.on('msg:custom', this.handleMsg, this);
   }
 
-  private startStopNode(): void {
-    if (this.get('state') === 'started') {
-      this.node.start(0);
-    } else {
-      this.node.stop(0);
+  private handleMsg(command: any, buffers: any): void {
+    if (command.event === 'trigger') {
+      let time = command.args.time;
+      if (time === null) {
+        time = undefined;
+      }
+      if (command.method === 'start') {
+        this.node.start(time);
+      } else if (command.method === 'stop') {
+        this.node.stop(time);
+      }
     }
   }
 

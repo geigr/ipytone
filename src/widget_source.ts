@@ -4,6 +4,8 @@ import * as tone from 'tone';
 
 // import * as source from 'tone/Tone/source/Source';
 
+import { normalizeArguments } from './utils';
+
 import { AudioNodeModel } from './widget_base';
 
 import { AudioBufferModel, AudioBuffersModel, ParamModel } from './widget_core';
@@ -15,7 +17,6 @@ abstract class SourceModel extends AudioNodeModel {
     return {
       ...super.defaults(),
       _model_name: SourceModel.model_name,
-      state: 'stopped',
       _volume: undefined,
       mute: false,
     };
@@ -38,14 +39,13 @@ abstract class SourceModel extends AudioNodeModel {
       this.volume.value = this.node.volume.value;
       this.volume.save_changes();
     });
-    this.on('change:state', this.startStopNode, this);
+    this.on('msg:custom', this.handleMsg, this);
   }
 
-  private startStopNode(): void {
-    if (this.get('state') === 'started') {
-      this.node.start(0);
-    } else {
-      this.node.stop(0);
+  private handleMsg(command: any, buffers: any): void {
+    if (command.event === 'trigger') {
+      const argsArray = normalizeArguments(command.args, command.arg_keys);
+      (this.node as any)[command.method](...argsArray);
     }
   }
 

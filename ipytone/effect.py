@@ -5,7 +5,7 @@ from .base import AudioNode
 from .channel import CrossFade
 from .core import Gain, Param
 from .signal import Signal
-from .transport import start_node, stop_node
+from .transport import add_or_send_event
 from .utils import validate_osc_type
 
 
@@ -164,7 +164,6 @@ class Tremolo(StereoEffect):
 
     type = Unicode("sine", help="Tremolo LFO type").tag(sync=True)
     spread = Float(180, help="Tremolo stereo spread (degrees)").tag(sync=True)
-    state = Enum(["started", "stopped"], allow_none=False, default_value="stopped").tag(sync=True)
     _frequency = Instance(Signal).tag(sync=True, **widget_serialization)
     _depth = Instance(Signal).tag(sync=True, **widget_serialization)
 
@@ -191,17 +190,19 @@ class Tremolo(StereoEffect):
         """Tremolo depth."""
         return self._depth
 
-    def start(self, time=""):
+    def start(self, time=None):
         """Start the tremolo effect.
 
         If it's already started, this will stop and restart the source.
         """
-        return start_node(self, time=time)
+        add_or_send_event("start", self, {"time": time})
+        return self
 
-    def stop(self, time=""):
+    def stop(self, time=None):
         """Stop the tremolo effect."""
 
-        return stop_node(self, time=time)
+        add_or_send_event("stop", self, {"time": time})
+        return self
 
     def dispose(self):
         with self._graph.hold_state():

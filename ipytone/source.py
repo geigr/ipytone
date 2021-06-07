@@ -4,7 +4,7 @@ from traitlets import Bool, Enum, Float, Instance, TraitError, Unicode, validate
 from .base import AudioNode
 from .core import AudioBuffer, AudioBuffers, Param, Volume
 from .signal import Signal
-from .transport import start_node, stop_node
+from .transport import add_or_send_event
 from .utils import validate_osc_type
 
 
@@ -14,7 +14,6 @@ class Source(AudioNode):
     _model_name = Unicode("SourceModel").tag(sync=True)
 
     mute = Bool(False, help="Mute source").tag(sync=True)
-    state = Enum(["started", "stopped"], allow_none=False, default_value="stopped").tag(sync=True)
     _volume = Instance(Param).tag(sync=True, **widget_serialization)
 
     def __init__(self, volume=0, mute=False, **kwargs):
@@ -27,17 +26,18 @@ class Source(AudioNode):
         """The volume parameter."""
         return self._volume
 
-    def start(self, time=""):
+    def start(self, time=None, offset=None, duration=None):
         """Start the audio source.
 
         If it's already started, this will stop and restart the source.
         """
-        return start_node(self, time=time)
+        add_or_send_event("start", self, {"time": time, "offset": offset, "duration": duration})
+        return self
 
-    def stop(self, time=""):
+    def stop(self, time=None):
         """Stop the audio source."""
-
-        return stop_node(self, time=time)
+        add_or_send_event("stop", self, {"time": time})
+        return self
 
 
 class Oscillator(Source):

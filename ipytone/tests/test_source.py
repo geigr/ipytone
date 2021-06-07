@@ -6,20 +6,29 @@ from ipytone import AudioBuffer, Noise, Oscillator, Player, Players, Volume
 from ipytone.source import Source
 
 
-def test_source():
+def test_source(mocker):
     node = Source()
+    mocker.patch.object(node, "send")
 
     assert node.mute is False
-    assert node.state == "stopped"
     assert isinstance(node.output, Volume)
     assert node.volume is node.output.volume
 
     n = node.start()
-    assert node.state == "started"
     assert n is node
+    node.send.assert_called_with(
+        {
+            "event": "trigger",
+            "method": "start",
+            "args": {"time": None, "offset": None, "duration": None},
+            "arg_keys": ["time", "offset", "duration"],
+        }
+    )
 
     n = node.stop()
-    assert node.state == "stopped"
+    node.send.assert_called_with(
+        {"event": "trigger", "method": "stop", "args": {"time": None}, "arg_keys": ["time"]}
+    )
     assert n is node
 
 
@@ -98,7 +107,6 @@ def test_players():
     assert players.loaded is False
     assert players.fade_in == 0
     assert players.fade_out == 0
-    assert players.state == "stopped"
 
     a = players.get_player("A")
     assert isinstance(a, Player)
@@ -111,11 +119,9 @@ def test_players():
     assert b.buffer.buffer_url == "another_url"
 
     a.start()
-    assert players.state == "started"
     b.start()
     p = players.stop_all()
     assert p is players
-    assert a.state == b.state == players.state == "stopped"
 
     players.fade_in = 1
     assert a.fade_in == b.fade_in == players.fade_in == 1

@@ -12,7 +12,7 @@ from .envelope import AmplitudeEnvelope, Envelope, FrequencyEnvelope
 from .graph import get_audio_graph
 from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Scale, Signal, Subtract
 from .source import Noise, Oscillator, Player, Players
-from .transport import transport
+from .transport import schedule, schedule_once, schedule_repeat, transport
 
 
 def _jupyter_labextension_paths():
