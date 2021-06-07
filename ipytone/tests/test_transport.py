@@ -107,12 +107,12 @@ def test_schedule_context_manager(mocker, func, cm_func, args, kwargs):
         osc.start(time).stop(time + 1)
 
     eid = func(clb, *args, **kwargs)
-    expected, = transport.send.call_args[0]
+    (expected,) = transport.send.call_args[0]
 
     with cm_func(*args, **kwargs) as (time, cm_eid):
         osc.start(time).stop(time + 1)
 
-    actual, = transport.send.call_args[0]
+    (actual,) = transport.send.call_args[0]
     assert eid != cm_eid
     actual["id"] = expected["id"]
 
