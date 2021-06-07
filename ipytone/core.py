@@ -7,6 +7,7 @@ from traittypes import Array
 
 from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext, ToneObject
 from .serialization import data_array_serialization
+from .transport import add_or_send_event
 
 UNITS = [
     "audioRange",
@@ -138,6 +139,131 @@ class Param(NodeWithContext):
     def input(self):
         """Returns the input node."""
         return self._input
+
+    def set_value_at_time(self, value, time):
+        """Schedules a parameter value change at the given time."""
+        add_or_send_event("setValueAtTime", self, {"value": value, "time": time})
+        return self
+
+    def set_ramp_point(self, time):
+        """Creates a schedule point with the value computed at the given time.
+
+        Use this method to create an automation starting point when you don't
+        know what will be the value at this time. Otherwise use
+        :meth:`Param.set_value_at_time`.
+
+        An automation starting point is needed when calling
+        :meth:`Param.linear_ramp_to_value_at_time` or
+        :meth:`Param.exp_ramp_to_value_at_time`.
+
+        """
+        add_or_send_event("setRampPoint", self, {"time": time})
+        return self
+
+    def linear_ramp_to_value_at_time(self, value, time):
+        """Schedules a linear continuous change from the previous scheduled parameter
+        value to the given value at the given time.
+
+        """
+        add_or_send_event("linearRampToValueAtTime", self, {"value": value, "time": time})
+        return self
+
+    def exp_ramp_to_value_at_time(self, value, time):
+        """Schedules an exponential continuous change from the previous scheduled parameter
+        value to the given value at the given time.
+
+        """
+        add_or_send_event("exponentialRampToValueAtTime", self, {"value": value, "time": time})
+        return self
+
+    def linear_ramp_to(self, value, ramp_time, start_time=None):
+        """Schedules a linear continuous change from the current time and current
+        value to the given value over the duration of ``ramp_time``.
+
+        """
+        add_or_send_event(
+            "linearRampTo", self, {"value": value, "ramp_time": ramp_time, "start_time": start_time}
+        )
+        return self
+
+    def exp_ramp_to(self, value, ramp_time, start_time=None):
+        """Schedules an exponential continuous change from the current time and current
+        value to the given value over the duration of ``ramp_time``.
+
+        """
+        add_or_send_event(
+            "exponentialRampTo",
+            self,
+            {"value": value, "ramp_time": ramp_time, "start_time": start_time},
+        )
+        return self
+
+    def target_ramp_to(self, value, ramp_time, start_time=None):
+        """Start exponentially approaching the target value at the given time.
+
+        Since it is an exponential approach it will continue approaching after
+        the ramp duration. ``ramp_time`` is the time that it takes to reach over 99% of
+        the way towards the value.
+
+        """
+        add_or_send_event(
+            "targetRampTo",
+            self,
+            {"value": value, "ramp_time": ramp_time, "start_time": start_time},
+        )
+        return self
+
+    def ramp_to(self, value, ramp_time, start_time=None):
+        """Ramps to the given value over the duration of the ``ramp_time``.
+
+        Automatically selects the best ramp type (exponential or linear)
+        depending on the `units` of the signal
+
+        """
+        if self.units in ["frequency", "bpm", "decibels"]:
+            return self.exp_ramp_to(value, ramp_time, start_time)
+        else:
+            return self.linear_ramp_to(value, ramp_time, start_time)
+
+    def exp_approach_value_at_time(self, value, time, ramp_time):
+        """Start exponentially approaching the target value at the given time.
+
+        Since it is an exponential approach it will continue approaching after
+        the ramp duration. ``ramp_time`` is the time that it takes to reach
+        over 99% of the way towards the value.
+
+        """
+        add_or_send_event(
+            "exponentialApproachValueAtTime",
+            self,
+            {"value": value, "time": time, "ramp_time": ramp_time},
+        )
+        return self
+
+    def set_target_at_time(self, value, start_time, time_const):
+        """Start exponentially approaching the target value at the given time.
+
+        """
+        add_or_send_event(
+            "setTargetAtTime",
+            self,
+            {"value": value, "start_time": start_time, "time_const": time_const},
+        )
+        return self
+
+    def set_value_curve_at_time(self, values, start_time, duration, scaling=None):
+        """Sets an array of arbitrary parameter values starting at the given time
+        for the given duration.
+
+        Optionally scale values with a ``scaling`` factor.
+
+        """
+        add_or_send_event(
+            "setValueCurveAtTime",
+            self,
+            {"values": list(values), "start_time": start_time, "duration": duration, "scaling": scaling},
+        )
+        return self
 
     def _repr_keys(self):
         for key in super()._repr_keys():
