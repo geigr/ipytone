@@ -59,7 +59,6 @@ class InternalAudioNode(AudioNode):
 
 
 class ParamScheduleMixin:
-
     def set_value_at_time(self, value, time):
         """Schedules a parameter value change at the given time."""
         add_or_send_event("setValueAtTime", self, {"value": value, "time": time})
