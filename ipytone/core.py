@@ -187,6 +187,22 @@ class ParamScheduleMixin:
         )
         return self
 
+    def cancel_scheduled_values(self, time):
+        """Cancels all scheduled parameter changes with times greater than or equal to
+        a given time.
+
+        """
+        add_or_send_event("cancelScheduledValues", self, {"time": time})
+        return self
+
+    def cancel_and_hold_at_time(self, time):
+        """Like :meth:`Param.cancel_scheduled_values` but also holds the automated value
+        at time until the next automated event.
+
+        """
+        add_or_send_event("cancelAndHoldAtTime", self, {"time": time})
+        return self
+
 
 class Param(NodeWithContext, ParamScheduleMixin):
     """Single, automatable parameter with units."""
