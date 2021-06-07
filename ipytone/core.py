@@ -6,8 +6,8 @@ from traitlets import Bool, Dict, Enum, Float, Instance, Int, Unicode, Union
 from traittypes import Array
 
 from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext, ToneObject
+from .callback import add_or_send_event
 from .serialization import data_array_serialization
-from .transport import add_or_send_event
 
 UNITS = [
     "audioRange",
@@ -58,87 +58,7 @@ class InternalAudioNode(AudioNode):
             yield "type"
 
 
-class Param(NodeWithContext):
-    """Single, automatable parameter with units."""
-
-    _model_name = Unicode("ParamModel").tag(sync=True)
-
-    _is_param = True
-    _create_node = Bool(False).tag(sync=True)
-    _input = Union((Instance(NativeAudioParam), Instance(NativeAudioNode))).tag(
-        sync=True, **widget_serialization
-    )
-    _units = Enum(UNITS, default_value="number", allow_none=False).tag(sync=True)
-    value = Union((Float(), Int(), Unicode()), help="Parameter value").tag(sync=True)
-    _min_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
-    _max_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
-    _swappable = Bool(False).tag(sync=True)
-    overridden = Bool(False).tag(sync=True)
-    convert = Bool(help="If True, convert the value into the specified units").tag(sync=True)
-
-    def __init__(
-        self,
-        value=1,
-        units="number",
-        convert=True,
-        min_value=None,
-        max_value=None,
-        swappable=False,
-        **kwargs
-    ):
-        if "_input" not in kwargs:
-            if swappable:
-                input = NativeAudioNode(type="GainNode")
-            else:
-                input = NativeAudioParam()
-
-            kwargs["_input"] = input
-
-        kw = {
-            "value": value,
-            "_units": units,
-            "convert": convert,
-            "_min_value": min_value,
-            "_max_value": max_value,
-            "_swappable": swappable,
-        }
-
-        kwargs.update(kw)
-        super().__init__(**kwargs)
-
-    @property
-    def units(self):
-        """Parameter value units."""
-        return self._units
-
-    @property
-    def min_value(self):
-        """Parameter value lower limit."""
-        if self._min_value is not None:
-            return self._min_value
-        elif self._units == "audioRange":
-            return -1
-        elif self._units in ["number", "decibels"]:
-            # min value for web audio API GainNode
-            return -math.inf
-        else:
-            # all other units
-            return 0
-
-    @property
-    def max_value(self):
-        """Parameter value upper limit."""
-        if self._max_value is not None:
-            return self._max_value
-        elif self._units in ["audioRange", "normalRange"]:
-            return 1
-        else:
-            return math.inf
-
-    @property
-    def input(self):
-        """Returns the input node."""
-        return self._input
+class ParamScheduleMixin:
 
     def set_value_at_time(self, value, time):
         """Schedules a parameter value change at the given time."""
@@ -241,9 +161,7 @@ class Param(NodeWithContext):
         return self
 
     def set_target_at_time(self, value, start_time, time_const):
-        """Start exponentially approaching the target value at the given time.
-
-        """
+        """Start exponentially approaching the target value at the given time."""
         add_or_send_event(
             "setTargetAtTime",
             self,
@@ -261,9 +179,97 @@ class Param(NodeWithContext):
         add_or_send_event(
             "setValueCurveAtTime",
             self,
-            {"values": list(values), "start_time": start_time, "duration": duration, "scaling": scaling},
+            {
+                "values": list(values),
+                "start_time": start_time,
+                "duration": duration,
+                "scaling": scaling,
+            },
         )
         return self
+
+
+class Param(NodeWithContext, ParamScheduleMixin):
+    """Single, automatable parameter with units."""
+
+    _model_name = Unicode("ParamModel").tag(sync=True)
+
+    _is_param = True
+    _create_node = Bool(False).tag(sync=True)
+    _input = Union((Instance(NativeAudioParam), Instance(NativeAudioNode))).tag(
+        sync=True, **widget_serialization
+    )
+    _units = Enum(UNITS, default_value="number", allow_none=False).tag(sync=True)
+    value = Union((Float(), Int(), Unicode()), help="Parameter value").tag(sync=True)
+    _min_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
+    _max_value = Union((Float(), Int()), default_value=None, allow_none=True).tag(sync=True)
+    _swappable = Bool(False).tag(sync=True)
+    overridden = Bool(False).tag(sync=True)
+    convert = Bool(help="If True, convert the value into the specified units").tag(sync=True)
+
+    def __init__(
+        self,
+        value=1,
+        units="number",
+        convert=True,
+        min_value=None,
+        max_value=None,
+        swappable=False,
+        **kwargs
+    ):
+        if "_input" not in kwargs:
+            if swappable:
+                input = NativeAudioNode(type="GainNode")
+            else:
+                input = NativeAudioParam()
+
+            kwargs["_input"] = input
+
+        kw = {
+            "value": value,
+            "_units": units,
+            "convert": convert,
+            "_min_value": min_value,
+            "_max_value": max_value,
+            "_swappable": swappable,
+        }
+
+        kwargs.update(kw)
+        super().__init__(**kwargs)
+
+    @property
+    def units(self):
+        """Parameter value units."""
+        return self._units
+
+    @property
+    def min_value(self):
+        """Parameter value lower limit."""
+        if self._min_value is not None:
+            return self._min_value
+        elif self._units == "audioRange":
+            return -1
+        elif self._units in ["number", "decibels"]:
+            # min value for web audio API GainNode
+            return -math.inf
+        else:
+            # all other units
+            return 0
+
+    @property
+    def max_value(self):
+        """Parameter value upper limit."""
+        if self._max_value is not None:
+            return self._max_value
+        elif self._units in ["audioRange", "normalRange"]:
+            return 1
+        else:
+            return math.inf
+
+    @property
+    def input(self):
+        """Returns the input node."""
+        return self._input
 
     def _repr_keys(self):
         for key in super()._repr_keys():

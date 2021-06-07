@@ -98,13 +98,23 @@ def test_tremolo(mocker):
 
     e = tre.start()
     tre.send.assert_called_with(
-        {"event": "trigger", "method": "start", "args": {"time": None}, "arg_keys": ["time"]}
+        {
+            "event": "trigger",
+            "method": "start",
+            "args": {"time": {"value": None, "eval": False}},
+            "arg_keys": ["time"],
+        }
     )
     assert e is tre
 
     e = tre.stop()
     tre.send.assert_called_with(
-        {"event": "trigger", "method": "stop", "args": {"time": None}, "arg_keys": ["time"]}
+        {
+            "event": "trigger",
+            "method": "stop",
+            "args": {"time": {"value": None, "eval": False}},
+            "arg_keys": ["time"],
+        }
     )
     assert e is tre
 

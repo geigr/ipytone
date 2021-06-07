@@ -2,10 +2,10 @@ from traitlets import Bool, Enum, Float, Int, List, Unicode, Union
 from traittypes import Array
 
 from .base import AudioNode
+from .callback import add_or_send_event
 from .core import Gain
 from .serialization import data_array_serialization
 from .signal import Pow, Scale, Signal
-from .transport import add_or_send_event
 
 BASIC_CURVES = ["linear", "exponential"]
 CURVES = BASIC_CURVES + ["sine", "cosine", "bounce", "ripple", "step"]

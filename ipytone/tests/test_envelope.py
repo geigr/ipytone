@@ -56,7 +56,8 @@ def test_enveloppe_trigger(mocker, method, js_method, kwargs):
     env = Envelope()
     mocker.patch.object(env, "send")
 
-    expected = {"event": "trigger", "method": js_method, "args": kwargs, "arg_keys": list(kwargs)}
+    args = {k: {"value": v, "eval": False} for k, v in kwargs.items()}
+    expected = {"event": "trigger", "method": js_method, "args": args, "arg_keys": list(kwargs)}
 
     e = getattr(env, method)(**kwargs)
     assert e is env

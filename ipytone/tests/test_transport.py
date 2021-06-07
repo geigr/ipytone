@@ -75,13 +75,17 @@ def test_transport_schedule(mocker, op, func, expected_id, args, kwargs):
             {
                 "method": "start",
                 "callee": osc.model_id,
-                "args": {"time": "time", "offset": None, "duration": None},
+                "args": {
+                    "time": {"value": "time", "eval": True},
+                    "offset": {"value": None, "eval": False},
+                    "duration": {"value": None, "eval": False},
+                },
                 "arg_keys": ["time", "offset", "duration"],
             },
             {
                 "method": "stop",
                 "callee": osc.model_id,
-                "args": {"time": "time + 1"},
+                "args": {"time": {"value": "time + 1", "eval": True}},
                 "arg_keys": ["time"],
             },
         ],
@@ -119,7 +123,8 @@ def test_transport_cancel(mocker):
 def test_transport_play(mocker, method, args):
     mocker.patch.object(transport, "send")
 
-    expected = {"event": "play", "method": method, "args": args, "arg_keys": list(args)}
+    expected_args = {k: {"value": v, "eval": False} for k, v in args.items()}
+    expected = {"event": "play", "method": method, "args": expected_args, "arg_keys": list(args)}
 
     t = getattr(transport, method)(*args.values())
     assert t is transport

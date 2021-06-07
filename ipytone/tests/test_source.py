@@ -20,14 +20,23 @@ def test_source(mocker):
         {
             "event": "trigger",
             "method": "start",
-            "args": {"time": None, "offset": None, "duration": None},
+            "args": {
+                "time": {"value": None, "eval": False},
+                "offset": {"value": None, "eval": False},
+                "duration": {"value": None, "eval": False},
+            },
             "arg_keys": ["time", "offset", "duration"],
         }
     )
 
     n = node.stop()
     node.send.assert_called_with(
-        {"event": "trigger", "method": "stop", "args": {"time": None}, "arg_keys": ["time"]}
+        {
+            "event": "trigger",
+            "method": "stop",
+            "args": {"time": {"value": None, "eval": False}},
+            "arg_keys": ["time"],
+        }
     )
     assert n is node
 

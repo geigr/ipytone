@@ -8,13 +8,23 @@ import * as tone from 'tone';
 
 import { normalizeArguments } from './utils';
 
-import { ToneObjectModel } from './widget_base';
+import { NodeWithContextModel, ToneObjectModel } from './widget_base';
 
 import { ParamModel } from './widget_core';
 
 import { SignalModel } from './widget_signal';
 
 type transportCallback = { (time: number): void };
+
+type callbackArgs = { [key: string]: { eval: boolean; value: any } };
+
+type callbackItem = {
+  method: string;
+  callee: string;
+  model: NodeWithContextModel;
+  args: callbackArgs;
+  arg_keys: string[];
+};
 
 export class TransportModel extends ToneObjectModel {
   defaults(): any {
@@ -49,11 +59,11 @@ export class TransportModel extends ToneObjectModel {
   }
 
   private getToneCallback(items: any): Promise<transportCallback> {
-    const itemsModel = items.map((data: any) => {
+    const itemsModel: callbackItem[] = items.map((data: any) => {
       return Promise.resolve(this.widget_manager.get_model(data.callee)).then(
         (model: WidgetModel | undefined) => {
           const item = { ...data };
-          item.model = model;
+          item.model = model as NodeWithContextModel;
           return item;
         }
       );
@@ -61,9 +71,17 @@ export class TransportModel extends ToneObjectModel {
 
     return Promise.all(itemsModel).then((items) => {
       const callback = (time: number) => {
-        items.forEach((item: any) => {
-          const args = { ...item.args };
-          args.time = eval(args.time);
+        items.forEach((item) => {
+          const args: callbackArgs = {};
+
+          for (const [k, v] of Object.entries(item.args)) {
+            if (v.eval) {
+              args[k] = { value: eval(v.value), eval: true };
+            } else {
+              args[k] = { value: v.value, eval: false };
+            }
+          }
+
           const argsArray = normalizeArguments(args, item.arg_keys);
           item.model.node[item.method](...argsArray);
         });
