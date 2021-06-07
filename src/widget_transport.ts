@@ -1,10 +1,18 @@
-import { WidgetModel, ISerializers } from '@jupyter-widgets/base';
+import {
+  WidgetModel,
+  ISerializers,
+  unpack_models,
+} from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
 
 import { normalizeArguments } from './utils';
 
 import { ToneObjectModel } from './widget_base';
+
+import { ParamModel } from './widget_core';
+
+import { SignalModel } from './widget_signal';
 
 type transportCallback = { (time: number): void };
 
@@ -13,12 +21,19 @@ export class TransportModel extends ToneObjectModel {
     return {
       ...super.defaults(),
       _model_name: TransportModel.model_name,
+      _bpm: null,
+      time_signature: 4,
+      loop_start: 0,
+      loop_end: '4m',
+      loop: false,
+      swing: 0,
+      swing_subdivision: '8n',
+      position: 0,
+      seconds: 0,
+      progress: 0,
+      ticks: 0,
     };
   }
-
-  static serializers: ISerializers = {
-    ...ToneObjectModel.serializers,
-  };
 
   initialize(
     attributes: Backbone.ObjectHash,
@@ -26,10 +41,11 @@ export class TransportModel extends ToneObjectModel {
   ): void {
     super.initialize(attributes, options);
     this.py2jsEventID = {};
+    this.bpm.setNode(tone.Transport.bpm);
   }
 
-  initEventListeners(): void {
-    this.on('msg:custom', this.handleMsg, this);
+  get bpm(): ParamModel<'bpm'> {
+    return this.get('_bpm');
   }
 
   private getToneCallback(items: any): Promise<transportCallback> {
@@ -90,9 +106,38 @@ export class TransportModel extends ToneObjectModel {
     }
   }
 
+  private syncPosition(): void {
+    this.set('position', tone.Transport.position, { silent: true });
+    this.set('seconds', tone.Transport.seconds, { silent: true });
+    this.set('progress', tone.Transport.progress, { silent: true });
+    this.set('ticks', tone.Transport.ticks, { silent: true });
+    this.save_changes();
+  }
+
   private play(command: any): void {
     const argsArray = normalizeArguments(command.args, command.arg_keys);
     (tone.Transport as any)[command.method](...argsArray);
+    this.syncPosition();
+  }
+
+  private clearEvent(pyEventID: number): void {
+    tone.Transport.clear(this.py2jsEventID[pyEventID]);
+    delete this.py2jsEventID[pyEventID];
+  }
+
+  private syncSignal(command: any): void {
+    Promise.resolve(this.widget_manager.get_model(command.signal)).then(
+      (model: WidgetModel | undefined) => {
+        const signalModel = model as SignalModel<any>;
+        if (command.op === 'sync') {
+          tone.Transport.syncSignal(signalModel.node, command.ratio);
+          signalModel.set('value', 0, { silent: true });
+          signalModel.save_changes();
+        } else if (command.op === 'unsync') {
+          tone.Transport.unsyncSignal(signalModel.node);
+        }
+      }
+    );
   }
 
   private handleMsg(command: any, buffers: any): void {
@@ -102,13 +147,51 @@ export class TransportModel extends ToneObjectModel {
       this.play(command);
     } else if (command.event === 'clear') {
       this.clearEvent(command.id);
+    } else if (command.event === 'cancel') {
+      tone.Transport.cancel(command.after);
+    } else if (command.event === 'sync_signal') {
+      this.syncSignal(command);
     }
   }
 
-  private clearEvent(pyEventID: number): void {
-    tone.Transport.clear(this.py2jsEventID[pyEventID]);
-    delete this.py2jsEventID[pyEventID];
+  initEventListeners(): void {
+    this.on('change:time_signature', () => {
+      tone.Transport.timeSignature = this.get('time_signature');
+    });
+    this.on('change:loop_start', () => {
+      tone.Transport.loopStart = this.get('loop_start');
+    });
+    this.on('change:loop_end', () => {
+      tone.Transport.loopEnd = this.get('loop_end');
+    });
+    this.on('change:loop', () => {
+      tone.Transport.loop = this.get('loop');
+    });
+    this.on('change:swing', () => {
+      tone.Transport.swing = this.get('swing');
+    });
+    this.on('change:swing_subdivision', () => {
+      tone.Transport.swingSubdivision = this.get('swing_subdivision');
+    });
+    this.on('change:position', () => {
+      tone.Transport.position = this.get('position');
+      this.syncPosition();
+    });
+    this.on('change:seconds', () => {
+      tone.Transport.seconds = this.get('seconds');
+      this.syncPosition();
+    });
+    this.on('change:ticks', () => {
+      tone.Transport.position = this.get('ticks');
+      this.syncPosition();
+    });
+    this.on('msg:custom', this.handleMsg, this);
   }
+
+  static serializers: ISerializers = {
+    ...ToneObjectModel.serializers,
+    _bpm: { deserialize: unpack_models as any },
+  };
 
   py2jsEventID: { [id: number]: number };
 
