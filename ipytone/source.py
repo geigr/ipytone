@@ -2,9 +2,9 @@ from ipywidgets import widget_serialization
 from traitlets import Bool, Enum, Float, Instance, TraitError, Unicode, validate
 
 from .base import AudioNode
+from .callback import add_or_send_event
 from .core import AudioBuffer, AudioBuffers, Param, Volume
 from .signal import Signal
-from .transport import add_or_send_event
 from .utils import validate_osc_type
 
 

@@ -4,6 +4,8 @@ import * as tone from 'tone';
 
 import { UnitName, UnitMap } from 'tone/Tone/core/type/Units';
 
+import { normalizeArguments } from './utils';
+
 import { AudioNodeModel } from './widget_base';
 
 import { ParamModel } from './widget_core';
@@ -65,12 +67,21 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
     this.updateOverridden();
   }
 
+  private handleMsg(command: any, buffers: any): void {
+    if (command.event === 'trigger') {
+      const argsArray = normalizeArguments(command.args, command.arg_keys);
+      (this.node as any)[command.method](...argsArray);
+    }
+  }
+
   initEventListeners(): void {
     super.initEventListeners();
 
     this.on('change:value', () => {
       this.node.value = this.get('value');
     });
+
+    this.on('msg:custom', this.handleMsg, this);
   }
 
   node: tone.Signal<T>;

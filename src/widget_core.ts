@@ -4,6 +4,8 @@ import * as tone from 'tone';
 
 import { UnitMap, UnitName } from 'tone/Tone/core/type/Units';
 
+import { normalizeArguments } from './utils';
+
 import {
   AudioNodeModel,
   NativeAudioNodeModel,
@@ -152,6 +154,13 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
     }
   }
 
+  private handleMsg(command: any, buffers: any): void {
+    if (command.event === 'trigger') {
+      const argsArray = normalizeArguments(command.args, command.arg_keys);
+      (this.node as any)[command.method](...argsArray);
+    }
+  }
+
   initEventListeners(): void {
     super.initEventListeners();
 
@@ -162,6 +171,8 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
       this.node.convert = this.get('convert');
     });
     this.on('change:_disposed', this.dispose, this);
+
+    this.on('msg:custom', this.handleMsg, this);
   }
 
   static serializers: ISerializers = {

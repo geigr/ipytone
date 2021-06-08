@@ -2,7 +2,7 @@ from ipywidgets import widget_serialization
 from traitlets import Bool, Float, Instance, Int, Unicode, Union
 
 from .base import AudioNode, ToneObject
-from .core import Gain, InternalAudioNode, Param
+from .core import Gain, InternalAudioNode, Param, ParamScheduleMixin
 
 
 class SignalOperator(AudioNode):
@@ -47,7 +47,7 @@ class SignalOperator(AudioNode):
         return self._create_simple_op_signal(Pow, value=value)
 
 
-class Signal(SignalOperator):
+class Signal(SignalOperator, ParamScheduleMixin):
     """A node that defines a value that can be modulated or calculated
     at the audio sample-level accuracy.
 
