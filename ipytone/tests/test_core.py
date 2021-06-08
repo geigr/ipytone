@@ -14,6 +14,7 @@ from ipytone.core import (
     Volume,
     destination,
 )
+from ipytone.signal import Signal
 
 
 def test_internal_audio_node():
@@ -22,6 +23,65 @@ def test_internal_audio_node():
     assert node.number_of_inputs == 1
     assert node.number_of_outputs == 1
     assert repr(node) == "InternalAudioNode(type='test')"
+
+
+@pytest.fixture(params=["param", "signal"])
+def param_or_signal(request):
+    if request.param == "param":
+        obj = Param()
+    else:
+        obj = Signal(units="frequency")
+    yield obj
+    obj.dispose()
+
+
+@pytest.mark.parametrize(
+    "method,js_method,args",
+    [
+        ("set_value_at_time", "setValueAtTime", {"value": 1, "time": 0}),
+        ("set_ramp_point", "setRampPoint", {"time": 0}),
+        ("linear_ramp_to_value_at_time", "linearRampToValueAtTime", {"value": 1, "time": 1}),
+        ("exp_ramp_to_value_at_time", "exponentialRampToValueAtTime", {"value": 1, "time": 1}),
+        ("linear_ramp_to", "linearRampTo", {"value": 1, "ramp_time": 2, "start_time": 3}),
+        ("exp_ramp_to", "exponentialRampTo", {"value": 1, "ramp_time": 2, "start_time": 3}),
+        ("target_ramp_to", "targetRampTo", {"value": 1, "ramp_time": 2, "start_time": 3}),
+        ("ramp_to", "linearRampTo", {"value": 1, "ramp_time": 2, "start_time": 3}),
+        (
+            "exp_approach_value_at_time",
+            "exponentialApproachValueAtTime",
+            {
+                "value": 1,
+                "time": 1,
+                "ramp_time": 2,
+            },
+        ),
+        ("set_target_at_time", "setTargetAtTime", {"value": 1, "start_time": 3, "time_const": 2}),
+        (
+            "set_value_curve_at_time",
+            "setValueCurveAtTime",
+            {"values": [0, 1, 2], "start_time": 0, "duration": 2, "scaling": None},
+        ),
+        ("cancel_scheduled_values", "cancelScheduledValues", {"time": 0}),
+        ("cancel_and_hold_at_time", "cancelAndHoldAtTime", {"time": 0}),
+    ],
+)
+def test_param_schedule_mixin(mocker, param_or_signal, method, js_method, args):
+    mocker.patch.object(param_or_signal, "send")
+
+    if param_or_signal.units == "frequency" and method == "ramp_to":
+        js_method = "exponentialRampTo"
+
+    expected_args = {k: {"value": v, "eval": False} for k, v in args.items()}
+    expected = {
+        "event": "trigger",
+        "method": js_method,
+        "args": expected_args,
+        "arg_keys": list(args),
+    }
+
+    obj = getattr(param_or_signal, method)(*args.values())
+    assert obj is param_or_signal
+    param_or_signal.send.assert_called_once_with(expected)
 
 
 def test_param():
