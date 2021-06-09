@@ -5,6 +5,7 @@ from traitlets import TraitError
 from ipytone import AudioBuffer, Noise, Player, Players, Volume
 from ipytone.source import (
     AMOscillator,
+    FatOscillator,
     FMOscillator,
     Oscillator,
     PulseOscillator,
@@ -152,6 +153,13 @@ def test_fm_oscillator():
     assert osc.disposed is True
     assert osc.harmonicity.disposed is True
     assert osc.modulation_index.disposed is True
+
+
+def test_fat_oscillator():
+    osc = FatOscillator()
+
+    assert osc.spread == 20
+    assert osc.count == 3
 
 
 def test_pulse_oscillator():

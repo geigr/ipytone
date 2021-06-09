@@ -13,6 +13,7 @@ from .graph import get_audio_graph
 from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Scale, Signal, Subtract
 from .source import (
     AMOscillator,
+    FatOscillator,
     FMOscillator,
     Noise,
     Oscillator,

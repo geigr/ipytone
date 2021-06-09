@@ -307,6 +307,18 @@ class FMOscillator(Oscillator):
         return self
 
 
+class FatOscillator(Oscillator):
+    """A 'fat" oscillator is made of multiple oscillators with detune spread between them."""
+
+    _model_name = Unicode("FatOscillatorModel").tag(sync=True)
+
+    spread = Int(20, help="Control the detune amount between the oscillators").tag(sync=True)
+    count = Int(3, help="Number of oscillators").tag(sync=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(type="sawtooth", **kwargs)
+
+
 class PulseOscillator(Oscillator):
     """A pulse oscillator.
 

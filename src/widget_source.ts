@@ -310,6 +310,47 @@ export class FMOscillatorModel extends BaseOscillatorModel {
   static model_name = 'FMOscillatorModel';
 }
 
+export class FatOscillatorModel extends BaseOscillatorModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: FatOscillatorModel.model_name,
+      spread: 20,
+      count: 3,
+    };
+  }
+
+  createNode(): tone.FatOscillator {
+    return new tone.FatOscillator({
+      type: this.get('type'),
+      frequency: this.get('_frequency').get('value'),
+      detune: this.get('_detune').get('value'),
+      volume: this.get('volume'),
+      phase: this.get('phase'),
+      partials: this.get('_partials'),
+      spread: this.get('spread'),
+      count: this.get('count'),
+    });
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:spread', () => {
+      this.node.spread = this.get('spread');
+      this.maybeSetArray();
+    });
+    this.on('change:count', () => {
+      this.node.count = this.get('count');
+      this.maybeSetArray();
+    });
+  }
+
+  node: tone.FatOscillator;
+
+  static model_name = 'FatOscillatorModel';
+}
+
 export class PulseOscillatorModel extends BaseOscillatorModel {
   defaults(): any {
     return {
