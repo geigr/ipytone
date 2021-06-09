@@ -41,6 +41,21 @@ class Source(AudioNode):
         add_or_send_event("stop", self, {"time": time})
         return self
 
+    def sync(self):
+        """Sync the source to the transport.
+
+        All subsequent calls to `start` and `stop` are synced to the
+        transport time instead of the audio context time.
+
+        """
+        add_or_send_event("sync", self, {})
+        return self
+
+    def unsync(self):
+        """Unsync the source to the transport. """
+        add_or_send_event("unsync", self, {})
+        return self
+
 
 class Oscillator(Source):
     """A simple Oscillator.

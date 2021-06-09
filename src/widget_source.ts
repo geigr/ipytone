@@ -19,6 +19,8 @@ import {
 interface SourceInterface extends tone.ToneAudioNode {
   mute: boolean;
   volume: tone.Param<'decibels'>;
+  sync(): this;
+  unsync(): this;
 }
 
 abstract class SourceModel extends AudioNodeModel {

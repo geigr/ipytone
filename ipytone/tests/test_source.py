@@ -40,6 +40,14 @@ def test_source(mocker):
     )
     assert n is node
 
+    n = node.sync()
+    node.send.assert_called_with({"event": "trigger", "method": "sync", "args": {}, "arg_keys": []})
+    assert n is node
+
+    n = node.unsync()
+    node.send.assert_called_with({"event": "trigger", "method": "unsync", "args": {}, "arg_keys": []})
+    assert n is node
+
 
 def test_oscillator():
     osc = Oscillator()
