@@ -240,6 +240,53 @@ export class PulseOscillatorModel extends BaseOscillatorModel {
   static model_name = 'PulseOscillatorModel';
 }
 
+export class PWMOscillatorModel extends BaseOscillatorModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: PWMOscillatorModel.model_name,
+      _modulation_frequency: null,
+    };
+  }
+
+  get modulation_frequency(): SignalModel<'frequency'> {
+    return this.get('_modulation_frequency');
+  }
+
+  createNode(): tone.PWMOscillator {
+    return new tone.PWMOscillator({
+      type: this.get('type'),
+      frequency: this.get('_frequency').get('value'),
+      detune: this.get('_detune').get('value'),
+      modulationFrequency: this.get('_modulation_frequency').get('value'),
+      volume: this.get('volume'),
+      phase: this.get('phase'),
+    });
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.modulation_frequency.setNode(this.node.modulationFrequency);
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.modulation_frequency.on('change:value', () => {
+      this.maybeSetArray();
+    });
+  }
+
+  static serializers: ISerializers = {
+    ...BaseOscillatorModel.serializers,
+    _modulation_frequency: { deserialize: unpack_models as any },
+  };
+
+  node: tone.PWMOscillator;
+
+  static model_name = 'PWMOscillatorModel';
+}
+
 export class NoiseModel extends SourceModel {
   defaults(): any {
     return {

@@ -52,7 +52,7 @@ class Source(AudioNode):
         return self
 
     def unsync(self):
-        """Unsync the source to the transport. """
+        """Unsync the source to the transport."""
         add_or_send_event("unsync", self, {})
         return self
 
@@ -215,6 +215,14 @@ class Oscillator(Source):
 
 
 class PulseOscillator(Oscillator):
+    """A pulse oscillator.
+
+    Parameters
+    ----------
+    width : float, optional
+        Pulse width. A value of zero corresponds to a square wave.
+
+    """
 
     _model_name = Unicode("PulseOscillatorModel").tag(sync=True)
 
@@ -248,6 +256,54 @@ class PulseOscillator(Oscillator):
         with self._graph.hold_state():
             super().dispose()
             self._width.dispose()
+
+        return self
+
+
+class PWMOscillator(Oscillator):
+    """A pulse oscillator for which the pulse width is modulated at a given frequency.
+
+    Parameters
+    ----------
+    modulation_frequency : float, optional
+        Modulation frequency of the pulse width.
+
+    """
+
+    _model_name = Unicode("PWMOscillatorModel").tag(sync=True)
+
+    _valid_types = ("pwm",)
+    _modulation_frequency = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+
+    def __init__(self, modulation_frequency=0.4, **kwargs):
+        modulation_frequency = Signal(
+            value=modulation_frequency, units="frequency", _create_node=False
+        )
+        super().__init__(_modulation_frequency=modulation_frequency, type="pwm", **kwargs)
+
+    @validate("type")
+    def _validate_type(self, proposal):
+        if proposal["value"] != "pwm":
+            raise TraitError("PWMOscillator only supports the 'pwm' oscillator type")
+        return "pwm"
+
+    @property
+    def partial_count(self):
+        return 0
+
+    @property
+    def partials(self):
+        return []
+
+    @property
+    def modulation_frequency(self) -> Signal:
+        """Modulation frequency of the pulse width."""
+        return self._modulation_frequency
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._modulation_frequency.dispose()
 
         return self
 

@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 from traitlets import TraitError
 
-from ipytone import AudioBuffer, Noise, Oscillator, Player, Players, Volume
-from ipytone.source import PulseOscillator, Source
+from ipytone import AudioBuffer, Noise, Player, Players, Volume
+from ipytone.source import Oscillator, PulseOscillator, PWMOscillator, Source
 
 
 def test_source(mocker):
@@ -45,7 +45,9 @@ def test_source(mocker):
     assert n is node
 
     n = node.unsync()
-    node.send.assert_called_with({"event": "trigger", "method": "unsync", "args": {}, "arg_keys": []})
+    node.send.assert_called_with(
+        {"event": "trigger", "method": "unsync", "args": {}, "arg_keys": []}
+    )
     assert n is node
 
 
@@ -129,6 +131,24 @@ def test_pulse_oscillator():
     assert n is osc
     assert osc.disposed is True
     assert osc.width.disposed is True
+
+
+def test_pwm_oscillator():
+    osc = PWMOscillator()
+
+    assert osc.type == "pwm"
+    assert osc.partial_count == 0
+    assert osc.partials == []
+    assert osc.modulation_frequency.units == "frequency"
+    assert osc.modulation_frequency.value == 0.4
+
+    with pytest.raises(TraitError, match=".*only supports the 'pwm'.*"):
+        osc.type = "sine"
+
+    n = osc.dispose()
+    assert n is osc
+    assert osc.disposed is True
+    assert osc.modulation_frequency.disposed is True
 
 
 def test_noise():
