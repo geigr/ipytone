@@ -11,7 +11,16 @@ from .effect import Distortion, FeedbackDelay, PingPongDelay, Reverb, Tremolo, V
 from .envelope import AmplitudeEnvelope, Envelope, FrequencyEnvelope
 from .graph import get_audio_graph
 from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Scale, Signal, Subtract
-from .source import AMOscillator, Noise, Oscillator, Player, Players, PulseOscillator, PWMOscillator
+from .source import (
+    AMOscillator,
+    FMOscillator,
+    Noise,
+    Oscillator,
+    Player,
+    Players,
+    PulseOscillator,
+    PWMOscillator,
+)
 from .transport import schedule, schedule_once, schedule_repeat, transport
 
 

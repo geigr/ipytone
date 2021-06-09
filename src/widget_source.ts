@@ -246,6 +246,70 @@ export class AMOscillatorModel extends BaseOscillatorModel {
   static model_name = 'AMOscillatorModel';
 }
 
+export class FMOscillatorModel extends BaseOscillatorModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: FMOscillatorModel.model_name,
+      _harmonicity: null,
+      _modulation_index: null,
+      modulation_type: 'square',
+    };
+  }
+
+  get harmonicity(): MultiplyModel {
+    return this.get('_harmonicity');
+  }
+
+  get modulationIndex(): MultiplyModel {
+    return this.get('_modulation_index');
+  }
+
+  createNode(): tone.FMOscillator {
+    return new tone.FMOscillator({
+      type: this.get('type'),
+      frequency: this.get('_frequency').get('value'),
+      detune: this.get('_detune').get('value'),
+      harmonicity: this.get('_harmonicity').get('value'),
+      modulationType: this.get('modulation_type'),
+      modulationIndex: this.get('_modulation_index').get('value'),
+      volume: this.get('volume'),
+      phase: this.get('phase'),
+    });
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.harmonicity.setNode(this.node.harmonicity);
+    this.modulationIndex.setNode(this.node.modulationIndex);
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.harmonicity.on('change:value', () => {
+      this.maybeSetArray();
+    });
+    this.modulationIndex.on('change:value', () => {
+      this.maybeSetArray();
+    });
+    this.on('change:modulation_type', () => {
+      this.node.modulationType = this.get('modulation_type');
+      this.maybeSetArray();
+    });
+  }
+
+  static serializers: ISerializers = {
+    ...BaseOscillatorModel.serializers,
+    _harmonicity: { deserialize: unpack_models as any },
+    _modulation_index: { deserialize: unpack_models as any },
+  };
+
+  node: tone.FMOscillator;
+
+  static model_name = 'FMOscillatorModel';
+}
+
 export class PulseOscillatorModel extends BaseOscillatorModel {
   defaults(): any {
     return {

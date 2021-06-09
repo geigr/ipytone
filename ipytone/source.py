@@ -245,7 +245,7 @@ class AMOscillator(Oscillator):
         return base_type + partial_count
 
     @property
-    def harmonicity(self) -> Signal:
+    def harmonicity(self) -> Multiply:
         """Frequency ratio between the carrier and the modulator oscillators."""
         return self._harmonicity
 
@@ -253,6 +253,56 @@ class AMOscillator(Oscillator):
         with self._graph.hold_state():
             super().dispose()
             self._harmonicity.dispose()
+
+        return self
+
+
+class FMOscillator(Oscillator):
+    """Frequency modulation synthesis
+
+    Parameters
+    ----------
+    harmonicity : float, optional
+       Frequency ratio between the carrier and the modulator oscillators. A
+       value of 1 (default) gives both oscillators the same frequency. A value of 2
+       means a change of an octave. Must be > 0.
+    modulation_index : float, optional
+       Depth (amount) of the modulation (default: 2). Must be > 0.
+
+    """
+
+    _model_name = Unicode("FMOscillatorModel").tag(sync=True)
+
+    _harmonicity = Instance(Multiply, allow_none=True).tag(sync=True, **widget_serialization)
+    _modulation_index = Instance(Multiply, allow_none=True).tag(sync=True, **widget_serialization)
+    modulation_type = Unicode("square", help="The type of the modulator oscillator").tag(sync=True)
+
+    def __init__(self, harmonicity=1, modulation_index=2, **kwargs):
+        harmonicity = Multiply(value=harmonicity, _create_node=False)
+        modulation_index = Multiply(value=modulation_index, _create_node=False)
+        super().__init__(_harmonicity=harmonicity, _modulation_index=modulation_index, **kwargs)
+
+    @validate("modulation_type")
+    def _validate_modulation_type(self, proposal):
+        value = proposal["value"]
+        base_type, partial_count = parse_osc_type(value, types=self._valid_types)
+        return base_type + partial_count
+
+    @property
+    def harmonicity(self) -> Multiply:
+        """Frequency ratio between the carrier and the modulator oscillators."""
+        return self._harmonicity
+
+    @property
+    def modulation_index(self) -> Multiply:
+        """Depth (amount) of the modulation."""
+        return self._modulation_index
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._harmonicity.dispose()
+            self._modulation_index.dispose()
 
         return self
 

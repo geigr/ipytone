@@ -3,7 +3,14 @@ import pytest
 from traitlets import TraitError
 
 from ipytone import AudioBuffer, Noise, Player, Players, Volume
-from ipytone.source import AMOscillator, Oscillator, PulseOscillator, PWMOscillator, Source
+from ipytone.source import (
+    AMOscillator,
+    FMOscillator,
+    Oscillator,
+    PulseOscillator,
+    PWMOscillator,
+    Source,
+)
 
 
 def test_source(mocker):
@@ -128,6 +135,23 @@ def test_am_oscillator():
     assert n is osc
     assert osc.disposed is True
     assert osc.harmonicity.disposed is True
+
+
+def test_fm_oscillator():
+    osc = FMOscillator()
+
+    assert osc.modulation_type == "square"
+    assert osc.harmonicity.value == 1
+    assert osc.modulation_index.value == 2
+
+    with pytest.raises(TraitError, match="Invalid oscillator type.*"):
+        osc.modulation_type = "not a valid oscillator type"
+
+    n = osc.dispose()
+    assert n is osc
+    assert osc.disposed is True
+    assert osc.harmonicity.disposed is True
+    assert osc.modulation_index.disposed is True
 
 
 def test_pulse_oscillator():
