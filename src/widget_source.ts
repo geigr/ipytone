@@ -172,6 +172,54 @@ export class OscillatorModel extends SourceModel {
   static model_name = 'OscillatorModel';
 }
 
+export class PulseOscillatorModel extends OscillatorModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: PulseOscillatorModel.model_name,
+      _width: null,
+    };
+  }
+
+  get width(): SignalModel<'audioRange'> {
+    return this.get('_width');
+  }
+
+  createNode(): any {  //tone.PulseOscillator {
+    return new tone.PulseOscillator({
+      type: this.get('type'),
+      frequency: this.get('_frequency').get('value'),
+      detune: this.get('_detune').get('value'),
+      width: this.get('_width').get('value'),
+      volume: this.get('volume'),
+      phase: this.get('phase'),
+    });
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.width.setNode(this.node.width);
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.width.on('change:value', () => {
+      this.maybeSetArray();
+    })
+  }
+
+  static serializers: ISerializers = {
+    ...OscillatorModel.serializers,
+    _width: { deserialize: unpack_models as any },
+  };
+
+  //node: tone.PulseOscillator;
+  node: any;
+
+  static model_name = 'PulseOscillatorModel';
+}
+
 export class NoiseModel extends SourceModel {
   defaults(): any {
     return {

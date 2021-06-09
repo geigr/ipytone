@@ -2,6 +2,9 @@ import re
 
 from traitlets import TraitError
 
+OSC_TYPES = ["sine", "square", "sawtooth", "triangle"]
+EXTENDED_OSC_TYPES = OSC_TYPES + ["pwm", "pulse"]
+
 
 def validate_osc_type(value):
     value_re = r"(sine|square|sawtooth|triangle)[\d]*"
@@ -12,7 +15,10 @@ def validate_osc_type(value):
     return value
 
 
-def parse_osc_type(value, types=("sine", "square", "sawtooth", "triangle")):
+def parse_osc_type(value, types=None):
+    if types is None:
+        types = OSC_TYPES
+
     types_str = "|".join(types)
     input_re = f"^(?P<basic_type>{types_str})(?P<partial_count>[0-9]*)$"
 

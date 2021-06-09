@@ -7,7 +7,7 @@ from .callback import add_or_send_event
 from .core import AudioBuffer, AudioBuffers, Param, Volume
 from .serialization import data_array_serialization
 from .signal import Signal
-from .utils import parse_osc_type
+from .utils import parse_osc_type, OSC_TYPES
 
 
 class Source(AudioNode):
@@ -65,6 +65,7 @@ class Oscillator(Source):
 
     _model_name = Unicode("OscillatorModel").tag(sync=True)
 
+    _valid_types = OSC_TYPES
     type = Unicode("sine", help="Oscillator type").tag(sync=True)
     _partials = List(trait=Float()).tag(sync=True)
 
@@ -87,7 +88,7 @@ class Oscillator(Source):
 
         else:
             partials = []
-            _, partial_count_ = parse_osc_type(type)
+            _, partial_count_ = parse_osc_type(type, types=self._valid_types)
 
         if partial_count is not None:
             if type == "custom":
@@ -126,7 +127,7 @@ class Oscillator(Source):
                 raise ValueError("Cannot set 'custom' type, use the ``partial`` property instead")
             return value
         else:
-            base_type, partial_count = parse_osc_type(value)
+            base_type, partial_count = parse_osc_type(value, types=self._valid_types)
             return base_type + partial_count
 
     @property
@@ -135,12 +136,12 @@ class Oscillator(Source):
         if self.type == "custom":
             return self.type
         else:
-            base_type, _ = parse_osc_type(self.type)
+            base_type, _ = parse_osc_type(self.type, types=self._valid_types)
             return base_type
 
     @base_type.setter
     def base_type(self, value):
-        _, partial_count = parse_osc_type(self.type)
+        _, partial_count = parse_osc_type(self.type, types=self._valid_types)
         self.type = value + partial_count
 
     @property
@@ -173,7 +174,7 @@ class Oscillator(Source):
         if self.type == "custom":
             return len(self.partials)
         else:
-            _, partial_count = parse_osc_type(self.type)
+            _, partial_count = parse_osc_type(self.type, types=self._valid_types)
             return partial_count
 
     @partial_count.setter
@@ -183,7 +184,7 @@ class Oscillator(Source):
         else:
             if value == 0:
                 value = ""
-            base_type, _ = parse_osc_type(self.type)
+            base_type, _ = parse_osc_type(self.type, types=self._valid_types)
             self.type = base_type + str(value)
 
     def dispose(self):
@@ -191,6 +192,43 @@ class Oscillator(Source):
             super().dispose()
             self._frequency.dispose()
             self._detune.dispose()
+
+        return self
+
+
+class PulseOscillator(Oscillator):
+
+    _model_name = Unicode("PulseOscillatorModel").tag(sync=True)
+
+    _width = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+
+    def __init__(self, width=0.2, **kwargs):
+        width = Signal(value=width, units="audioRange", _create_node=False)
+        super().__init__(_width=width, **kwargs)
+
+    @validate("type")
+    def _validate_type(self, proposal):
+        if proposal["value"] != "pulse":
+            raise ValueError("PulseOscillator only supports the 'pulse' oscillator type")
+        return "pulse"
+
+    @property
+    def partial_count(self):
+        return 0
+
+    @property
+    def partials(self):
+        return []
+
+    @property
+    def width(self) -> Signal:
+        """The width of the pulse."""
+        return self._width
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._width.dispose()
 
         return self
 
