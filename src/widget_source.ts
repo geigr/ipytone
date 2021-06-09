@@ -182,7 +182,7 @@ export class OscillatorModel extends BaseOscillatorModel {
       type: this.get('type'),
       frequency: this.get('_frequency').get('value'),
       detune: this.get('_detune').get('value'),
-      volume: this.get('volume'),
+      volume: this.get('_volume').get('value'),
       phase: this.get('phase'),
       partials: this.get('_partials'),
     });
@@ -214,7 +214,7 @@ export class AMOscillatorModel extends BaseOscillatorModel {
       detune: this.get('_detune').get('value'),
       harmonicity: this.get('_harmonicity').get('value'),
       modulationType: this.get('modulation_type'),
-      volume: this.get('volume'),
+      volume: this.get('_volume').get('value'),
       phase: this.get('phase'),
     });
   }
@@ -273,7 +273,7 @@ export class FMOscillatorModel extends BaseOscillatorModel {
       harmonicity: this.get('_harmonicity').get('value'),
       modulationType: this.get('modulation_type'),
       modulationIndex: this.get('_modulation_index').get('value'),
-      volume: this.get('volume'),
+      volume: this.get('_volume').get('value'),
       phase: this.get('phase'),
     });
   }
@@ -325,7 +325,7 @@ export class FatOscillatorModel extends BaseOscillatorModel {
       type: this.get('type'),
       frequency: this.get('_frequency').get('value'),
       detune: this.get('_detune').get('value'),
-      volume: this.get('volume'),
+      volume: this.get('_volume').get('value'),
       phase: this.get('phase'),
       partials: this.get('_partials'),
       spread: this.get('spread'),
@@ -370,7 +370,7 @@ export class PulseOscillatorModel extends BaseOscillatorModel {
       frequency: this.get('_frequency').get('value'),
       detune: this.get('_detune').get('value'),
       width: this.get('_width').get('value'),
-      volume: this.get('volume'),
+      volume: this.get('_volume').get('value'),
       phase: this.get('phase'),
     });
   }
@@ -417,7 +417,7 @@ export class PWMOscillatorModel extends BaseOscillatorModel {
       frequency: this.get('_frequency').get('value'),
       detune: this.get('_detune').get('value'),
       modulationFrequency: this.get('_modulation_frequency').get('value'),
-      volume: this.get('volume'),
+      volume: this.get('_volume').get('value'),
       phase: this.get('phase'),
     });
   }
@@ -445,6 +445,137 @@ export class PWMOscillatorModel extends BaseOscillatorModel {
   static model_name = 'PWMOscillatorModel';
 }
 
+type AnyOscillator =
+  | tone.Oscillator
+  | tone.PWMOscillator
+  | tone.PulseOscillator
+  | tone.FatOscillator
+  | tone.AMOscillator
+  | tone.FMOscillator;
+
+export class OmniOscillatorModel extends BaseOscillatorModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: OmniOscillatorModel.model_name,
+      _modulation_frequency: null,
+      _width: null,
+      _harmonicity: null,
+      _modulation_index: null,
+      modulation_type: 'square',
+      spread: 20,
+      count: 3,
+    };
+  }
+
+  get modulation_frequency(): SignalModel<'frequency'> {
+    return this.get('_modulation_frequency');
+  }
+
+  get width(): SignalModel<'audioRange'> {
+    return this.get('_width');
+  }
+
+  get harmonicity(): MultiplyModel {
+    return this.get('_harmonicity');
+  }
+
+  get modulationIndex(): MultiplyModel {
+    return this.get('_modulation_index');
+  }
+
+  createNode(): tone.OmniOscillator<AnyOscillator> {
+    return new tone.OmniOscillator({
+      type: this.get('type'),
+      frequency: this.get('_frequency').get('value'),
+      detune: this.get('_detune').get('value'),
+      volume: this.get('_volume').get('value'),
+      phase: this.get('phase'),
+    });
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.setOptionalNodes();
+  }
+
+  private setOptionalNodes(): void {
+    if (this.node.sourceType === 'am' || this.node.sourceType === 'fm') {
+      this.harmonicity.setNode(this.node.harmonicity as any);
+      (this.node.harmonicity as tone.Signal<'positive'>).value = this.get(
+        '_harmonicity'
+      ).get('value');
+
+      if (this.node.sourceType === 'fm') {
+        this.modulationIndex.setNode(this.node.modulationIndex as any);
+        (this.node.modulationIndex as tone.Signal<'positive'>).value = this.get(
+          '_modulation_index'
+        ).get('value');
+        this.node.modulationType = this.get('_modulation_type');
+      }
+    } else if (this.node.sourceType === 'fat') {
+      this.node.spread = this.get('spread');
+      this.node.count = this.get('count');
+    } else if (this.node.sourceType === 'pulse') {
+      this.width.setNode(this.node.width as any);
+      (this.node.width as tone.Signal<'audioRange'>).value = this.get(
+        '_width'
+      ).get('value');
+    } else if (this.node.sourceType === 'pwm') {
+      this.modulation_frequency.setNode(this.node.modulationFrequency as any);
+      (this.node
+        .modulationFrequency as tone.Signal<'frequency'>).value = this.get(
+        '_modulation_frequency'
+      ).get('value');
+    }
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:type', () => {
+      this.setOptionalNodes();
+    });
+
+    this.modulation_frequency.on('change:value', () => {
+      this.maybeSetArray();
+    });
+    this.width.on('change:value', () => {
+      this.maybeSetArray();
+    });
+    this.harmonicity.on('change:value', () => {
+      this.maybeSetArray();
+    });
+    this.modulationIndex.on('change:value', () => {
+      this.maybeSetArray();
+    });
+    this.on('change:modulation_type', () => {
+      this.node.modulationType = this.get('modulation_type');
+      this.maybeSetArray();
+    });
+    this.on('change:spread', () => {
+      this.node.spread = this.get('spread');
+      this.maybeSetArray();
+    });
+    this.on('change:count', () => {
+      this.node.count = this.get('count');
+      this.maybeSetArray();
+    });
+  }
+
+  static serializers: ISerializers = {
+    ...BaseOscillatorModel.serializers,
+    _modulation_frequency: { deserialize: unpack_models as any },
+    _width: { deserialize: unpack_models as any },
+    _harmonicity: { deserialize: unpack_models as any },
+    _modulation_index: { deserialize: unpack_models as any },
+  };
+
+  node: tone.OmniOscillator<AnyOscillator>;
+
+  static model_name = 'OmniOscillatorModel';
+}
+
 export class NoiseModel extends SourceModel {
   defaults(): any {
     return {
@@ -459,7 +590,7 @@ export class NoiseModel extends SourceModel {
   createNode(): tone.Noise {
     return new tone.Noise({
       type: this.get('type'),
-      volume: this.get('volume'),
+      volume: this.get('_volume').get('value'),
       fadeIn: this.get('fade_in'),
       fadeOut: this.get('fade_out'),
     });
@@ -524,7 +655,7 @@ export class PlayerModel extends SourceModel {
       fadeOut: this.get('fade_out'),
       reverse: this.get('reverse'),
       playbackRate: this.get('playback_rate'),
-      volume: this.get('volume'),
+      volume: this.get('_volume').get('value'),
     });
   }
 
@@ -589,7 +720,7 @@ export class PlayersModel extends AudioNodeModel {
       urls: this.buffers.buffer_nodes,
       fadeIn: this.get('fade_in'),
       fadeOut: this.get('fade_out'),
-      volume: this.get('volume'),
+      volume: this.get('_volume').get('value'),
       mute: this.mute,
     });
 

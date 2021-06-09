@@ -89,9 +89,6 @@ def test_oscillator():
     with pytest.raises(TraitError, match="Invalid oscillator type.*"):
         osc.type = "not a good oscillator wave"
 
-    with pytest.raises(TraitError, match="Cannot set 'custom' type.*"):
-        osc.type = "custom"
-
     osc.partials = [1.0, 0.5, 0.3]
     assert osc.partials == [1.0, 0.5, 0.3]
     assert osc.type == "custom"

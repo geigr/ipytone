@@ -1,3 +1,5 @@
+import re
+
 from ipywidgets import widget_serialization
 from traitlets import Bool, Enum, Float, Instance, Int, List, TraitError, Unicode, validate
 from traittypes import Array
@@ -133,17 +135,20 @@ class Oscillator(Source):
         """Oscillator detune."""
         return self._detune
 
+    def _parse_osc_type(self, value, validate=False):
+        if value == "custom":
+            if validate and not len(self._partials):
+                raise TraitError("Cannot set 'custom' type, use the ``partial`` property instead")
+            return value, ""
+        else:
+            base_type, partial_count = parse_osc_type(value, types=self._valid_types)
+            return base_type, partial_count
+
     @validate("type")
     def _validate_type(self, proposal):
         value = proposal["value"]
 
-        if value == "custom":
-            if not len(self.partials):
-                raise TraitError("Cannot set 'custom' type, use the ``partial`` property instead")
-            return value
-        else:
-            base_type, partial_count = parse_osc_type(value, types=self._valid_types)
-            return base_type + partial_count
+        return "".join(self._parse_osc_type(value, validate=True))
 
     @property
     def base_type(self):
@@ -151,12 +156,12 @@ class Oscillator(Source):
         if self.type == "custom":
             return self.type
         else:
-            base_type, _ = parse_osc_type(self.type, types=self._valid_types)
+            base_type, _ = self._parse_osc_type(self.type)
             return base_type
 
     @base_type.setter
     def base_type(self, value):
-        _, partial_count = parse_osc_type(self.type, types=self._valid_types)
+        _, partial_count = self._parse_osc_type(self.type)
         self.type = value + partial_count
 
     @property
@@ -189,7 +194,7 @@ class Oscillator(Source):
         if self.type == "custom":
             return len(self.partials)
         else:
-            _, partial_count = parse_osc_type(self.type, types=self._valid_types)
+            _, partial_count = self._parse_osc_type(self.type)
             if not len(partial_count):
                 return 0
             else:
@@ -202,7 +207,7 @@ class Oscillator(Source):
         else:
             if value == 0:
                 value = ""
-            base_type, _ = parse_osc_type(self.type, types=self._valid_types)
+            base_type, _ = self._parse_osc_type(self.type)
             self.type = base_type + str(value)
 
     def dispose(self):
@@ -409,6 +414,217 @@ class PWMOscillator(Oscillator):
         with self._graph.hold_state():
             super().dispose()
             self._modulation_frequency.dispose()
+
+        return self
+
+
+class OmniOscillator(Oscillator):
+    """Full options oscillator.
+
+    See other oscillators for documentation.
+    """
+
+    _model_name = Unicode("OmniOscillatorModel").tag(sync=True)
+
+    _valid_types = OSC_TYPES + ["pulse", "pwm"]
+    _modulation_frequency = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+    _width = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+    _harmonicity = Instance(Multiply, allow_none=True).tag(sync=True, **widget_serialization)
+    _modulation_index = Instance(Multiply, allow_none=True).tag(sync=True, **widget_serialization)
+    modulation_type = Unicode("square", help="The type of the modulator oscillator").tag(sync=True)
+
+    spread = Int(20, help="Control the detune amount between the oscillators").tag(sync=True)
+    count = Int(3, help="Number of oscillators").tag(sync=True)
+
+    def __init__(
+        self,
+        type="sine",
+        harmonicity=1,
+        modulation_index=2,
+        width=0.2,
+        modulation_frequency=0.4,
+        **kwargs,
+    ):
+        harmonicity = Multiply(value=harmonicity, _create_node=False)
+        modulation_index = Multiply(value=modulation_index, _create_node=False)
+        width = Signal(value=width, units="audioRange", _create_node=False)
+        modulation_frequency = Signal(
+            value=modulation_frequency, units="frequency", _create_node=False
+        )
+        super().__init__(
+            type="sine",
+            _harmonicity=harmonicity,
+            _modulation_index=modulation_index,
+            _width=width,
+            _modulation_frequency=modulation_frequency,
+            **kwargs,
+        )
+
+        # pick up the right validator (this class, not the base class)
+        self.type = type
+
+    def _parse_osc_type(self, value, validate=False):
+        match = re.match(r"^(?P<prefix>am|fm|fat|.*)(?P<type>.*)$", value)
+
+        if match is None:
+            raise TraitError(f"Invalid oscillator type {value!r}")
+
+        prefix, type_partial = match.groups()
+        base_type, partial_count = super()._parse_osc_type(type_partial, validate=validate)
+
+        return prefix, base_type, partial_count
+
+    def _is_pulse(self, value=None):
+        if value is None:
+            value = self.type
+        return value in ["pulse", "pwm"]
+
+    @validate("type")
+    def _validate_type(self, proposal):
+        value = proposal["value"]
+
+        if self._is_pulse(value):
+            return value
+        else:
+            prefix, base_type, partial_count = self._parse_osc_type(value, validate=True)
+            return "".join([prefix, base_type, partial_count])
+
+    @property
+    def source_type(self):
+        if self._is_pulse():
+            return self.type
+
+        prefix, _, _ = self._parse_osc_type(self.type)
+        if not prefix:
+            return "oscillator"
+        else:
+            return prefix
+
+    @source_type.setter
+    def source_type(self, value):
+        if self._is_pulse(value):
+            self.type = value
+        else:
+            _, base_type, partial_count = self._parse_osc_type(self.type)
+            if value == "oscillator":
+                self.type = base_type + partial_count
+            else:
+                self.type = value + base_type + partial_count
+
+    @property
+    def base_type(self):
+        if self._is_pulse():
+            return self.type
+        else:
+            _, base_type, _ = self._parse_osc_type(self.type)
+            return base_type
+
+    @base_type.setter
+    def base_type(self, value):
+        if self._is_pulse(value):
+            raise ValueError("Use ``source_type`` instead to set pulse oscillator")
+
+        prefix, _, partial_count = self._parse_osc_type(self.type)
+        self.type = prefix + value + partial_count
+
+    @validate("modulation_type")
+    def _validate_modulation_type(self, proposal):
+        value = proposal["value"]
+        base_type, partial_count = parse_osc_type(value, types=self._valid_types)
+        return base_type + partial_count
+
+    @property
+    def harmonicity(self):
+        """Frequency ratio between the carrier and the modulator oscillators."""
+        if self.type[0:2] in ["am", "fm"]:
+            return self._harmonicity
+        else:
+            return None
+
+    @property
+    def modulation_index(self):
+        """Depth (amount) of the modulation."""
+        if self.type.startswith("fm"):
+            return self._modulation_index
+        else:
+            return None
+
+    @property
+    def modulation_frequency(self):
+        """Modulation frequency of the pulse width."""
+        if self.type == "pwm":
+            return self._modulation_frequency
+        else:
+            return None
+
+    @property
+    def width(self):
+        """The width of the pulse."""
+        if self.type == "pulse":
+            return self._width
+        else:
+            return None
+
+    @property
+    def partial_count(self):
+        if self._is_pulse():
+            return 0
+        elif self.type == "custom":
+            return len(self._partials)
+        else:
+            _, _, partial_count = self._parse_osc_type(self.type)
+            if not len(partial_count):
+                return 0
+            else:
+                return int(partial_count)
+
+    @partial_count.setter
+    def partial_count(self, value):
+        if self._is_pulse():
+            raise NotImplementedError("Cannot set partial count for pulse oscillators")
+
+        prefix, base_type, _ = self._parse_osc_type(self.type)
+
+        if base_type == "custom":
+            self._partials = self._partials[0:value]
+        else:
+            if value == 0:
+                value = ""
+            self.type = prefix + base_type + str(value)
+
+    @property
+    def partials(self):
+        if self._is_pulse():
+            return []
+        else:
+            return self._partials
+
+    @partials.setter
+    def partials(self, value):
+        if self._is_pulse():
+            raise NotImplementedError("Cannot set partials for pulse oscillators")
+
+        if value is None:
+            value = []
+
+        self._partials = value
+
+        if len(value):
+            self.type = "custom"
+
+    def dispose(self):
+        src_type = self.source_type
+
+        with self._graph.hold_state():
+            super().dispose()
+            if src_type in ["am", "fm"]:
+                self._harmonicity.dispose()
+                if src_type == "fm":
+                    self._modulation_index.dispose()
+            elif src_type == "pulse":
+                self._width.dispose()
+            elif src_type == "pwm":
+                self._modulation_frequency.dispose()
 
         return self
 

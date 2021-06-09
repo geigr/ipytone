@@ -16,6 +16,7 @@ from .source import (
     FatOscillator,
     FMOscillator,
     Noise,
+    OmniOscillator,
     Oscillator,
     Player,
     Players,
