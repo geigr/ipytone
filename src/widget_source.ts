@@ -2,8 +2,6 @@ import { ISerializers, unpack_models } from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
 
-// import * as source from 'tone/Tone/source/Source';
-
 import { normalizeArguments } from './utils';
 
 import { AudioNodeModel } from './widget_base';
@@ -17,6 +15,11 @@ import {
   dataarray_serialization,
   getArrayProp,
 } from './serializers';
+
+interface ISource extends tone.ToneAudioNode {
+  mute: boolean,
+  volume: tone.Param<'decibels'>,
+}
 
 abstract class SourceModel extends AudioNodeModel {
   defaults(): any {
@@ -60,18 +63,25 @@ abstract class SourceModel extends AudioNodeModel {
     _volume: { deserialize: unpack_models as any },
   };
 
-  // FIXME: typescript error: property not assignable to the same property in base type
-  // node: source.Source<source.SourceOptions>;
-  node: any;
+  node: ISource;
 
   static model_name = 'SourceModel';
 }
 
-export class OscillatorModel extends SourceModel {
+interface IBaseOscillator extends ISource {
+  frequency: tone.Signal<'frequency'>,
+  detune: tone.Signal<'cents'>,
+  type: string,
+  partials: number[],
+  phase: number,
+  asArray(length: number): Promise<Float32Array>;
+}
+
+abstract class BaseOscillatorModel extends SourceModel {
   defaults(): any {
     return {
       ...super.defaults(),
-      _model_name: OscillatorModel.model_name,
+      _model_name: BaseOscillatorModel.model_name,
       type: 'sine',
       _partials: [],
       _frequency: null,
@@ -94,10 +104,6 @@ export class OscillatorModel extends SourceModel {
     }
   }
 
-  get type(): tone.ToneOscillatorType {
-    return this.get('type');
-  }
-
   get frequency(): SignalModel<'frequency'> {
     return this.get('_frequency');
   }
@@ -115,17 +121,6 @@ export class OscillatorModel extends SourceModel {
     this.set('array', value, { silent: true });
   }
 
-  createNode(): tone.Oscillator {
-    return new tone.Oscillator({
-      type: this.get('type'),
-      frequency: this.get('_frequency').get('value'),
-      detune: this.get('_detune').get('value'),
-      volume: this.get('volume'),
-      phase: this.get('phase'),
-      partials: this.get('_partials'),
-    });
-  }
-
   setSubNodes(): void {
     this.frequency.setNode(this.node.frequency);
     this.detune.setNode(this.node.detune);
@@ -133,7 +128,7 @@ export class OscillatorModel extends SourceModel {
 
   maybeSetArray(): void {
     if (this.get('sync_array')) {
-      this.node.asArray(this.get('array_length')).then((arr) => {
+      this.node.asArray(this.get('array_length')).then((arr: Float32Array) => {
         this.array = arr;
         this.save_changes();
       });
@@ -145,8 +140,8 @@ export class OscillatorModel extends SourceModel {
 
     this.on('change:type', () => {
       // prevent calling twice (partials changed -> type = custom)
-      if (this.node.type !== this.type) {
-        this.node.type = this.type;
+      if (this.node.type !== this.get('type')) {
+        this.node.type = this.get('type');
         this.maybeSetArray();
       }
     });
@@ -167,12 +162,36 @@ export class OscillatorModel extends SourceModel {
     array: dataarray_serialization,
   };
 
+  node: IBaseOscillator;
+
+  static model_name = 'BaseOscillatorModel';
+}
+
+export class OscillatorModel extends BaseOscillatorModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: OscillatorModel.model_name,
+    };
+  }
+
+  createNode(): tone.Oscillator {
+    return new tone.Oscillator({
+      type: this.get('type'),
+      frequency: this.get('_frequency').get('value'),
+      detune: this.get('_detune').get('value'),
+      volume: this.get('volume'),
+      phase: this.get('phase'),
+      partials: this.get('_partials'),
+    });
+  }
+
   node: tone.Oscillator;
 
   static model_name = 'OscillatorModel';
 }
 
-export class PulseOscillatorModel extends OscillatorModel {
+export class PulseOscillatorModel extends BaseOscillatorModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -185,7 +204,7 @@ export class PulseOscillatorModel extends OscillatorModel {
     return this.get('_width');
   }
 
-  createNode(): any {  //tone.PulseOscillator {
+  createNode(): tone.PulseOscillator {
     return new tone.PulseOscillator({
       type: this.get('type'),
       frequency: this.get('_frequency').get('value'),
@@ -210,12 +229,11 @@ export class PulseOscillatorModel extends OscillatorModel {
   }
 
   static serializers: ISerializers = {
-    ...OscillatorModel.serializers,
+    ...BaseOscillatorModel.serializers,
     _width: { deserialize: unpack_models as any },
   };
 
-  //node: tone.PulseOscillator;
-  node: any;
+  node: tone.PulseOscillator;
 
   static model_name = 'PulseOscillatorModel';
 }
