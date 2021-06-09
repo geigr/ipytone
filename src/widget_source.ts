@@ -16,9 +16,9 @@ import {
   getArrayProp,
 } from './serializers';
 
-interface ISource extends tone.ToneAudioNode {
-  mute: boolean,
-  volume: tone.Param<'decibels'>,
+interface SourceInterface extends tone.ToneAudioNode {
+  mute: boolean;
+  volume: tone.Param<'decibels'>;
 }
 
 abstract class SourceModel extends AudioNodeModel {
@@ -63,17 +63,17 @@ abstract class SourceModel extends AudioNodeModel {
     _volume: { deserialize: unpack_models as any },
   };
 
-  node: ISource;
+  node: SourceInterface;
 
   static model_name = 'SourceModel';
 }
 
-interface IBaseOscillator extends ISource {
-  frequency: tone.Signal<'frequency'>,
-  detune: tone.Signal<'cents'>,
-  type: string,
-  partials: number[],
-  phase: number,
+interface BaseOscillatorInterface extends SourceInterface {
+  frequency: tone.Signal<'frequency'>;
+  detune: tone.Signal<'cents'>;
+  type: string;
+  partials: number[];
+  phase: number;
   asArray(length: number): Promise<Float32Array>;
 }
 
@@ -162,7 +162,7 @@ abstract class BaseOscillatorModel extends SourceModel {
     array: dataarray_serialization,
   };
 
-  node: IBaseOscillator;
+  node: BaseOscillatorInterface;
 
   static model_name = 'BaseOscillatorModel';
 }
@@ -225,7 +225,7 @@ export class PulseOscillatorModel extends BaseOscillatorModel {
 
     this.width.on('change:value', () => {
       this.maybeSetArray();
-    })
+    });
   }
 
   static serializers: ISerializers = {

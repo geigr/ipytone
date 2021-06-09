@@ -6,7 +6,7 @@ from .callback import add_or_send_event
 from .channel import CrossFade
 from .core import Gain, Param
 from .signal import Signal
-from .utils import validate_osc_type
+from .utils import parse_osc_type
 
 
 class Effect(AudioNode):
@@ -178,7 +178,7 @@ class Tremolo(StereoEffect):
 
     @validate("type")
     def _validate_type(self, proposal):
-        return validate_osc_type(proposal["value"])
+        return "".join(parse_osc_type(proposal["value"]))
 
     @property
     def frequency(self) -> Signal:
@@ -234,7 +234,7 @@ class Vibrato(Effect):
 
     @validate("type")
     def _validate_type(self, proposal):
-        return validate_osc_type(proposal["value"])
+        return "".join(parse_osc_type(proposal["value"]))
 
     @property
     def frequency(self) -> Signal:

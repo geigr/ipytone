@@ -3,7 +3,7 @@ import pytest
 from traitlets import TraitError
 
 from ipytone import AudioBuffer, Noise, Oscillator, Player, Players, Volume
-from ipytone.source import Source
+from ipytone.source import PulseOscillator, Source
 
 
 def test_source(mocker):
@@ -45,13 +45,42 @@ def test_oscillator():
     osc = Oscillator()
 
     assert osc.type == "sine"
+    assert osc.base_type == "sine"
+    assert osc.partial_count == 0
+    assert osc.partials == []
     assert osc.frequency.value == 440
     assert osc.frequency.units == "frequency"
     assert osc.detune.value == 0
     assert osc.detune.units == "cents"
+    assert osc.phase == 0
+    assert osc.sync_array is False
+    assert osc.array_length == 1024
 
-    with pytest.raises(TraitError, match="Invalid oscillator type"):
+    osc.type = "square2"
+    assert osc.base_type == "square"
+    assert osc.partial_count == 2
+
+    osc.base_type = "triangle"
+    assert osc.type == "triangle2"
+
+    osc.partial_count = 3
+    assert osc.type == "triangle3"
+    osc.partial_count = 0
+    assert osc.type == "triangle"
+
+    with pytest.raises(TraitError, match="Invalid oscillator type.*"):
         osc.type = "not a good oscillator wave"
+
+    with pytest.raises(TraitError, match="Cannot set 'custom' type.*"):
+        osc.type = "custom"
+
+    osc.partials = [1.0, 0.5, 0.3]
+    assert osc.partials == [1.0, 0.5, 0.3]
+    assert osc.type == "custom"
+    assert osc.partial_count == 3
+
+    osc.partial_count = 2
+    assert osc.partials == [1.0, 0.5]
 
     # test dispose
     n = osc.dispose()
@@ -59,6 +88,39 @@ def test_oscillator():
     assert osc.disposed is True
     assert osc.frequency.disposed is True
     assert osc.detune.disposed is True
+
+    with pytest.raises(ValueError, match="Partials values must be given.*"):
+        Oscillator(type="custom", partials=None)
+
+    with pytest.raises(ValueError, match="Partial count already set.*"):
+        Oscillator(type="sine8", partial_count=2)
+
+    osc2 = Oscillator(type="custom", partials=[1.0, 0.5, 0.3], partial_count=2)
+    assert osc2.partials == [1.0, 0.5]
+
+    osc3 = Oscillator(type="sine", partial_count=2)
+    assert osc3.type == "sine2"
+
+    osc4 = Oscillator(type="sine", partial_count=0)
+    assert osc4.type == "sine"
+
+
+def test_pulse_oscillator():
+    osc = PulseOscillator()
+
+    assert osc.type == "pulse"
+    assert osc.partial_count == 0
+    assert osc.partials == []
+    assert osc.width.units == "audioRange"
+    assert osc.width.value == 0.2
+
+    with pytest.raises(TraitError, match=".*only supports the 'pulse'.*"):
+        osc.type = "sine"
+
+    n = osc.dispose()
+    assert n is osc
+    assert osc.disposed is True
+    assert osc.width.disposed is True
 
 
 def test_noise():

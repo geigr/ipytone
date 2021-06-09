@@ -7,7 +7,7 @@ from .callback import add_or_send_event
 from .core import AudioBuffer, AudioBuffers, Param, Volume
 from .serialization import data_array_serialization
 from .signal import Signal
-from .utils import parse_osc_type, OSC_TYPES
+from .utils import OSC_TYPES, parse_osc_type
 
 
 class Source(AudioNode):
@@ -124,7 +124,7 @@ class Oscillator(Source):
 
         if value == "custom":
             if not len(self.partials):
-                raise ValueError("Cannot set 'custom' type, use the ``partial`` property instead")
+                raise TraitError("Cannot set 'custom' type, use the ``partial`` property instead")
             return value
         else:
             base_type, partial_count = parse_osc_type(value, types=self._valid_types)
@@ -175,7 +175,10 @@ class Oscillator(Source):
             return len(self.partials)
         else:
             _, partial_count = parse_osc_type(self.type, types=self._valid_types)
-            return partial_count
+            if not len(partial_count):
+                return 0
+            else:
+                return int(partial_count)
 
     @partial_count.setter
     def partial_count(self, value):
@@ -200,16 +203,17 @@ class PulseOscillator(Oscillator):
 
     _model_name = Unicode("PulseOscillatorModel").tag(sync=True)
 
+    _valid_types = ("pulse",)
     _width = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
 
     def __init__(self, width=0.2, **kwargs):
         width = Signal(value=width, units="audioRange", _create_node=False)
-        super().__init__(_width=width, **kwargs)
+        super().__init__(_width=width, type="pulse", **kwargs)
 
     @validate("type")
     def _validate_type(self, proposal):
         if proposal["value"] != "pulse":
-            raise ValueError("PulseOscillator only supports the 'pulse' oscillator type")
+            raise TraitError("PulseOscillator only supports the 'pulse' oscillator type")
         return "pulse"
 
     @property

@@ -6,15 +6,6 @@ OSC_TYPES = ["sine", "square", "sawtooth", "triangle"]
 EXTENDED_OSC_TYPES = OSC_TYPES + ["pwm", "pulse"]
 
 
-def validate_osc_type(value):
-    value_re = r"(sine|square|sawtooth|triangle)[\d]*"
-
-    if re.fullmatch(value_re, value) is None:
-        raise TraitError(f"Invalid oscillator type: {value}")
-
-    return value
-
-
 def parse_osc_type(value, types=None):
     if types is None:
         types = OSC_TYPES
@@ -26,6 +17,6 @@ def parse_osc_type(value, types=None):
     res = pattern.search(value)
 
     if res is None:
-        raise ValueError(f"Invalid oscillator type {value!r}")
+        raise TraitError(f"Invalid oscillator type {value!r}")
 
     return res.group("basic_type"), res.group("partial_count")
