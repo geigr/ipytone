@@ -2,6 +2,8 @@ import { ISerializers, unpack_models } from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
 
+import { normalizeArguments } from './utils';
+
 import { AudioNodeModel } from './widget_base';
 
 import { ParamModel } from './widget_core';
@@ -233,15 +235,8 @@ export class TremoloModel extends AudioNodeModel {
 
   private handleMsg(command: any, buffers: any): void {
     if (command.event === 'trigger') {
-      let time = command.args.time;
-      if (time === null) {
-        time = undefined;
-      }
-      if (command.method === 'start') {
-        this.node.start(time);
-      } else if (command.method === 'stop') {
-        this.node.stop(time);
-      }
+      const argsArray = normalizeArguments(command.args, command.arg_keys);
+      (this.node as any)[command.method](...argsArray);
     }
   }
 
