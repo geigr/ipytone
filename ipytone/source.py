@@ -1,11 +1,13 @@
 from ipywidgets import widget_serialization
-from traitlets import Bool, Enum, Float, Instance, TraitError, Unicode, validate
+from traitlets import Bool, Enum, Float, Instance, Int, List, TraitError, Unicode, validate
+from traittypes import Array
 
 from .base import AudioNode
 from .callback import add_or_send_event
 from .core import AudioBuffer, AudioBuffers, Param, Volume
+from .serialization import data_array_serialization
 from .signal import Signal
-from .utils import validate_osc_type
+from .utils import parse_osc_type
 
 
 class Source(AudioNode):
@@ -53,25 +55,57 @@ class Oscillator(Source):
         (default, 440 Hertz).
     detune : int or float, optional
         Oscillator frequency detune, in cents (default: 0).
+    partials : list, optional
+        Relative amplitude of each of the harmonics of the oscillator. The 1st value
+        is the fundamental frequency, the 2nd value is an octave up, etc.
+    partial_count : int, optional
+        Number of harmonics which are used to generate the waveform.
 
     """
 
     _model_name = Unicode("OscillatorModel").tag(sync=True)
 
     type = Unicode("sine", help="Oscillator type").tag(sync=True)
+    _partials = List(trait=Float()).tag(sync=True)
+
     _frequency = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
     _detune = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+    phase = Float(0.0, help="Starting position within the oscillator's cycle").tag(sync=True)
 
-    def __init__(self, type="sine", frequency=440, detune=0, **kwargs):
+    array = Array(
+        allow_none=True, default_value=None, read_only=True, help="Oscillator waveform"
+    ).tag(sync=True, **data_array_serialization)
+    array_length = Int(1024, help="Oscillator waveform resolution (array length)").tag(sync=True)
+    sync_array = Bool(False, help="if True, synchronize waveform").tag(sync=True)
+
+    def __init__(
+        self, type="sine", frequency=440, detune=0, partials=None, partial_count=None, **kwargs
+    ):
+        if type == "custom":
+            if partials is None:
+                raise ValueError("Partials values must be given for 'custom' oscillator type")
+
+        else:
+            partials = []
+            _, partial_count_ = parse_osc_type(type)
+
+        if partial_count is not None:
+            if type == "custom":
+                partials = partials[0:partial_count]
+            else:
+                if partial_count_:
+                    raise ValueError(f"Partial count already set in oscillator type {type!r}")
+                if partial_count == 0:
+                    partial_count = ""
+                type += str(partial_count)
+
         frequency = Signal(value=frequency, units="frequency", _create_node=False)
         detune = Signal(value=detune, units="cents", _create_node=False)
 
-        kwargs.update({"type": type, "_frequency": frequency, "_detune": detune})
+        kwargs.update(
+            {"type": type, "_frequency": frequency, "_detune": detune, "_partials": partials}
+        )
         super().__init__(**kwargs)
-
-    @validate("type")
-    def _validate_type(self, proposal):
-        return validate_osc_type(proposal["value"])
 
     @property
     def frequency(self) -> Signal:
@@ -83,6 +117,75 @@ class Oscillator(Source):
         """Oscillator detune."""
         return self._detune
 
+    @validate("type")
+    def _validate_type(self, proposal):
+        value = proposal["value"]
+
+        if value == "custom":
+            if not len(self.partials):
+                raise ValueError("Cannot set 'custom' type, use the ``partial`` property instead")
+            return value
+        else:
+            base_type, partial_count = parse_osc_type(value)
+            return base_type + partial_count
+
+    @property
+    def base_type(self):
+        """Oscillator wave type without partials."""
+        if self.type == "custom":
+            return self.type
+        else:
+            base_type, _ = parse_osc_type(self.type)
+            return base_type
+
+    @base_type.setter
+    def base_type(self, value):
+        _, partial_count = parse_osc_type(self.type)
+        self.type = value + partial_count
+
+    @property
+    def partials(self):
+        """Relative amplitude of each of the harmonics of the oscillator.
+
+        The 1st value is the fundamental frequency, the 2nd value is an octave
+        up, etc.
+
+        """
+        return self._partials
+
+    @partials.setter
+    def partials(self, value):
+        if value is None:
+            value = []
+
+        self._partials = value
+
+        if len(value):
+            self.type = "custom"
+
+    @property
+    def partial_count(self):
+        """Number of harmonics which are used to generate the waveform.
+
+        If the value equals zero, the maximum number of partials are used.
+
+        """
+        if self.type == "custom":
+            return len(self.partials)
+        else:
+            _, partial_count = parse_osc_type(self.type)
+            return partial_count
+
+    @partial_count.setter
+    def partial_count(self, value):
+        if self.type == "custom":
+            self._partials = self._partials[0:value]
+        else:
+            if value == 0:
+                value = ""
+            base_type, _ = parse_osc_type(self.type)
+            self.type = base_type + str(value)
+
     def dispose(self):
         with self._graph.hold_state():
             super().dispose()
@@ -93,6 +196,7 @@ class Oscillator(Source):
 
 
 class Noise(Source):
+
     """A noise source."""
 
     _model_name = Unicode("NoiseModel").tag(sync=True)

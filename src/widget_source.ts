@@ -12,6 +12,12 @@ import { AudioBufferModel, AudioBuffersModel, ParamModel } from './widget_core';
 
 import { SignalModel } from './widget_signal';
 
+import {
+  ArrayProperty,
+  dataarray_serialization,
+  getArrayProp,
+} from './serializers';
+
 abstract class SourceModel extends AudioNodeModel {
   defaults(): any {
     return {
@@ -67,23 +73,25 @@ export class OscillatorModel extends SourceModel {
       ...super.defaults(),
       _model_name: OscillatorModel.model_name,
       type: 'sine',
+      _partials: [],
       _frequency: null,
       _detune: null,
+      phase: 0,
+      array: null,
+      array_length: 1024,
+      sync_array: false,
     };
   }
 
-  createNode(): tone.Oscillator {
-    return new tone.Oscillator({
-      type: this.get('type'),
-      frequency: this.get('_frequency').get('value'),
-      detune: this.get('_detune').get('value'),
-      volume: this.get('volume'),
-    });
-  }
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
+    super.initialize(attributes, options);
 
-  setSubNodes(): void {
-    this.frequency.setNode(this.node.frequency);
-    this.detune.setNode(this.node.detune);
+    if (this.get('_create_node')) {
+      this.maybeSetArray();
+    }
   }
 
   get type(): tone.ToneOscillatorType {
@@ -98,11 +106,57 @@ export class OscillatorModel extends SourceModel {
     return this.get('_detune');
   }
 
+  get array(): ArrayProperty {
+    return getArrayProp(this.get('array'));
+  }
+
+  set array(value: ArrayProperty) {
+    // avoid infinite event listener loop
+    this.set('array', value, { silent: true });
+  }
+
+  createNode(): tone.Oscillator {
+    return new tone.Oscillator({
+      type: this.get('type'),
+      frequency: this.get('_frequency').get('value'),
+      detune: this.get('_detune').get('value'),
+      volume: this.get('volume'),
+      phase: this.get('phase'),
+      partials: this.get('_partials'),
+    });
+  }
+
+  setSubNodes(): void {
+    this.frequency.setNode(this.node.frequency);
+    this.detune.setNode(this.node.detune);
+  }
+
+  maybeSetArray(): void {
+    if (this.get('sync_array')) {
+      this.node.asArray(this.get('array_length')).then((arr) => {
+        this.array = arr;
+        this.save_changes();
+      });
+    }
+  }
+
   initEventListeners(): void {
     super.initEventListeners();
 
     this.on('change:type', () => {
-      this.node.type = this.type;
+      // prevent calling twice (partials changed -> type = custom)
+      if (this.node.type !== this.type) {
+        this.node.type = this.type;
+        this.maybeSetArray();
+      }
+    });
+    this.on('change:_partials', () => {
+      this.node.partials = this.get('_partials');
+      this.maybeSetArray();
+    });
+    this.on('change:phase', () => {
+      this.node.phase = this.get('phase');
+      this.maybeSetArray();
     });
   }
 
@@ -110,6 +164,7 @@ export class OscillatorModel extends SourceModel {
     ...SourceModel.serializers,
     _frequency: { deserialize: unpack_models as any },
     _detune: { deserialize: unpack_models as any },
+    array: dataarray_serialization,
   };
 
   node: tone.Oscillator;
