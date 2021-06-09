@@ -6,7 +6,7 @@ from .base import AudioNode
 from .callback import add_or_send_event
 from .core import AudioBuffer, AudioBuffers, Param, Volume
 from .serialization import data_array_serialization
-from .signal import Signal
+from .signal import Multiply, Signal
 from .utils import OSC_TYPES, parse_osc_type
 
 
@@ -210,6 +210,49 @@ class Oscillator(Source):
             super().dispose()
             self._frequency.dispose()
             self._detune.dispose()
+
+        return self
+
+
+class AMOscillator(Oscillator):
+    """An amplitude modulated oscillator.
+
+    It is implemented with two oscillators, one which modulates
+    the other's amplitude through a gain node.
+
+    Parameters
+    ----------
+    harmonicity : float, optional
+       Frequency ratio between the carrier and the modulator oscillators. A
+       value of 1 (default) gives both oscillators the same frequency. A value of 2
+       means a change of an octave. Must be > 0.
+
+    """
+
+    _model_name = Unicode("AMOscillatorModel").tag(sync=True)
+
+    _harmonicity = Instance(Multiply, allow_none=True).tag(sync=True, **widget_serialization)
+    modulation_type = Unicode("square", help="The type of the modulator oscillator").tag(sync=True)
+
+    def __init__(self, harmonicity=1, **kwargs):
+        harmonicity = Multiply(value=harmonicity, _create_node=False)
+        super().__init__(_harmonicity=harmonicity, **kwargs)
+
+    @validate("modulation_type")
+    def _validate_modulation_type(self, proposal):
+        value = proposal["value"]
+        base_type, partial_count = parse_osc_type(value, types=self._valid_types)
+        return base_type + partial_count
+
+    @property
+    def harmonicity(self) -> Signal:
+        """Frequency ratio between the carrier and the modulator oscillators."""
+        return self._harmonicity
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._harmonicity.dispose()
 
         return self
 

@@ -8,7 +8,7 @@ import { AudioNodeModel } from './widget_base';
 
 import { AudioBufferModel, AudioBuffersModel, ParamModel } from './widget_core';
 
-import { SignalModel } from './widget_signal';
+import { SignalModel, MultiplyModel } from './widget_signal';
 
 import {
   ArrayProperty,
@@ -191,6 +191,59 @@ export class OscillatorModel extends BaseOscillatorModel {
   node: tone.Oscillator;
 
   static model_name = 'OscillatorModel';
+}
+
+export class AMOscillatorModel extends BaseOscillatorModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: AMOscillatorModel.model_name,
+      _harmonicity: null,
+      modulation_type: 'square',
+    };
+  }
+
+  get harmonicity(): MultiplyModel {
+    return this.get('_harmonicity');
+  }
+
+  createNode(): tone.AMOscillator {
+    return new tone.AMOscillator({
+      type: this.get('type'),
+      frequency: this.get('_frequency').get('value'),
+      detune: this.get('_detune').get('value'),
+      harmonicity: this.get('_harmonicity').get('value'),
+      modulationType: this.get('modulation_type'),
+      volume: this.get('volume'),
+      phase: this.get('phase'),
+    });
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.harmonicity.setNode(this.node.harmonicity);
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.harmonicity.on('change:value', () => {
+      this.maybeSetArray();
+    });
+    this.on('change:modulation_type', () => {
+      this.node.modulationType = this.get('modulation_type');
+      this.maybeSetArray();
+    });
+  }
+
+  static serializers: ISerializers = {
+    ...BaseOscillatorModel.serializers,
+    _harmonicity: { deserialize: unpack_models as any },
+  };
+
+  node: tone.AMOscillator;
+
+  static model_name = 'AMOscillatorModel';
 }
 
 export class PulseOscillatorModel extends BaseOscillatorModel {
