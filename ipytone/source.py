@@ -8,7 +8,7 @@ from .base import AudioNode
 from .callback import add_or_send_event
 from .core import AudioBuffer, AudioBuffers, Param, Volume
 from .serialization import data_array_serialization
-from .signal import Multiply, Signal
+from .signal import Multiply, Scale, Signal
 from .utils import OSC_TYPES, parse_osc_type
 
 
@@ -56,6 +56,107 @@ class Source(AudioNode):
     def unsync(self):
         """Unsync the source to the transport."""
         add_or_send_event("unsync", self, {})
+        return self
+
+
+class LFO(AudioNode):
+    """LFO (Low Frequency Oscillator).
+
+    A LFO produces an output signal which can be attached to an audio parameter
+    or signal in order to modulate that parameter with an oscillator.
+
+    It may be synced to the transport to start/stop and change when the tempo
+    changes.
+
+    """
+
+    _model_name = Unicode("LFOModel").tag(sync=True)
+
+    _frequency = Instance(Signal, allow_none=True).tag(sync=True, **widget_serialization)
+    _amplitude = Instance(Param, allow_none=True).tag(sync=True, **widget_serialization)
+
+    _valid_types = OSC_TYPES
+    type = Unicode("sine", help="LFO oscillator type").tag(sync=True)
+    phase = Float(0.0, help="Starting position of the LFO's cycle").tag(sync=True)
+    partials = List(trait=Float(), help="See Oscillator.partials").tag(sync=True)
+
+    units = Unicode("number", help="LFO output units").tag(sync=True)
+    convert = Bool(True, help="If True, convert input value in units").tag(sync=True)
+
+    def __init__(self, frequency="4n", amplitude=1, min=0, max=1, **kwargs):
+        amplitude = Param(value=amplitude, units="normalRange", _create_node=False)
+        frequency = Signal(value=frequency, units="frequency", _create_node=False)
+
+        out_node = Scale(min_out=min, max_out=max, _create_node=False)
+
+        kwargs.update({"_output": out_node, "_frequency": frequency, "_amplitude": amplitude})
+        super().__init__(**kwargs)
+
+    @validate("type")
+    def _validate_type(self, proposal):
+        value = proposal["value"]
+
+        if value == "custom":
+            if not len(self._partials):
+                raise TraitError("Cannot set 'custom' type, use the ``partials`` attribute instead")
+            return value
+        else:
+            base_type, partial_count = parse_osc_type(value, types=self._valid_types)
+            return base_type + partial_count
+
+    @property
+    def frequency(self) -> Signal:
+        """LFO frequency."""
+        return self._frequency
+
+    @property
+    def amplitude(self) -> Param:
+        """LFO amplitude."""
+        return self._amplitude
+
+    @property
+    def min_out(self):
+        return self.output.min_out
+
+    @min_out.setter
+    def min_out(self, value):
+        self.output.min_out = value
+
+    @property
+    def max_out(self):
+        print(self.output.max_out)
+        return self.output.max_out
+
+    @max_out.setter
+    def max_out(self, value):
+        self.output.max_out = value
+
+    def start(self, time=None):
+        """Start the LFO."""
+        add_or_send_event("start", self, {"time": time})
+        return self
+
+    def stop(self, time=None):
+        """Stop the LFO."""
+        add_or_send_event("stop", self, {"time": time})
+        return self
+
+    def sync(self):
+        """Sync the LFO playback state and frequency to the transport."""
+        add_or_send_event("sync", self, {})
+        return self
+
+    def unsync(self):
+        """Unsync the LFO from the transport."""
+        add_or_send_event("unsync", self, {})
+        return self
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._frequency.dispose()
+            self._amplitude.dispose()
+
         return self
 
 

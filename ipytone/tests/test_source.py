@@ -4,6 +4,7 @@ from traitlets import TraitError
 
 from ipytone import AudioBuffer, Noise, Player, Players, Volume
 from ipytone.source import (
+    LFO,
     AMOscillator,
     FatOscillator,
     FMOscillator,
@@ -58,6 +59,65 @@ def test_source(mocker):
         {"event": "trigger", "method": "unsync", "args": {}, "arg_keys": []}
     )
     assert n is node
+
+
+def test_lfo(mocker):
+    lfo = LFO()
+    mocker.patch.object(lfo, "send")
+
+    assert lfo.frequency.value == "4n"
+    assert lfo.amplitude.value == 1
+    assert lfo.min_out == lfo.output.min_out == 0
+    assert lfo.max_out == lfo.output.max_out == 1
+    assert lfo.type == "sine"
+    assert lfo.phase == 0
+    assert lfo.partials == []
+    assert lfo.units == "number"
+    assert lfo.convert is True
+
+    lfo.min_out = 0.5
+    assert lfo.output.min_out == 0.5
+    lfo.min_out = 0.9
+    assert lfo.output.min_out == 0.9
+
+    n = lfo.start()
+    assert n is lfo
+    lfo.send.assert_called_with(
+        {
+            "event": "trigger",
+            "method": "start",
+            "args": {
+                "time": {"value": None, "eval": False},
+            },
+            "arg_keys": ["time"],
+        }
+    )
+
+    n = lfo.stop()
+    lfo.send.assert_called_with(
+        {
+            "event": "trigger",
+            "method": "stop",
+            "args": {"time": {"value": None, "eval": False}},
+            "arg_keys": ["time"],
+        }
+    )
+    assert n is lfo
+
+    n = lfo.sync()
+    lfo.send.assert_called_with({"event": "trigger", "method": "sync", "args": {}, "arg_keys": []})
+    assert n is lfo
+
+    n = lfo.unsync()
+    lfo.send.assert_called_with(
+        {"event": "trigger", "method": "unsync", "args": {}, "arg_keys": []}
+    )
+    assert n is lfo
+
+    n = lfo.dispose()
+    assert n is lfo
+    assert lfo.frequency.disposed is True
+    assert lfo.amplitude.disposed is True
 
 
 def test_oscillator():

@@ -12,6 +12,7 @@ from .envelope import AmplitudeEnvelope, Envelope, FrequencyEnvelope
 from .graph import get_audio_graph
 from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Scale, Signal, Subtract
 from .source import (
+    LFO,
     AMOscillator,
     FatOscillator,
     FMOscillator,

@@ -70,6 +70,87 @@ abstract class SourceModel extends AudioNodeModel {
   static model_name = 'SourceModel';
 }
 
+export class LFOModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: LFOModel.model_name,
+      _frequency: undefined,
+      _amplitude: undefined,
+      type: 'sine',
+      partials: [],
+      phase: 0,
+      units: 'number',
+      convert: true,
+    };
+  }
+
+  get frequency(): SignalModel<'frequency'> {
+    return this.get('_frequency');
+  }
+
+  get amplitude(): ParamModel<'normalRange'> {
+    return this.get('_amplitude');
+  }
+
+  createNode(): tone.LFO {
+    return new tone.LFO({
+      type: this.get('type'),
+      frequency: this.get('_frequency').get('value'),
+      amplitude: this.get('_amplitude').get('value'),
+      min: this.get('_output').get('min_out'),
+      max: this.get('_output').get('max_out'),
+      phase: this.get('phase'),
+      partials: this.get('_partials'),
+      units: this.get('units'),
+    });
+  }
+
+  setSubNodes(): void {
+    this.frequency.setNode(this.node.frequency);
+    this.amplitude.setNode(this.node.amplitude);
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:type', () => {
+      this.node.type = this.get('type');
+    });
+    this.on('change:partials', () => {
+      this.node.partials = this.get('partials');
+    });
+    this.on('change:phase', () => {
+      this.node.phase = this.get('phase');
+    });
+    this.on('change:units', () => {
+      this.node.units = this.get('units');
+    });
+    this.on('change:convert', () => {
+      this.node.convert = this.get('convert');
+    });
+
+    this.on('msg:custom', this.handleMsg, this);
+  }
+
+  private handleMsg(command: any, buffers: any): void {
+    if (command.event === 'trigger') {
+      const argsArray = normalizeArguments(command.args, command.arg_keys);
+      (this.node as any)[command.method](...argsArray);
+    }
+  }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _frequency: { deserialize: unpack_models as any },
+    _amplitude: { deserialize: unpack_models as any },
+  };
+
+  node: tone.LFO;
+
+  static model_name = 'LFOModel';
+}
+
 interface BaseOscillatorInterface extends SourceInterface {
   frequency: tone.Signal<'frequency'>;
   detune: tone.Signal<'cents'>;
