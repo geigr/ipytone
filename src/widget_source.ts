@@ -141,8 +141,8 @@ abstract class BaseOscillatorModel extends SourceModel {
     super.initEventListeners();
 
     this.on('change:type', () => {
-      // prevent calling twice (partials changed -> type = custom)
-      if (this.node.type !== this.get('type')) {
+      // partials changed -> tone updates the type)
+      if (!this.get('type').endsWidth('custom')) {
         this.node.type = this.get('type');
         this.maybeSetArray();
       }

@@ -7,6 +7,7 @@ from ipytone.source import (
     AMOscillator,
     FatOscillator,
     FMOscillator,
+    OmniOscillator,
     Oscillator,
     PulseOscillator,
     PWMOscillator,
@@ -193,6 +194,109 @@ def test_pwm_oscillator():
     assert n is osc
     assert osc.disposed is True
     assert osc.modulation_frequency.disposed is True
+
+
+def test_omni_oscillator():
+    osc = OmniOscillator()
+
+    assert osc.type == "sine"
+    assert osc.partial_count == 0
+    assert osc.partials == []
+
+    osc.type = "amsine"
+    assert osc.modulation_type == "square"
+    assert osc.harmonicity.value == 1
+    with pytest.raises(TraitError, match="Invalid oscillator type.*"):
+        osc.modulation_type = "not a valid oscillator type"
+
+    osc.type = "fmsine"
+    assert osc.harmonicity.value == 1
+
+    osc.type = "pulse"
+    assert osc.source_type == "pulse"
+    assert osc.base_type == "pulse"
+    assert osc.partial_count == 0
+    with pytest.raises(NotImplementedError):
+        osc.partial_count = 1
+    assert osc.partials == []
+    with pytest.raises(NotImplementedError):
+        osc.partials = [1, 0.5, 0.2]
+    assert osc.width.units == "audioRange"
+    assert osc.width.value == 0.2
+
+    osc.type = "pwm"
+    assert osc.source_type == "pwm"
+    assert osc.base_type == "pwm"
+    assert osc.partial_count == 0
+    with pytest.raises(NotImplementedError):
+        osc.partial_count = 1
+    assert osc.partials == []
+    with pytest.raises(NotImplementedError):
+        osc.partials = [1, 0.5, 0.2]
+    assert osc.modulation_frequency.units == "frequency"
+    assert osc.modulation_frequency.value == 0.4
+
+    osc.source_type = "oscillator"
+    # from pulse/pwm: back to sine by default
+    assert osc.type == "sine"
+    osc.source_type = "am"
+    assert osc.type == "amsine"
+    osc.source_type = "fm"
+    assert osc.type == "fmsine"
+    osc.source_type = "fat"
+    assert osc.type == "fatsine"
+    osc.type = "sine"
+    assert osc.source_type == "oscillator"
+    osc.source_type = "pulse"
+    assert osc.type == "pulse"
+
+    assert osc.base_type == "pulse"
+    osc.base_type = "sine"
+    assert osc.type == "sine"
+    osc.type = "amsine"
+    assert osc.base_type == "sine"
+    osc.base_type = "square"
+    assert osc.type == "amsquare"
+
+    osc.partial_count = 3
+    assert osc.type == "amsquare3"
+    osc.partial_count = 0
+    assert osc.type == "amsquare"
+
+    osc.partials = [1.0, 0.5, 0.4]
+    assert osc.type == "amcustom"
+    assert osc.partial_count == 3
+    osc.partial_count = 2
+    assert osc.partials == [1.0, 0.5]
+
+
+@pytest.mark.parametrize(
+    "type,active_props",
+    [
+        ("sine", []),
+        ("fatsine", []),
+        ("amsine", ["harmonicity"]),
+        ("fmsine", ["harmonicity", "modulation_index"]),
+        ("pulse", ["width"]),
+        ("pwm", ["modulation_frequency"]),
+    ],
+)
+def test_omni_oscillator_properties(type, active_props):
+    all_props = {"harmonicity", "modulation_index", "width", "modulation_frequency"}
+    active_props = set(active_props)
+
+    osc = OmniOscillator(type=type)
+
+    for prop in all_props.intersection(active_props):
+        assert getattr(osc, prop) is not None
+
+    for prop in all_props.difference(active_props):
+        assert getattr(osc, prop) is None
+
+    osc.dispose()
+
+    for prop in active_props:
+        assert getattr(osc, prop).disposed is True
 
 
 def test_noise():

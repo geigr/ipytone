@@ -464,12 +464,15 @@ class OmniOscillator(Oscillator):
         self.type = type
 
     def _parse_osc_type(self, value, validate=False):
-        match = re.match(r"^(?P<prefix>am|fm|fat|.*)(?P<type>.*)$", value)
+        match = re.match(r"^(?P<prefix>am|fm|fat){0,1}(?P<type>.*)$", value)
 
         if match is None:
             raise TraitError(f"Invalid oscillator type {value!r}")
 
         prefix, type_partial = match.groups()
+        if prefix is None:
+            prefix = ""
+
         base_type, partial_count = super()._parse_osc_type(type_partial, validate=validate)
 
         return prefix, base_type, partial_count
@@ -506,6 +509,8 @@ class OmniOscillator(Oscillator):
             self.type = value
         else:
             _, base_type, partial_count = self._parse_osc_type(self.type)
+            if self._is_pulse(base_type):
+                base_type = "sine"
             if value == "oscillator":
                 self.type = base_type + partial_count
             else:
@@ -569,10 +574,12 @@ class OmniOscillator(Oscillator):
     def partial_count(self):
         if self._is_pulse():
             return 0
-        elif self.type == "custom":
+
+        _, base_type, partial_count = self._parse_osc_type(self.type)
+
+        if base_type == "custom":
             return len(self._partials)
         else:
-            _, _, partial_count = self._parse_osc_type(self.type)
             if not len(partial_count):
                 return 0
             else:
@@ -610,7 +617,8 @@ class OmniOscillator(Oscillator):
         self._partials = value
 
         if len(value):
-            self.type = "custom"
+            prefix, _, _ = self._parse_osc_type(self.type)
+            self.type = prefix + "custom"
 
     def dispose(self):
         src_type = self.source_type
