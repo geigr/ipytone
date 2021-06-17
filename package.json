@@ -1,6 +1,6 @@
 {
   "name": "ipytone",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Interactive audio in Jupyter",
   "keywords": [
     "jupyter",

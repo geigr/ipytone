@@ -2,28 +2,35 @@ name: Upload Python Package
 
 on:
   release:
-    types: [created]
+    types: [published]
+
+defaults:
+  run:
+    shell: bash -l {0}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Set up Python via conda
         uses: conda-incubator/setup-miniconda@v2
         with:
+          activate-environment: ipytone-dev
+          environment-file: environment-dev.yml
           python-version: 3.8
-          auto-activate-base: true
+          mamba-version: "*"
+          auto-activate-base: false
           channels: conda-forge
-      - name: Install dependencies
-        shell: bash -l {0}
+      - name: Conda info
         run: |
-          conda install pip twine setuptools wheel jupyterlab=3 jupyter-packaging python-build nodejs yarn -c conda-forge
-      - name: Build and publish
-        shell: bash -l {0}
+          conda info
+          conda list
+      - name: Build package
+        run: python setup.py sdist bdist_wheel
+      - name: Publish
         env:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: |
-          python -m build . --no-isolation
-          twine upload dist/ipytone-*
+        run: twine upload dist/ipytone-*
