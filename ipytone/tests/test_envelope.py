@@ -79,5 +79,5 @@ def test_frequency_envelope():
     assert env.input.value == env.exponent == 1
     assert isinstance(env.output, Scale)
     assert env.output.min_out == env.base_frequency == 200.0
-    assert env.output.max_out == 200.0 * 2 ** 4
+    assert env.output.max_out == 200.0 * 2**4
     assert env.octaves == 4
