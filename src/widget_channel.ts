@@ -4,7 +4,7 @@ import * as tone from 'tone';
 
 import { AudioNodeModel } from './widget_base';
 
-import { GainModel } from './widget_core';
+import { GainModel, ParamModel } from './widget_core';
 
 import { SignalModel } from './widget_signal';
 
@@ -52,4 +52,36 @@ export class CrossFadeModel extends AudioNodeModel {
   node: tone.CrossFade;
 
   static model_name = 'CrossFadeModel';
+}
+
+export class PannerModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: PannerModel.model_name,
+      _pan: undefined,
+    };
+  }
+
+  createNode(): tone.Panner {
+    return new tone.Panner({ pan: this.pan.value });
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.pan.setNode(this.node.pan);
+  }
+
+  get pan(): ParamModel<'audioRange'> {
+    return this.get('_pan');
+  }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _pan: { deserialize: unpack_models as any },
+  };
+
+  node: tone.Panner;
+
+  static model_name = 'PannerModel';
 }

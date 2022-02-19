@@ -2,7 +2,7 @@ from ipywidgets import widget_serialization
 from traitlets import Instance, Unicode
 
 from .base import AudioNode
-from .core import Gain
+from .core import Gain, NativeAudioNode, Param
 from .signal import Signal
 
 
@@ -50,5 +50,42 @@ class CrossFade(AudioNode):
             self._a.dispose()
             self._b.dispose()
             self._fade.dispose()
+
+        return self
+
+
+class Panner(AudioNode):
+    """An audio node that provides equal power left/right panner."""
+
+    _model_name = Unicode("PannerModel").tag(sync=True)
+
+    _pan = Instance(Param).tag(sync=True, **widget_serialization)
+
+    def __init__(self, pan=0, **kwargs):
+        panner_node = NativeAudioNode(type="StereoPannerNode")
+        pan_node = Param(value=pan, units="audioRange", _create_node=False)
+
+        kwargs.update({"_pan": pan_node, "_input": panner_node, "_output": panner_node})
+        super().__init__(**kwargs)
+
+    @property
+    def pan(self) -> Param:
+        """Pan control parameter.
+
+        value = -1 -> hard left
+        value =  1 -> hard right
+
+        """
+        return self._pan
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        yield "pan"
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._pan.dispose()
 
         return self
