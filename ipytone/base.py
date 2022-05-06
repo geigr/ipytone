@@ -272,6 +272,10 @@ class PyAudioNode(HasTraits):
 
     name = Unicode("").tag(sync=True)
 
+    channel_count = Int(2)
+    channel_count_mode = Enum(["max", "clamped-max", "explicit"], default_value="max")
+    channel_interpretation = Enum(["speakers", "discrete"], default_value="speakers")
+
     def __init__(self, input_node, output_node, **kwargs):
         self._node = PyInternalAudioNode(
             _input=input_node, _output=output_node, name=self.name, **kwargs
