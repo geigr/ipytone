@@ -297,21 +297,26 @@ class PyAudioNode(HasTraits):
     def connect(self, destination, output_number=0, input_number=0):
         if isinstance(destination, PyAudioNode):
             destination = destination._node
-        return self._node.connect(destination, output_number, input_number)
+        self._node.connect(destination, output_number, input_number)
+        return self
 
     def disconnect(self, destination, output_number=0, input_number=0):
         if isinstance(destination, PyAudioNode):
             destination = destination._node
-        return self._node.disconnect(destination, output_number, input_number)
+        self._node.disconnect(destination, output_number, input_number)
+        return self
 
     def fan(self, *destinations):
-        return self._node.fan(*destinations)
+        self._node.fan(*destinations)
+        return self
 
     def chain(self, *destinations):
-        return self._node.chain(*destinations)
+        self._node.chain(*destinations)
+        return self
 
     def to_destination(self):
-        return self.to_destination()
+        self._node.to_destination()
+        return self
 
     @property
     def input(self):
@@ -322,8 +327,10 @@ class PyAudioNode(HasTraits):
         return self._node.output
 
     def dispose(self):
-        return self._node.dispose()
+        self._node.dispose()
+        return self
 
+    @property
     def disposed(self):
         return self._node.disposed
 
@@ -331,13 +338,15 @@ class PyAudioNode(HasTraits):
         self._node.close()
 
     def _repr_keys(self):
-        for key in self._node._repr_keys():
-            yield key
+        if self.name:
+            yield "name"
+        if self.disposed:
+            yield "disposed"
 
     def _gen_repr_from_keys(self, keys):
         class_name = self.__class__.__name__
         signature = ", ".join("{}={!r}".format(key, getattr(self, key)) for key in keys)
-        return "{}({})".format(class_name, signature)
+        return f"{class_name}({signature})"
 
     def __repr__(self):
         # emulate repr of ipywidgets.Widget (no DOM)
