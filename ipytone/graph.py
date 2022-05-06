@@ -3,7 +3,14 @@ from contextlib import contextmanager
 from ipywidgets import widget_serialization
 from traitlets import Instance, Int, List, Tuple, Unicode, Union
 
-from .base import AudioNode, NativeAudioNode, NativeAudioParam, ToneWidgetBase, is_disposed
+from .base import (
+    AudioNode,
+    NativeAudioNode,
+    NativeAudioParam,
+    PyAudioNode,
+    ToneWidgetBase,
+    is_disposed,
+)
 from .core import Param
 
 _Connection = List(
@@ -52,6 +59,10 @@ class AudioGraph(ToneWidgetBase):
 
     def connect(self, src_node, dest_node, output_number=0, input_number=0):
         """Connect a source node output to a destination node input."""
+
+        if isinstance(dest_node, PyAudioNode):
+            # TODO: reference to pure-python audio node is lost in the graph
+            dest_node = dest_node.widget
 
         if not isinstance(src_node, (AudioNode, NativeAudioNode)):
             raise ValueError("src_node must be a (native) AudioNode object")
