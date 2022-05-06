@@ -224,16 +224,13 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
 export class PyToneAudioNode extends tone.ToneAudioNode {
   readonly name: string = 'PyToneAudioNode';
 
-  private _input: tone.InputNode | undefined = undefined;
-  private _output: tone.OutputNode | undefined = undefined;
-
-  readonly input: tone.InputNode | undefined = this._input;
-  readonly output: tone.OutputNode | undefined = this._output;
+  readonly input: tone.InputNode | undefined;
+  readonly output: tone.OutputNode | undefined;
 
   constructor(input?: tone.InputNode, output?: tone.OutputNode) {
     super();
-    this._input = input;
-    this._output = output;
+    this.input = input;
+    this.output = output;
   }
 }
 
