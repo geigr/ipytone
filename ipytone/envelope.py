@@ -89,7 +89,7 @@ class FrequencyEnvelope(Envelope):
         kwargs.update({"base_frequency": base_frequency, "octaves": octaves, "exponent": exponent})
 
         in_node = Pow(value=exponent)
-        out_node = Scale(min_out=base_frequency, max_out=base_frequency * 2 ** octaves)
+        out_node = Scale(min_out=base_frequency, max_out=base_frequency * 2**octaves)
         kwargs.update({"_input": in_node, "_output": out_node})
 
         super().__init__(**kwargs)

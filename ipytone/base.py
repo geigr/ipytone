@@ -1,5 +1,5 @@
 from ipywidgets import Widget, widget_serialization
-from traitlets import Bool, Enum, Instance, Int, Unicode
+from traitlets import Bool, Enum, HasTraits, Instance, Int, Unicode
 
 from ._frontend import module_name, module_version
 
@@ -247,3 +247,94 @@ class AudioNode(NodeWithContext):
                 self.output.dispose()
 
         return self
+
+
+class PyInternalAudioNode(AudioNode):
+    """An audio node widget wrapped by a :class:`PyAudioNode` object."""
+
+    _model_name = Unicode("PyInternalAudioNodeModel").tag(sync=True)
+
+
+class PyAudioNode(HasTraits):
+    """A Pure-Python audio node.
+
+    Although it provides the same interface than :class:`AudioNode`, it has no
+    direct representation in the front-end (i.e., it is not an
+    :class:`ipywidget.Widget`). It is materialized in the front-end through its
+    input and/or output nodes, which must correspond to :class:`AudioNode`
+    objects (maybe via other :class:`PyAudioNode` nested objects).
+
+    This class may be used as a base class to create nodes that don't exist in
+    Tone.js and/or that are straightforward to (re)implement based on audio
+    nodes types already available in ipytone.
+
+    """
+
+    name = Unicode("").tag(sync=True)
+
+    def __init__(self, input_node, output_node, **kwargs):
+        self._node = PyInternalAudioNode(
+            _input=input_node, _output=output_node, name=self.name, **kwargs
+        )
+
+    @property
+    def widget(self):
+        """Returns the wrapped audio node widget."""
+        return self._node
+
+    @property
+    def number_of_inputs(self):
+        return self._node.number_of_inputs
+
+    @property
+    def number_of_outputs(self):
+        return self._node.number_of_outputs
+
+    def connect(self, destination, output_number=0, input_number=0):
+        if isinstance(destination, PyAudioNode):
+            destination = destination._node
+        return self._node.connect(destination, output_number, input_number)
+
+    def disconnect(self, destination, output_number=0, input_number=0):
+        if isinstance(destination, PyAudioNode):
+            destination = destination._node
+        return self._node.disconnect(destination, output_number, input_number)
+
+    def fan(self, *destinations):
+        return self._node.fan(*destinations)
+
+    def chain(self, *destinations):
+        return self._node.chain(*destinations)
+
+    def to_destination(self):
+        return self.to_destination()
+
+    @property
+    def input(self):
+        return self._node.input
+
+    @property
+    def output(self):
+        return self._node.output
+
+    def dispose(self):
+        return self._node.dispose()
+
+    def disposed(self):
+        return self._node.disposed
+
+    def close(self):
+        self._node.close()
+
+    def _repr_keys(self):
+        for key in self._node._repr_keys():
+            yield key
+
+    def _gen_repr_from_keys(self, keys):
+        class_name = self.__class__.__name__
+        signature = ", ".join("{}={!r}".format(key, getattr(self, key)) for key in keys)
+        return "{}({})".format(class_name, signature)
+
+    def __repr__(self):
+        # emulate repr of ipywidgets.Widget (no DOM)
+        return self._gen_repr_from_keys(self._repr_keys())
