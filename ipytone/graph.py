@@ -30,6 +30,21 @@ _Connection = List(
 )
 
 
+def _get_internal_nodes(src_node, dest_node):
+    """Maybe return internal (widget) nodes of pure-python source and
+    destination nodes
+
+    """
+    # TODO: references to pure-python audio input and/or output nodes are lost in the graph
+    if isinstance(src_node, PyAudioNode):
+        src_node = src_node.widget
+    if isinstance(dest_node, PyAudioNode):
+        dest_node = dest_node.widget
+
+    return src_node, dest_node
+
+
+
 class AudioGraph(ToneWidgetBase):
     """An audio graph representing all nodes and their connections in the main audio context."""
 
@@ -60,9 +75,7 @@ class AudioGraph(ToneWidgetBase):
     def connect(self, src_node, dest_node, output_number=0, input_number=0):
         """Connect a source node output to a destination node input."""
 
-        if isinstance(dest_node, PyAudioNode):
-            # TODO: reference to pure-python audio node is lost in the graph
-            dest_node = dest_node.widget
+        src_node, dest_node = _get_internal_nodes(src_node, dest_node)
 
         if not isinstance(src_node, (AudioNode, NativeAudioNode)):
             raise ValueError("src_node must be a (native) AudioNode object")
@@ -85,6 +98,7 @@ class AudioGraph(ToneWidgetBase):
     def disconnect(self, src_node, dest_node, output_number=0, input_number=0):
         """Disconnect a source node output from a destination node input."""
 
+        src_node, dest_node = _get_internal_nodes(src_node, dest_node)
         conn = (src_node, dest_node, output_number, input_number)
 
         if conn not in self._connections:

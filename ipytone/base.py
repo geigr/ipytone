@@ -1,5 +1,5 @@
 from ipywidgets import Widget, widget_serialization
-from traitlets import Bool, Enum, HasTraits, Instance, Int, Unicode
+from traitlets import Bool, Enum, HasTraits, Instance, Int, Unicode, Union
 
 from ._frontend import module_name, module_version
 
@@ -258,25 +258,48 @@ class PyInternalAudioNode(AudioNode):
 class PyAudioNode(HasTraits):
     """A Pure-Python audio node.
 
-    Although it provides the same interface than :class:`AudioNode`, it has no
-    direct representation in the front-end (i.e., it is not an
-    :class:`ipywidget.Widget`). It is materialized in the front-end through its
+    Although it provides the same interface than :class:`AudioNode`, it is not a
+    :class:`ipywidget.Widget`. It is materialized in the front-end through its
     input and/or output nodes, which must correspond to :class:`AudioNode`
-    objects (maybe via other :class:`PyAudioNode` nested objects).
+    objects (maybe via some other :class:`PyAudioNode` nested objects).
 
-    This class may be used as a base class to create nodes that don't exist in
-    Tone.js and/or that are straightforward to (re)implement based on audio
-    nodes types already available in ipytone.
+    This class may be used as a base class to create custom nodes that don't
+    exist in Tone.js or high-level nodes that are straightforward to
+    implement on top of audio nodes types already available in ipytone.
 
     """
-
     name = Unicode("").tag(sync=True)
+
+    _input = Union((Instance(ToneWidgetBase, allow_none=True), Instance("ipytone.PyAudioNode", allow_none=True)))
+    _output = Union((Instance(ToneWidgetBase, allow_none=True), Instance("ipytone.PyAudioNode", allow_none=True)))
 
     channel_count = Int(2)
     channel_count_mode = Enum(["max", "clamped-max", "explicit"], default_value="max")
     channel_interpretation = Enum(["speakers", "discrete"], default_value="speakers")
 
     def __init__(self, input_node, output_node, **kwargs):
+        # ignore _input / _output kwargs -> must be passed as args
+        kwargs.pop("_input", None)
+        kwargs.pop("_output", None)
+        super().__init__(**kwargs)
+
+        self._input = input_node
+        self._output = output_node
+
+        # the internal node must have two widgets (or None) as input/output
+        max_iter = 50
+        err_msg = "could not find input/output audio node widget"
+        i = 0
+        while isinstance(input_node, PyAudioNode):
+            input_node = input_node.input
+            if i >= max_iter:
+                raise StopIteration(err_msg)
+        i = 0
+        while isinstance(output_node, PyAudioNode):
+            output_node = output_node.output
+            if i >= max_iter:
+                raise StopIteration(err_msg)
+
         self._node = PyInternalAudioNode(
             _input=input_node, _output=output_node, name=self.name, **kwargs
         )
@@ -295,14 +318,10 @@ class PyAudioNode(HasTraits):
         return self._node.number_of_outputs
 
     def connect(self, destination, output_number=0, input_number=0):
-        if isinstance(destination, PyAudioNode):
-            destination = destination._node
         self._node.connect(destination, output_number, input_number)
         return self
 
     def disconnect(self, destination, output_number=0, input_number=0):
-        if isinstance(destination, PyAudioNode):
-            destination = destination._node
         self._node.disconnect(destination, output_number, input_number)
         return self
 
@@ -320,11 +339,11 @@ class PyAudioNode(HasTraits):
 
     @property
     def input(self):
-        return self._node.input
+        return self._input
 
     @property
     def output(self):
-        return self._node.output
+        return self._output
 
     def dispose(self):
         self._node.dispose()
