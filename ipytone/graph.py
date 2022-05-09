@@ -44,7 +44,6 @@ def _get_internal_nodes(src_node, dest_node):
     return src_node, dest_node
 
 
-
 class AudioGraph(ToneWidgetBase):
     """An audio graph representing all nodes and their connections in the main audio context."""
 

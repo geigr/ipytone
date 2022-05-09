@@ -1,4 +1,11 @@
-from ipytone.base import AudioNode, NativeAudioNode, NativeAudioParam, PyAudioNode, PyInternalAudioNode, ToneObject
+from ipytone.base import (
+    AudioNode,
+    NativeAudioNode,
+    NativeAudioParam,
+    PyAudioNode,
+    PyInternalAudioNode,
+    ToneObject,
+)
 from ipytone.core import InternalAudioNode, destination
 
 

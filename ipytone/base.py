@@ -268,10 +268,21 @@ class PyAudioNode(HasTraits):
     implement on top of audio nodes types already available in ipytone.
 
     """
+
     name = Unicode("").tag(sync=True)
 
-    _input = Union((Instance(ToneWidgetBase, allow_none=True), Instance("ipytone.PyAudioNode", allow_none=True)))
-    _output = Union((Instance(ToneWidgetBase, allow_none=True), Instance("ipytone.PyAudioNode", allow_none=True)))
+    _input = Union(
+        (
+            Instance(ToneWidgetBase, allow_none=True),
+            Instance("ipytone.PyAudioNode", allow_none=True),
+        )
+    )
+    _output = Union(
+        (
+            Instance(ToneWidgetBase, allow_none=True),
+            Instance("ipytone.PyAudioNode", allow_none=True),
+        )
+    )
 
     channel_count = Int(2)
     channel_count_mode = Enum(["max", "clamped-max", "explicit"], default_value="max")
