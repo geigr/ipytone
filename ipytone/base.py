@@ -300,9 +300,7 @@ class PyAudioNode(HasTraits):
             if i >= max_iter:
                 raise StopIteration(err_msg)
 
-        self._node = PyInternalAudioNode(
-            _input=input_node, _output=output_node, name=self.name, **kwargs
-        )
+        self._node = PyInternalAudioNode(_input=input_node, _output=output_node, **kwargs)
 
     @property
     def widget(self):
