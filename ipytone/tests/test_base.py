@@ -178,5 +178,24 @@ def test_pyaudionode(audio_graph):
     assert (node.widget, node2, 0, 0) not in audio_graph.connections
     assert n is node
 
-    node.dispose()
+    node4 = InternalAudioNode()
+    node5 = InternalAudioNode()
+    n = node.fan(node4, node5)
+    assert (node.widget, node4, 0, 0) in audio_graph.connections
+    assert (node.widget, node5, 0, 0) in audio_graph.connections
+    assert n is node
+
+    node6 = InternalAudioNode()
+    node7 = InternalAudioNode()
+    n = node.chain(node6, node7)
+    assert (node.widget, node6, 0, 0) in audio_graph.connections
+    assert (node6, node7, 0, 0) in audio_graph.connections
+    assert n is node
+
+    n = node.to_destination()
+    assert (node.widget, destination, 0, 0) in audio_graph.connections
+    assert n is node
+
+    n = node.dispose()
     assert node.disposed is True
+    assert n is node
