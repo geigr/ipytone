@@ -131,6 +131,7 @@ class AudioNode(NodeWithContext):
     _input = Instance(ToneWidgetBase, allow_none=True).tag(sync=True, **widget_serialization)
     _output = Instance(ToneWidgetBase, allow_none=True).tag(sync=True, **widget_serialization)
     _create_node = Bool(True).tag(sync=True)
+    _set_node_channels = Bool(True).tag(sync=True)
     channel_count = Int(2).tag(sync=True)
     channel_count_mode = Enum(["max", "clamped-max", "explicit"], default_value="max").tag(
         sync=True
@@ -284,6 +285,7 @@ class PyAudioNode(HasTraits):
         )
     )
 
+    _set_node_channels = Bool(True)
     channel_count = Int(2)
     channel_count_mode = Enum(["max", "clamped-max", "explicit"], default_value="max")
     channel_interpretation = Enum(["speakers", "discrete"], default_value="speakers")

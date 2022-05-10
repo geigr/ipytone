@@ -25,9 +25,9 @@ class Envelope(AudioNode):
     sustain = Float(1.0, help="Envelope sustain").tag(sync=True)
     release = Float(0.5, help="Envelope release").tag(sync=True)
 
-    attack_curve = Union([Enum(CURVES), List(Float)], default_value="linear").tag(sync=True)
+    attack_curve = Union([Enum(CURVES), List(Float())], default_value="linear").tag(sync=True)
     decay_curve = Enum(BASIC_CURVES, default_value="exponential").tag(sync=True)
-    release_curve = Union([Enum(CURVES), List(Float)], default_value="exponential").tag(sync=True)
+    release_curve = Union([Enum(CURVES), List(Float())], default_value="exponential").tag(sync=True)
 
     array = Array(allow_none=True, default_value=None, read_only=True, help="Envelope data").tag(
         sync=True, **data_array_serialization

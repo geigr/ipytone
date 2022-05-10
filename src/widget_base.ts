@@ -138,6 +138,7 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
       _create_node: true,
       _input: null,
       _output: null,
+      _set_node_channels: true,
       channel_count: 2,
       channel_count_mode: 'max',
       channel_interpretation: 'speakers',
@@ -152,7 +153,9 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
 
     if (this.get('_create_node')) {
       this.node = this.createNode();
-      this.setNodeChannels();
+      if (this.get('_set_node_channels')) {
+        this.setNodeChannels();
+      }
       this.setInputOutputNodes();
       this.setSubNodes();
     }
@@ -176,7 +179,9 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
 
   setNode(node: tone.ToneAudioNode): void {
     this.node = node;
-    this.setNodeChannels();
+    if (this.get('_set_node_channels')) {
+      this.setNodeChannels();
+    }
     this.setInputOutputNodes();
     this.setSubNodes();
   }
