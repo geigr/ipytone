@@ -61,12 +61,12 @@ class Panner(AudioNode):
 
     _pan = Instance(Param).tag(sync=True, **widget_serialization)
 
-    def __init__(self, pan=0, **kwargs):
+    def __init__(self, pan=0, channel_count=1, **kwargs):
         panner_node = NativeAudioNode(type="StereoPannerNode")
         pan_node = Param(value=pan, units="audioRange", _create_node=False)
 
         kwargs.update({"_pan": pan_node, "_input": panner_node, "_output": panner_node})
-        super().__init__(**kwargs)
+        super().__init__(channel_count=channel_count, channel_count_mode="explicit", **kwargs)
 
     @property
     def pan(self) -> Param:
