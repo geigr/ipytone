@@ -1,5 +1,5 @@
 from ipywidgets import widget_serialization
-from traitlets import Instance, Unicode
+from traitlets import Bool, Instance, Unicode
 
 from .base import AudioNode, PyAudioNode
 from .core import Gain, NativeAudioNode, Param, Volume
@@ -128,3 +128,27 @@ class PanVol(PyAudioNode):
     @mute.setter
     def mute(self, value):
         self._volume.mute = value
+
+
+class Solo(AudioNode):
+    """An audio node to isolate a specific audio stream from audio streams
+    connected to other solo nodes.
+
+    When an instance is set to ``solo = True`` it will mute all other instances
+    of ``Solo``.
+
+    """
+
+    _model_name = Unicode("SoloModel").tag(sync=True)
+
+    solo = Bool(False, help="if True, all other Solo instances are muted").tag(sync=True)
+
+    def __init__(self, **kwargs):
+        gain = Gain(_create_node=False)
+        kwargs.update({"_input": gain, "_output": gain})
+        super().__init__(**kwargs)
+
+    @property
+    def muted(self):
+        """If the current instance is muted, i.e., another instance is soloed"""
+        return self.input.gain.value == 0

@@ -85,3 +85,56 @@ export class PannerModel extends AudioNodeModel {
 
   static model_name = 'PannerModel';
 }
+
+export class SoloModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: SoloModel.model_name,
+      solo: false,
+    };
+  }
+
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
+    super.initialize(attributes, options);
+
+    // keep track of all instances for syncing models
+    SoloModel._allSoloModels.add(this);
+  }
+
+  createNode(): tone.Solo {
+    return new tone.Solo({ solo: this.solo });
+  }
+
+  get solo(): boolean {
+    return this.get('solo');
+  }
+
+  set solo(solo) {
+    this.node.solo = solo;
+
+    // synchronize all solo models (their gain param)
+    SoloModel._allSoloModels.forEach((instance) => {
+      const gainParam = (instance.input as GainModel).gain;
+      gainParam.set('value', gainParam.node.value);
+      gainParam.save_changes();
+    });
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:solo', () => {
+      this.solo = this.get('solo');
+    });
+  }
+
+  node: tone.Solo;
+
+  private static _allSoloModels: Set<SoloModel> = new Set();
+
+  static model_name = 'SoloModel';
+}

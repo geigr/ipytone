@@ -1,4 +1,4 @@
-from ipytone.channel import CrossFade, Panner, PanVol
+from ipytone.channel import CrossFade, Panner, PanVol, Solo
 from ipytone.core import Gain, Param, Volume
 from ipytone.signal import Signal
 
@@ -56,3 +56,13 @@ def test_panvol():
     assert panvol.mute is False
     panvol.mute = True
     assert panvol.output.mute is True
+
+
+def test_solo():
+    solo = Solo()
+
+    assert solo.solo is False
+    assert solo.muted is False
+    assert isinstance(solo.input, Gain)
+    assert isinstance(solo.output, Gain)
+    assert solo.input is solo.output
