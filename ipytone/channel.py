@@ -244,20 +244,39 @@ class Channel(PyAudioNode):
 
 
 class Merge(AudioNode):
-    """An audio node for merging multiple mono input channels into a single
+    """An audio node that merges multiple mono input channels into a single
     multichannel output channel.
 
     """
 
     _model_name = Unicode("MergeModel").tag(sync=True)
 
-    channels = Int(2, help="number of channels to merge", read_only=True).tag(sync=True)
+    _channels = Int(2).tag(sync=True)
 
-    def __init__(self, **kwargs):
+    def __init__(self, channels=2, **kwargs):
         merger = NativeAudioNode(type="ChannelMergerNode")
-        super().__init__(_input=merger, _output=merger, _set_node_channels=False, **kwargs)
+        super().__init__(_input=merger, _output=merger, _channels=channels, _set_node_channels=False, **kwargs)
+
+    @property
+    def channels(self):
+        return self._channels
 
     def _repr_keys(self):
         for key in super()._repr_keys():
             yield key
         yield "channels"
+
+
+class Mono(PyAudioNode):
+    """An audio node that coerces an incoming audio signal (mono or stereo) into
+    a mono signal.
+
+    """
+
+    def __init__(self, **kwargs):
+        gain = Gain()
+        merge = Merge()
+        gain.connect(merge, 0, 0)
+        gain.connect(merge, 0, 1)
+        kwargs.update({"_set_node_channels": False})
+        super().__init__(gain, merge, **kwargs)

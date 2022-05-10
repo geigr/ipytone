@@ -285,6 +285,7 @@ class PyAudioNode(HasTraits):
         )
     )
 
+    _set_node_channels = Bool(True)
     channel_count = Int(2)
     channel_count_mode = Enum(["max", "clamped-max", "explicit"], default_value="max")
     channel_interpretation = Enum(["speakers", "discrete"], default_value="speakers")

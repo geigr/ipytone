@@ -144,12 +144,12 @@ export class MergeModel extends AudioNodeModel {
     return {
       ...super.defaults(),
       _model_name: MergeModel.model_name,
-      channels: 2,
+      _channels: 2,
     };
   }
 
   createNode(): tone.Merge {
-    return new tone.Merge({ channels: this.get('channels') });
+    return new tone.Merge({ channels: this.get('_channels') });
   }
 
   node: tone.Merge;
