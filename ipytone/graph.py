@@ -3,7 +3,14 @@ from contextlib import contextmanager
 from ipywidgets import widget_serialization
 from traitlets import Instance, Int, List, Tuple, Unicode, Union
 
-from .base import AudioNode, NativeAudioNode, NativeAudioParam, ToneWidgetBase, is_disposed
+from .base import (
+    AudioNode,
+    NativeAudioNode,
+    NativeAudioParam,
+    PyAudioNode,
+    ToneWidgetBase,
+    is_disposed,
+)
 from .core import Param
 
 _Connection = List(
@@ -21,6 +28,20 @@ _Connection = List(
         Int(0),
     )
 )
+
+
+def _get_internal_nodes(src_node, dest_node):
+    """Maybe return internal (widget) nodes of pure-python source and
+    destination nodes
+
+    """
+    # TODO: references to pure-python audio input and/or output nodes are lost in the graph
+    if isinstance(src_node, PyAudioNode):
+        src_node = src_node.widget
+    if isinstance(dest_node, PyAudioNode):
+        dest_node = dest_node.widget
+
+    return src_node, dest_node
 
 
 class AudioGraph(ToneWidgetBase):
@@ -53,6 +74,8 @@ class AudioGraph(ToneWidgetBase):
     def connect(self, src_node, dest_node, output_number=0, input_number=0):
         """Connect a source node output to a destination node input."""
 
+        src_node, dest_node = _get_internal_nodes(src_node, dest_node)
+
         if not isinstance(src_node, (AudioNode, NativeAudioNode)):
             raise ValueError("src_node must be a (native) AudioNode object")
         if not isinstance(dest_node, (AudioNode, NativeAudioNode, Param, NativeAudioParam)):
@@ -74,6 +97,7 @@ class AudioGraph(ToneWidgetBase):
     def disconnect(self, src_node, dest_node, output_number=0, input_number=0):
         """Disconnect a source node output from a destination node input."""
 
+        src_node, dest_node = _get_internal_nodes(src_node, dest_node)
         conn = (src_node, dest_node, output_number, input_number)
 
         if conn not in self._connections:

@@ -216,3 +216,37 @@ export abstract class AudioNodeModel extends NodeWithContextModel {
 
   static model_name = 'AudioNodeModel';
 }
+
+/**
+ * A basic Tone.js audio node that just accepts any input/output.
+ * It is meant to be wrapped by a PyInternalAudioNode widget.
+ */
+export class PyToneAudioNode extends tone.ToneAudioNode {
+  readonly name: string = 'PyToneAudioNode';
+
+  readonly input: tone.InputNode | undefined;
+  readonly output: tone.OutputNode | undefined;
+
+  constructor(input?: tone.InputNode, output?: tone.OutputNode) {
+    super();
+    this.input = input;
+    this.output = output;
+  }
+}
+
+export class PyInternalAudioNodeModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: PyInternalAudioNodeModel.model_name,
+    };
+  }
+
+  createNode(): PyToneAudioNode {
+    return new PyToneAudioNode(this.input.node, this.output.node);
+  }
+
+  node: PyToneAudioNode;
+
+  static model_name = 'PyInternalAudioNodeModel';
+}

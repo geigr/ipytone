@@ -1,6 +1,6 @@
 import pytest
 
-from ipytone.base import NativeAudioNode, NativeAudioParam
+from ipytone.base import NativeAudioNode, NativeAudioParam, PyAudioNode
 from ipytone.core import InternalAudioNode, Param
 
 
@@ -27,6 +27,17 @@ def test_audio_graph(audio_graph, src, dest, param):
         audio_graph.disconnect(src, dest)
         assert (src, dest, 0, 0) in audio_graph.connections
     assert (src, dest, 0, 0) not in audio_graph.connections
+
+
+def test_audi0_graph_py_audio_node(audio_graph):
+    in_node = InternalAudioNode()
+    out_node = InternalAudioNode()
+    dest = PyAudioNode(in_node, out_node)
+
+    src = InternalAudioNode()
+
+    audio_graph.connect(src, dest)
+    assert (src, dest.widget, 0, 0) in audio_graph.connections
 
 
 def test_audio_graph_errors(audio_graph):
