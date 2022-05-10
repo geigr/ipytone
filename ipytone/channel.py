@@ -1,8 +1,8 @@
 from ipywidgets import widget_serialization
 from traitlets import Instance, Unicode
 
-from .base import AudioNode
-from .core import Gain, NativeAudioNode, Param
+from .base import AudioNode, PyAudioNode
+from .core import Gain, NativeAudioNode, Param, Volume
 from .signal import Signal
 
 
@@ -89,3 +89,42 @@ class Panner(AudioNode):
             self._pan.dispose()
 
         return self
+
+
+class PanVol(PyAudioNode):
+    """Panner and Volume in one."""
+
+    def __init__(self, pan=0, volume=0, mute=False, channel_count=1, **kwargs):
+        self._panner = Panner(pan=pan, channel_count=channel_count)
+        self._volume = Volume(volume=volume, mute=mute)
+        self._panner.connect(self._volume)
+        super().__init__(
+            self._panner,
+            self._volume,
+            channel_count=channel_count,
+            channel_count_mode="explicit",
+            **kwargs
+        )
+
+    @property
+    def pan(self) -> Param:
+        """Pan control parameter.
+
+        value = -1 -> hard left
+        value =  1 -> hard right
+
+        """
+        return self._panner.pan
+
+    @property
+    def volume(self) -> Param:
+        """Volume control in decibels."""
+        return self._volume.volume
+
+    @property
+    def mute(self) -> bool:
+        return self._volume.mute
+
+    @mute.setter
+    def mute(self, value):
+        self._volume.mute = value

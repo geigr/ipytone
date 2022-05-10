@@ -1,4 +1,6 @@
-from ipytone import CrossFade, Gain, Panner, Param, Signal
+from ipytone.channel import CrossFade, Panner, PanVol
+from ipytone.core import Gain, Param, Volume
+from ipytone.signal import Signal
 
 
 def test_cross_fade():
@@ -34,3 +36,23 @@ def test_panner():
     assert p is panner
     assert panner.disposed is True
     assert panner.pan.disposed is True
+
+
+def test_panvol():
+    panvol = PanVol()
+
+    assert isinstance(panvol.input, Panner)
+    assert isinstance(panvol.output, Volume)
+
+    assert panvol.channel_count == 1
+    assert panvol.channel_count_mode == "explicit"
+
+    assert panvol.pan.value == 0
+    assert panvol.pan is panvol.input.pan
+
+    assert panvol.volume.value == 0
+    assert panvol.volume is panvol.output.volume
+
+    assert panvol.mute is False
+    panvol.mute = True
+    assert panvol.output.mute is True
