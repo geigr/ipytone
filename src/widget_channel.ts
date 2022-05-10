@@ -156,3 +156,21 @@ export class MergeModel extends AudioNodeModel {
 
   static model_name = 'MergeModel';
 }
+
+export class SplitModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: SplitModel.model_name,
+      _channels: 2,
+    };
+  }
+
+  createNode(): tone.Split {
+    return new tone.Split({ channels: this.get('_channels') });
+  }
+
+  node: tone.Split;
+
+  static model_name = 'SplitModel';
+}

@@ -1,5 +1,5 @@
 from ipytone.base import NativeAudioNode
-from ipytone.channel import Channel, CrossFade, Merge, Mono, Panner, PanVol, Solo
+from ipytone.channel import Channel, CrossFade, Merge, Mono, Panner, PanVol, Solo, Split
 from ipytone.core import Gain, Param, Volume
 from ipytone.signal import Signal
 
@@ -112,6 +112,17 @@ def test_merge():
     assert merge.output.type == "ChannelMergerNode"
 
     assert repr(merge) == "Merge(channels=2)"
+
+
+def test_split():
+    split = Split()
+
+    assert split.channels == 2
+    assert split.input is split.output
+    assert isinstance(split.output, NativeAudioNode)
+    assert split.output.type == "ChannelSplitterNode"
+
+    assert repr(split) == "Split(channels=2)"
 
 
 def test_mono(audio_graph):

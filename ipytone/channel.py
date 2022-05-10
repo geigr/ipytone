@@ -255,7 +255,36 @@ class Merge(AudioNode):
 
     def __init__(self, channels=2, **kwargs):
         merger = NativeAudioNode(type="ChannelMergerNode")
-        super().__init__(_input=merger, _output=merger, _channels=channels, _set_node_channels=False, **kwargs)
+        super().__init__(
+            _input=merger, _output=merger, _channels=channels, _set_node_channels=False, **kwargs
+        )
+
+    @property
+    def channels(self):
+        return self._channels
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        yield "channels"
+
+
+class Split(AudioNode):
+    """An audio node that splits an incoming signal into the number of given channels."""
+
+    _model_name = Unicode("SplitModel").tag(sync=True)
+
+    _channels = Int(2).tag(sync=True)
+
+    def __init__(self, channels=2, **kwargs):
+        splitter = NativeAudioNode(type="ChannelSplitterNode")
+        super().__init__(
+            _input=splitter,
+            _output=splitter,
+            _channels=channels,
+            _set_node_channels=False,
+            **kwargs,
+        )
 
     @property
     def channels(self):
