@@ -1,5 +1,5 @@
 from ipywidgets import Widget, widget_serialization
-from traitlets import Bool, Enum, Instance, Int, Unicode
+from traitlets import Bool, Enum, HasTraits, Instance, Int, Unicode, Union
 
 from ._frontend import module_name, module_version
 
@@ -247,3 +247,135 @@ class AudioNode(NodeWithContext):
                 self.output.dispose()
 
         return self
+
+
+class PyInternalAudioNode(AudioNode):
+    """An audio node widget wrapped by a :class:`PyAudioNode` object."""
+
+    _model_name = Unicode("PyInternalAudioNodeModel").tag(sync=True)
+
+
+class PyAudioNode(HasTraits):
+    """A Pure-Python audio node.
+
+    Although it provides the same interface than :class:`AudioNode`, it is not a
+    :class:`ipywidget.Widget`. It is materialized in the front-end through its
+    input and/or output nodes, which must correspond to :class:`AudioNode`
+    objects (maybe via some other :class:`PyAudioNode` nested objects).
+
+    This class may be used as a base class to create custom nodes that don't
+    exist in Tone.js or high-level nodes that are straightforward to
+    implement on top of audio nodes types already available in ipytone.
+
+    """
+
+    name = Unicode("").tag(sync=True)
+
+    _input = Union(
+        (
+            Instance(ToneWidgetBase, allow_none=True),
+            Instance("ipytone.PyAudioNode", allow_none=True),
+        )
+    )
+    _output = Union(
+        (
+            Instance(ToneWidgetBase, allow_none=True),
+            Instance("ipytone.PyAudioNode", allow_none=True),
+        )
+    )
+
+    channel_count = Int(2)
+    channel_count_mode = Enum(["max", "clamped-max", "explicit"], default_value="max")
+    channel_interpretation = Enum(["speakers", "discrete"], default_value="speakers")
+
+    def __init__(self, input_node, output_node, **kwargs):
+        # ignore _input / _output kwargs -> must be passed as args
+        kwargs.pop("_input", None)
+        kwargs.pop("_output", None)
+        super().__init__(**kwargs)
+
+        self._input = input_node
+        self._output = output_node
+
+        # the internal node must have two widgets (or None) as input/output
+        max_iter = 50
+        err_msg = "could not find input/output audio node widget"
+        i = 0
+        while isinstance(input_node, PyAudioNode):
+            input_node = input_node.input
+            if i >= max_iter:
+                raise StopIteration(err_msg)
+        i = 0
+        while isinstance(output_node, PyAudioNode):
+            output_node = output_node.output
+            if i >= max_iter:
+                raise StopIteration(err_msg)
+
+        self._node = PyInternalAudioNode(_input=input_node, _output=output_node, **kwargs)
+
+    @property
+    def widget(self):
+        """Returns the wrapped audio node widget."""
+        return self._node
+
+    @property
+    def number_of_inputs(self):
+        return self._node.number_of_inputs
+
+    @property
+    def number_of_outputs(self):
+        return self._node.number_of_outputs
+
+    def connect(self, destination, output_number=0, input_number=0):
+        self._node.connect(destination, output_number, input_number)
+        return self
+
+    def disconnect(self, destination, output_number=0, input_number=0):
+        self._node.disconnect(destination, output_number, input_number)
+        return self
+
+    def fan(self, *destinations):
+        self._node.fan(*destinations)
+        return self
+
+    def chain(self, *destinations):
+        self._node.chain(*destinations)
+        return self
+
+    def to_destination(self):
+        self._node.to_destination()
+        return self
+
+    @property
+    def input(self):
+        return self._input
+
+    @property
+    def output(self):
+        return self._output
+
+    def dispose(self):
+        self._node.dispose()
+        return self
+
+    @property
+    def disposed(self):
+        return self._node.disposed
+
+    def close(self):
+        self._node.close()
+
+    def _repr_keys(self):
+        if self.name:
+            yield "name"
+        if self.disposed:
+            yield "disposed"
+
+    def _gen_repr_from_keys(self, keys):
+        class_name = self.__class__.__name__
+        signature = ", ".join("{}={!r}".format(key, getattr(self, key)) for key in keys)
+        return f"{class_name}({signature})"
+
+    def __repr__(self):
+        # emulate repr of ipywidgets.Widget (no DOM)
+        return self._gen_repr_from_keys(self._repr_keys())

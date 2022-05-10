@@ -1,7 +1,11 @@
 // Copyright (c) Benoit Bovy
 // Distributed under the terms of the Modified BSD License.
 
-export { NativeAudioNodeModel, NativeAudioParamModel } from './widget_base';
+export {
+  NativeAudioNodeModel,
+  NativeAudioParamModel,
+  PyInternalAudioNodeModel,
+} from './widget_base';
 export * from './widget_channel';
 export * from './widget_core';
 export * from './widget_effect';

@@ -1,4 +1,11 @@
-from ipytone.base import AudioNode, NativeAudioNode, NativeAudioParam, ToneObject
+from ipytone.base import (
+    AudioNode,
+    NativeAudioNode,
+    NativeAudioParam,
+    PyAudioNode,
+    PyInternalAudioNode,
+    ToneObject,
+)
 from ipytone.core import InternalAudioNode, destination
 
 
@@ -134,3 +141,61 @@ def test_audio_node_chain(audio_graph):
     assert (node1, node2, 0, 0) in audio_graph.connections
     assert (node2, node3, 0, 0) in audio_graph.connections
     assert n is node1
+
+
+def test_pyaudionode(audio_graph):
+    in_node_in = InternalAudioNode()
+    in_node_out = InternalAudioNode()
+    in_node = PyAudioNode(in_node_in, in_node_out)
+    out_node = InternalAudioNode()
+    node = PyAudioNode(in_node, out_node, name="test")
+
+    assert node.disposed is False
+    assert node.number_of_inputs == 1
+    assert node.number_of_outputs == 1
+    assert node.channel_count == 2
+    assert node.channel_count_mode == "max"
+    assert node.channel_interpretation == "speakers"
+    assert repr(node) == "PyAudioNode(name='test')"
+
+    assert node.input is in_node
+    assert node.output is out_node
+
+    assert isinstance(node.widget, PyInternalAudioNode)
+    assert node.widget.input is in_node_in
+    assert node.widget.output is out_node
+
+    node2 = InternalAudioNode()
+    n = node.connect(node2)
+    assert (node.widget, node2, 0, 0) in audio_graph.connections
+    assert n is node
+
+    node3 = InternalAudioNode()
+    node3.connect(node)
+    assert (node3, node.widget, 0, 0) in audio_graph.connections
+
+    n = node.disconnect(node2)
+    assert (node.widget, node2, 0, 0) not in audio_graph.connections
+    assert n is node
+
+    node4 = InternalAudioNode()
+    node5 = InternalAudioNode()
+    n = node.fan(node4, node5)
+    assert (node.widget, node4, 0, 0) in audio_graph.connections
+    assert (node.widget, node5, 0, 0) in audio_graph.connections
+    assert n is node
+
+    node6 = InternalAudioNode()
+    node7 = InternalAudioNode()
+    n = node.chain(node6, node7)
+    assert (node.widget, node6, 0, 0) in audio_graph.connections
+    assert (node6, node7, 0, 0) in audio_graph.connections
+    assert n is node
+
+    n = node.to_destination()
+    assert (node.widget, destination, 0, 0) in audio_graph.connections
+    assert n is node
+
+    n = node.dispose()
+    assert node.disposed is True
+    assert n is node

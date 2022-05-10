@@ -45,6 +45,8 @@ interface ParamProperties<T extends UnitName> {
   convert: boolean;
   minValue?: number;
   maxValue?: number;
+  // so that we could reuse it with Gain
+  gain?: UnitMap[T];
 }
 
 export class ParamModel<T extends UnitName> extends NodeWithContextModel {
@@ -195,7 +197,9 @@ export class GainModel extends AudioNodeModel {
   }
 
   createNode(): tone.Gain {
-    return new tone.Gain(this.gain.properties);
+    const gain_opts = this.gain.properties;
+    gain_opts.gain = gain_opts.value;
+    return new tone.Gain(gain_opts);
   }
 
   setSubNodes(): void {
