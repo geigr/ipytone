@@ -138,3 +138,21 @@ export class SoloModel extends AudioNodeModel {
 
   static model_name = 'SoloModel';
 }
+
+export class MergeModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: MergeModel.model_name,
+      channels: 2,
+    };
+  }
+
+  createNode(): tone.Merge {
+    return new tone.Merge({ channels: this.get('channels') });
+  }
+
+  node: tone.Merge;
+
+  static model_name = 'MergeModel';
+}

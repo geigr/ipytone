@@ -1,5 +1,5 @@
 from ipywidgets import widget_serialization
-from traitlets import Bool, Instance, Unicode
+from traitlets import Bool, Instance, Int, Unicode
 
 from .base import AudioNode, PyAudioNode
 from .core import Gain, NativeAudioNode, Param, Volume
@@ -241,3 +241,23 @@ class Channel(PyAudioNode):
         bus_gain = self._get_bus(name)
         bus_gain.connect(self)
         return self
+
+
+class Merge(AudioNode):
+    """An audio node for merging multiple mono input channels into a single
+    multichannel output channel.
+
+    """
+
+    _model_name = Unicode("MergeModel").tag(sync=True)
+
+    channels = Int(2, help="number of channels to merge", read_only=True).tag(sync=True)
+
+    def __init__(self, **kwargs):
+        merger = NativeAudioNode(type="ChannelMergerNode")
+        super().__init__(_input=merger, _output=merger, _set_node_channels=False, **kwargs)
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        yield "channels"

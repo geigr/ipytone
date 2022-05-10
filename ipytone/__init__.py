@@ -6,7 +6,7 @@
 
 from ._version import __version__, version_info
 from .base import PyAudioNode
-from .channel import Channel, CrossFade, Panner, PanVol, Solo
+from .channel import Channel, CrossFade, Merge, Panner, PanVol, Solo
 from .core import AudioBuffer, AudioBuffers, Gain, Param, Volume, destination
 from .effect import Distortion, FeedbackDelay, PingPongDelay, Reverb, Tremolo, Vibrato
 from .envelope import AmplitudeEnvelope, Envelope, FrequencyEnvelope

@@ -1,4 +1,5 @@
-from ipytone.channel import Channel, CrossFade, Panner, PanVol, Solo
+from ipytone.base import NativeAudioNode
+from ipytone.channel import Channel, CrossFade, Merge, Panner, PanVol, Solo
 from ipytone.core import Gain, Param, Volume
 from ipytone.signal import Signal
 
@@ -100,3 +101,14 @@ def test_channel_buses(audio_graph):
     # check connections
     assert (sender, Channel._buses["test"], 0, 0) in audio_graph.connections
     assert (Channel._buses["test"], chan2.widget, 0, 0) in audio_graph.connections
+
+
+def test_merge():
+    merge = Merge()
+
+    assert merge.channels == 2
+    assert merge.input is merge.output
+    assert isinstance(merge.output, NativeAudioNode)
+    assert merge.output,type == "ChannelMergerNode"
+
+    assert repr(merge) == "Merge(channels=2)"
