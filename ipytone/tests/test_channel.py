@@ -1,4 +1,4 @@
-from ipytone.channel import CrossFade, Panner, PanVol, Solo
+from ipytone.channel import Channel, CrossFade, Panner, PanVol, Solo
 from ipytone.core import Gain, Param, Volume
 from ipytone.signal import Signal
 
@@ -66,3 +66,37 @@ def test_solo():
     assert isinstance(solo.input, Gain)
     assert isinstance(solo.output, Gain)
     assert solo.input is solo.output
+
+
+def test_channel():
+    chan = Channel()
+
+    assert chan.pan.value == 0
+    assert chan.volume.value == 0
+    assert chan.muted is False
+    assert chan.channel_count == 1
+    assert chan.channel_count_mode == "explicit"
+
+    assert chan.pan is chan.output.pan
+    assert chan.volume is chan.output.volume
+    assert chan.solo is chan.input.solo
+
+    # can't test solo -> muted without JS.
+    chan.mute = True
+    assert chan.muted is True
+
+
+def test_channel_buses(audio_graph):
+    chan1 = Channel()
+    chan2 = Channel()
+
+    sender = chan1.send("test", volume=-10)
+    assert isinstance(sender, Gain)
+    assert sender.gain.value == -10
+    assert sender.gain.units == "decibels"
+
+    chan2.receive("test")
+
+    # check connections
+    assert (sender, Channel._buses["test"], 0, 0) in audio_graph.connections
+    assert (Channel._buses["test"], chan2.widget, 0, 0) in audio_graph.connections

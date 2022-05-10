@@ -103,7 +103,7 @@ class PanVol(PyAudioNode):
             self._volume,
             channel_count=channel_count,
             channel_count_mode="explicit",
-            **kwargs
+            **kwargs,
         )
 
     @property
@@ -149,6 +149,95 @@ class Solo(AudioNode):
         super().__init__(**kwargs)
 
     @property
-    def muted(self):
+    def muted(self) -> bool:
         """If the current instance is muted, i.e., another instance is soloed"""
         return self.input.gain.value == 0
+
+
+class Channel(PyAudioNode):
+    """An audio node that provides a channel strip interface with volume, pan,
+    solo and mute controls.
+
+    This node may also be used to create channel buses that may receive audio
+    from one or more other channels.
+
+    """
+
+    # all channel buses that may be accessed by their name
+    _buses = {}
+
+    def __init__(self, pan=0, volume=0, solo=False, mute=False, channel_count=1, **kwargs):
+        self._solo = Solo(solo=solo)
+        self._panvol = PanVol(pan=pan, volume=volume, mute=mute, channel_count=channel_count)
+        self._solo.connect(self._panvol)
+        super().__init__(
+            self._solo,
+            self._panvol,
+            channel_count=channel_count,
+            channel_count_mode="explicit",
+            **kwargs,
+        )
+
+    @property
+    def pan(self) -> Param:
+        return self._panvol.pan
+
+    @property
+    def volume(self) -> Param:
+        return self._panvol.volume
+
+    @property
+    def solo(self):
+        return self._solo.solo
+
+    @solo.setter
+    def solo(self, value):
+        self._solo.solo = value
+
+    @property
+    def muted(self) -> bool:
+        """If the current instance is muted, i.e., another instance is soloed"""
+        return self._solo.muted or self.mute
+
+    @property
+    def mute(self) -> bool:
+        return self._panvol.mute
+
+    @mute.setter
+    def mute(self, value):
+        self._panvol.mute = value
+
+    def _get_bus(self, name) -> Gain:
+        """Get access to the bus channel referenced by ``name`` via a Gain
+        node (create the node if it doesn't exists yet)."""
+        if name not in self._buses:
+            self._buses[name] = Gain()
+        return self._buses[name]
+
+    def send(self, name, volume=0) -> Gain:
+        """Send audio from this channel (post-fader) to the channel bus.
+
+        Parameters
+        ----------
+        name : str
+            Name of the bus channel.
+        volume : float
+            Amount of the signal to send in decibels (default: 0, full signal).
+
+        Returns
+        -------
+        gain : :class:`ipytone.Gain`
+            The (new) gain node through which the audio signal is sent to the bus channel.
+
+        """
+        bus_gain = self._get_bus(name)
+        send_gain = Gain(gain=volume, units="decibels")
+        self.connect(send_gain)
+        send_gain.connect(bus_gain)
+        return send_gain
+
+    def receive(self, name):
+        """Receive audio from a bus channel referenced by ``name``."""
+        bus_gain = self._get_bus(name)
+        bus_gain.connect(self)
+        return self

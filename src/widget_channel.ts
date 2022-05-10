@@ -113,7 +113,7 @@ export class SoloModel extends AudioNodeModel {
     return this.get('solo');
   }
 
-  set solo(solo) {
+  set solo(solo: boolean) {
     this.node.solo = solo;
 
     // synchronize all solo models (their gain param)
