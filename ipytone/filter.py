@@ -1,5 +1,5 @@
 from ipywidgets import widget_serialization
-from traitlets import Bool, Enum, Instance, Int, Unicode
+from traitlets import Bool, Enum, Float, Instance, Int, Unicode, Union
 from traittypes import Array
 
 from .base import AudioNode
@@ -89,7 +89,7 @@ class BiquadFilter(AudioNode):
     def _repr_keys(self):
         for key in super()._repr_keys():
             yield key
-        for key in ["frequency", "q"]:
+        for key in ["type", "frequency", "q"]:
             yield key
 
     def dispose(self):
@@ -180,7 +180,7 @@ class Filter(AudioNode):
     def _repr_keys(self):
         for key in super()._repr_keys():
             yield key
-        for key in ["frequency", "q"]:
+        for key in ["type", "frequency", "q"]:
             yield key
 
     def dispose(self):
@@ -191,3 +191,44 @@ class Filter(AudioNode):
             self._detune.dispose()
             self._gain.dispose()
         return self
+
+
+ONE_POLE_FILTER_TYPES = ["lowpass", "highpass"]
+
+
+class OnePoleFilter(AudioNode):
+    """A one pole filter with 6db-per-octave rolloff.
+
+    Either 'highpass' or 'lowpass'. Note that changing the type or frequency may
+    result in a discontinuity which * can sound like a click or pop.
+
+    """
+
+    _model_name = Unicode("OnePoleFilterModel").tag(sync=True)
+
+    type = Enum(
+        ONE_POLE_FILTER_TYPES, allow_none=False, default_value="lowpass", help="filter type"
+    ).tag(sync=True)
+    frequency = Union((Float(), Unicode()), default_value=880, help="filter frequency").tag(sync=True)
+
+    def __init__(self, **kwargs):
+        in_gain = Gain(_create_node=False)
+        out_gain = Gain(_create_node=False)
+
+        kwargs.update({"_input": in_gain, "_output": out_gain})
+        super().__init__(**kwargs)
+
+    array = Array(
+        allow_none=True,
+        default_value=None,
+        read_only=True,
+        help="frequency response curve data (20hz-20kh)",
+    ).tag(sync=True, **data_array_serialization)
+    array_length = Int(128, help="Curve data resolution (array length)").tag(sync=True)
+    sync_array = Bool(False, help="If True, synchronize curve data").tag(sync=True)
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        for key in ["type", "frequency"]:
+            yield key

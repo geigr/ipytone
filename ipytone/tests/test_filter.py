@@ -3,7 +3,7 @@ from traitlets import TraitError
 
 from ipytone.base import NativeAudioNode
 from ipytone.core import Gain
-from ipytone.filter import BiquadFilter, Filter
+from ipytone.filter import BiquadFilter, Filter, OnePoleFilter
 
 
 def test_biquad_filter():
@@ -28,6 +28,7 @@ def test_biquad_filter():
     with pytest.raises(TraitError):
         bq_filter.type = "invalid"
 
+    assert "type" in repr(bq_filter)
     assert "frequency=" in repr(bq_filter)
     assert "q=" in repr(bq_filter)
 
@@ -64,6 +65,7 @@ def test_filter():
     with pytest.raises(TraitError):
         filtr.rolloff = -999
 
+    assert "type" in repr(filtr)
     assert "frequency=" in repr(filtr)
     assert "q=" in repr(filtr)
 
@@ -72,3 +74,23 @@ def test_filter():
     assert filtr.q.disposed is True
     assert filtr.detune.disposed is True
     assert filtr.gain.disposed is True
+
+
+def test_one_pole_filter():
+    op_filter = OnePoleFilter()
+
+    assert isinstance(op_filter.input, Gain)
+    assert isinstance(op_filter.output, Gain)
+    assert op_filter.input is not op_filter.output
+
+    assert op_filter.array_length == 128
+    assert op_filter.sync_array is False
+
+    assert op_filter.type == "lowpass"
+    assert op_filter.frequency == 880
+
+    with pytest.raises(TraitError):
+        op_filter.type = "highshelf"
+
+    assert "type" in repr(op_filter)
+    assert "frequency=" in repr(op_filter)

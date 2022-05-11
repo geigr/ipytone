@@ -10,7 +10,7 @@ from .channel import Channel, CrossFade, Merge, Mono, Panner, PanVol, Solo, Spli
 from .core import AudioBuffer, AudioBuffers, Gain, Param, Volume, destination
 from .effect import Distortion, FeedbackDelay, PingPongDelay, Reverb, Tremolo, Vibrato
 from .envelope import AmplitudeEnvelope, Envelope, FrequencyEnvelope
-from .filter import BiquadFilter, Filter
+from .filter import BiquadFilter, Filter, OnePoleFilter
 from .graph import get_audio_graph
 from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Scale, Signal, Subtract
 from .source import (

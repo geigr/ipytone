@@ -227,3 +227,73 @@ export class FilterModel extends AudioNodeModel {
 
   static model_name = 'FilterModel';
 }
+
+export class OnePoleFilterModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: OnePoleFilterModel.model_name,
+      type: 'lowpass',
+      frequency: 880,
+      array: null,
+      array_length: 128,
+      sync_array: false,
+    };
+  }
+
+  initialize(
+    attributes: Backbone.ObjectHash,
+    options: { model_id: string; comm: any; widget_manager: any }
+  ): void {
+    super.initialize(attributes, options);
+
+    if (this.get('_create_node')) {
+      this.maybeSetArray();
+    }
+  }
+
+  createNode(): tone.OnePoleFilter {
+    return new tone.OnePoleFilter({
+      type: this.get('type'),
+      frequency: this.get('frequency'),
+    });
+  }
+
+  maybeSetArray(): void {
+    if (this.get('sync_array')) {
+      this.array = this.node.getFrequencyResponse(this.get('array_length'));
+      this.save_changes();
+    }
+  }
+
+  get array(): ArrayProperty {
+    return getArrayProp(this.get('array'));
+  }
+
+  set array(value: ArrayProperty) {
+    // avoid infinite event listener loop
+    this.set('array', value, { silent: true });
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:type', () => {
+      this.node.type = this.get('type');
+      this.maybeSetArray();
+    });
+    this.on('change:frequency', () => {
+      this.node.frequency = this.get('frequency');
+      this.maybeSetArray();
+    });
+  }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    array: dataarray_serialization,
+  };
+
+  node: tone.OnePoleFilter;
+
+  static model_name = 'OnePoleFilterModel';
+}
