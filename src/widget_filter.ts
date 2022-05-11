@@ -297,3 +297,45 @@ export class OnePoleFilterModel extends AudioNodeModel {
 
   static model_name = 'OnePoleFilterModel';
 }
+
+export class FeedbackCombFilterModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: FeedbackCombFilterModel.model_name,
+      _delay_time: undefined,
+      _resonance: undefined,
+    };
+  }
+
+  createNode(): tone.FeedbackCombFilter {
+    return new tone.FeedbackCombFilter({
+      delayTime: this.delayTime.value,
+      resonance: this.resonance.value,
+    });
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.delayTime.setNode(this.node.delayTime);
+    this.resonance.setNode(this.node.resonance);
+  }
+
+  get delayTime(): ParamModel<'time'> {
+    return this.get('_delay_time');
+  }
+
+  get resonance(): ParamModel<'normalRange'> {
+    return this.get('_resonance');
+  }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _delay_time: { deserialize: unpack_models as any },
+    _resonance: { deserialize: unpack_models as any },
+  };
+
+  node: tone.FeedbackCombFilter;
+
+  static model_name = 'FeedbackCombFilterModel';
+}

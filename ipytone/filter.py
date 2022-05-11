@@ -209,7 +209,9 @@ class OnePoleFilter(AudioNode):
     type = Enum(
         ONE_POLE_FILTER_TYPES, allow_none=False, default_value="lowpass", help="filter type"
     ).tag(sync=True)
-    frequency = Union((Float(), Unicode()), default_value=880, help="filter frequency").tag(sync=True)
+    frequency = Union((Float(), Unicode()), default_value=880, help="filter frequency").tag(
+        sync=True
+    )
 
     def __init__(self, **kwargs):
         in_gain = Gain(_create_node=False)
@@ -232,3 +234,52 @@ class OnePoleFilter(AudioNode):
             yield key
         for key in ["type", "frequency"]:
             yield key
+
+
+class FeedbackCombFilter(AudioNode):
+    """Feedback comb filter."""
+
+    _model_name = Unicode("FeedbackCombFilterModel").tag(sync=True)
+
+    _delay_time = Instance(Param).tag(sync=True, **widget_serialization)
+    _resonance = Instance(Param).tag(sync=True, **widget_serialization)
+
+    def __init__(self, delay_time=0.1, resonance=0.5, **kwargs):
+        in_gain = Gain(_create_node=False)
+        out_gain = Gain(_create_node=False)
+
+        p_delay_time = Param(units="time", value=delay_time, _create_node=False)
+        p_resonance = Param(units="normalRange", value=resonance, _create_node=False)
+
+        kwargs.update(
+            {
+                "_input": in_gain,
+                "_output": out_gain,
+                "_delay_time": p_delay_time,
+                "_resonance": p_resonance,
+            }
+        )
+        super().__init__(**kwargs)
+
+    @property
+    def delay_time(self) -> Param:
+        """Amount of delay of the comb filter."""
+        return self._delay_time
+
+    @property
+    def resonance(self) -> Param:
+        """Amount of feedback of the delayed signal."""
+        return self._resonance
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        for key in ["delay_time", "resonance"]:
+            yield key
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._delay_time.dispose()
+            self._resonance.dispose()
+        return self
