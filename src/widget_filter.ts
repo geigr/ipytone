@@ -2,6 +2,8 @@ import { ISerializers, unpack_models } from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
 
+// import { PhaseShiftAllpass } from 'tone/Tone/component/filter/PhaseShiftAllpass';
+
 import { AudioNodeModel } from './widget_base';
 
 import { ParamModel } from './widget_core';
@@ -339,3 +341,36 @@ export class FeedbackCombFilterModel extends AudioNodeModel {
 
   static model_name = 'FeedbackCombFilterModel';
 }
+
+// TODO: Tone.js PhaseShiftAllpass not (yet?) part of public API
+// export class PhaseShiftAllpassModel extends AudioNodeModel {
+//   defaults(): any {
+//     return {
+//       ...super.defaults(),
+//       _model_name: PhaseShiftAllpassModel.model_name,
+//       _offset90: undefined,
+//     };
+//   }
+
+//   createNode(): PhaseShiftAllpass {
+//     return new PhaseShiftAllpass();
+//   }
+
+//   setSubNodes(): void {
+//     super.setSubNodes();
+//     this.offset90.setNode(this.node.offset90);
+//   }
+
+//   get offset90(): GainModel {
+//     return this.get('_offset90');
+//   }
+
+//   static serializers: ISerializers = {
+//     ...AudioNodeModel.serializers,
+//     _offset90: { deserialize: unpack_models as any },
+//   };
+
+//   node: PhaseShiftAllpass;
+
+//   static model_name = 'PhaseShiftAllpassModel';
+// }

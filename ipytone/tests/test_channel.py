@@ -1,5 +1,15 @@
 from ipytone.base import NativeAudioNode
-from ipytone.channel import Channel, CrossFade, Merge, Mono, Panner, PanVol, Solo, Split
+from ipytone.channel import (
+    Channel,
+    CrossFade,
+    Merge,
+    Mono,
+    MultibandSplit,
+    Panner,
+    PanVol,
+    Solo,
+    Split,
+)
 from ipytone.core import Gain, Param, Volume
 from ipytone.signal import Signal
 
@@ -123,6 +133,48 @@ def test_split():
     assert split.output.type == "ChannelSplitterNode"
 
     assert repr(split) == "Split(channels=2)"
+
+
+def test_multiband_split(audio_graph):
+    msplit = MultibandSplit()
+
+    assert isinstance(msplit.input, Gain)
+    assert msplit.output is None
+
+    assert msplit.low.type == "lowpass"
+    assert msplit.mid.type == "lowpass"
+    assert msplit.high.type == "highpass"
+    assert msplit.low_frequency.value == 400
+    assert msplit.low_frequency.units == "frequency"
+    assert msplit.high_frequency.value == 2500
+    assert msplit.high_frequency.units == "frequency"
+    assert msplit.q.value == 1
+    assert msplit.q.units == "positive"
+
+    # test connections
+    assert (msplit.input, msplit.low, 0, 0) in audio_graph.connections
+    assert (msplit.input, msplit.high, 0, 0) in audio_graph.connections
+    assert (msplit.input, msplit._low_mid, 0, 0) in audio_graph.connections
+    assert (msplit._low_mid, msplit._mid, 0, 0) in audio_graph.connections
+
+    assert (msplit.low_frequency, msplit.low.frequency, 0, 0) in audio_graph.connections
+    assert (msplit.low_frequency, msplit._low_mid.frequency, 0, 0) in audio_graph.connections
+    assert (msplit.high_frequency, msplit._mid.frequency, 0, 0) in audio_graph.connections
+    assert (msplit.high_frequency, msplit._high.frequency, 0, 0) in audio_graph.connections
+
+    assert (msplit.q, msplit.low.q, 0, 0) in audio_graph.connections
+    assert (msplit.q, msplit._low_mid.q, 0, 0) in audio_graph.connections
+    assert (msplit.q, msplit.mid.q, 0, 0) in audio_graph.connections
+    assert (msplit.q, msplit.high.q, 0, 0) in audio_graph.connections
+
+    msplit.dispose()
+    assert msplit.low.disposed is True
+    assert msplit._low_mid.disposed is True
+    assert msplit.mid.disposed is True
+    assert msplit.high.disposed is True
+    assert msplit.low_frequency.disposed is True
+    assert msplit.high_frequency.disposed is True
+    assert msplit.q.disposed is True
 
 
 def test_mono(audio_graph):

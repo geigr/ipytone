@@ -2,8 +2,10 @@ import pytest
 from traitlets import TraitError
 
 from ipytone.base import NativeAudioNode
+from ipytone.channel import MultibandSplit
 from ipytone.core import Gain
 from ipytone.filter import (
+    EQ3,
     BiquadFilter,
     FeedbackCombFilter,
     Filter,
@@ -140,3 +142,32 @@ def test_lowpass_comb_filter():
     assert "delay_time" in repr(lc_filter)
     assert "resonance" in repr(lc_filter)
     assert "dampening" in repr(lc_filter)
+
+
+def test_eq3(audio_graph):
+    eq = EQ3()
+
+    assert isinstance(eq.input, MultibandSplit)
+    assert isinstance(eq.output, Gain)
+
+    assert eq.low.value == 0
+    assert eq.mid.value == 0
+    assert eq.high.value == 0
+    assert eq.low_frequency.value == 400
+    assert eq.low_frequency is eq.input.low_frequency
+    assert eq.high_frequency.value == 2500
+    assert eq.high_frequency is eq.input.high_frequency
+    assert eq.q is eq.input.q
+
+    # test connections
+    assert (eq.input.low, eq._low_gain, 0, 0) in audio_graph.connections
+    assert (eq._low_gain, eq.output, 0, 0) in audio_graph.connections
+    assert (eq.input.mid, eq._mid_gain, 0, 0) in audio_graph.connections
+    assert (eq._mid_gain, eq.output, 0, 0) in audio_graph.connections
+    assert (eq.input.high, eq._high_gain, 0, 0) in audio_graph.connections
+    assert (eq._high_gain, eq.output, 0, 0) in audio_graph.connections
+
+    eq.dispose()
+    assert eq._low_gain.disposed is True
+    assert eq._mid_gain.disposed is True
+    assert eq._high_gain.disposed is True

@@ -6,11 +6,18 @@
 
 from ._version import __version__, version_info
 from .base import PyAudioNode
-from .channel import Channel, CrossFade, Merge, Mono, Panner, PanVol, Solo, Split
+from .channel import Channel, CrossFade, Merge, Mono, MultibandSplit, Panner, PanVol, Solo, Split
 from .core import AudioBuffer, AudioBuffers, Gain, Param, Volume, destination
 from .effect import Distortion, FeedbackDelay, PingPongDelay, Reverb, Tremolo, Vibrato
 from .envelope import AmplitudeEnvelope, Envelope, FrequencyEnvelope
-from .filter import BiquadFilter, FeedbackCombFilter, Filter, LowpassCombFilter, OnePoleFilter
+from .filter import (  # PhaseShiftAllpass,
+    EQ3,
+    BiquadFilter,
+    FeedbackCombFilter,
+    Filter,
+    LowpassCombFilter,
+    OnePoleFilter,
+)
 from .graph import get_audio_graph
 from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Scale, Signal, Subtract
 from .source import (

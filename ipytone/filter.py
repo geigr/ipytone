@@ -318,3 +318,86 @@ class LowpassCombFilter(PyAudioNode):
             yield key
         for key in ["delay_time", "resonance", "dampening"]:
             yield key
+
+
+# class PhaseShiftAllpass(AudioNode):
+#     """Optimized implementation of Hilbert transform using two all-pass IIR
+#     filters whose phase difference is approximately 90 degrees.
+
+#     """
+
+#     _model_name = Unicode("PhaseShiftAllpass").tag(sync=True)
+
+#     _offset90 = Instance(Gain).tag(sync=True, **widget_serialization)
+
+#     def __init__(self, **kwargs):
+#         in_gain = Gain(_create_node=False)
+#         out_gain = Gain(_create_node=False)
+#         offset90 = Gain(_create_node=False)
+#         kwargs.update({"_input": in_gain, "_output": out_gain, "_offset_90": offset90})
+#         super().__init__(**kwargs)
+
+#     @property
+#     def offset90(self) -> Gain:
+#         """Returns the PhaseShifted allpass output."""
+#         return self._offset90
+
+
+class EQ3(PyAudioNode):
+    """Three-band equalizer."""
+
+    def __init__(self, low=0, mid=0, high=0, low_frequency=400, high_frequency=2500, **kwargs):
+        from .channel import MultibandSplit
+
+        in_msplit = MultibandSplit(low_frequency=low_frequency, high_frequency=high_frequency)
+        out_gain = Gain()
+
+        self._low_gain = Gain(units="decibels", gain=low)
+        self._mid_gain = Gain(units="decibels", gain=mid)
+        self._high_gain = Gain(units="decibels", gain=high)
+
+        super().__init__(in_msplit, out_gain, **kwargs)
+
+        # connections
+        with self._graph.hold_state():
+            in_msplit.low.chain(self._low_gain, out_gain)
+            in_msplit.mid.chain(self._mid_gain, out_gain)
+            in_msplit.high.chain(self._high_gain, out_gain)
+
+    @property
+    def low(self) -> Param:
+        """Low band gain (decibels)."""
+        return self._low_gain.gain
+
+    @property
+    def mid(self) -> Param:
+        """Mid band gain (decibels)."""
+        return self._mid_gain.gain
+
+    @property
+    def high(self) -> Param:
+        """High band gain (decibels)."""
+        return self._high_gain.gain
+
+    @property
+    def low_frequency(self) -> Signal:
+        """Low/mid cross-over frequency."""
+        return self.input.low_frequency
+
+    @property
+    def high_frequency(self) -> Signal:
+        """Mid/high cross-over frequency."""
+        return self.input.high_frequency
+
+    @property
+    def q(self) -> Signal:
+        """Q factor of all filters."""
+        return self.input.q
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._low_gain.dispose()
+            self._mid_gain.dispose()
+            self._high_gain.dispose()
+        return self

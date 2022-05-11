@@ -3,6 +3,7 @@ from traitlets import Bool, Instance, Int, Unicode
 
 from .base import AudioNode, PyAudioNode
 from .core import Gain, NativeAudioNode, Param, Volume
+from .filter import Filter
 from .signal import Signal
 
 
@@ -294,6 +295,85 @@ class Split(AudioNode):
         for key in super()._repr_keys():
             yield key
         yield "channels"
+
+
+class MultibandSplit(PyAudioNode):
+    """Split the incoming signal into three bands (low, mid, high), with
+    cross-over frequency controls.
+
+    """
+
+    def __init__(self, low_frequency=400, high_frequency=2500, q=1, **kwargs):
+        in_gain = Gain()
+
+        self._low = Filter(frequency=0, type="lowpass")
+        self._low_mid = Filter(frequency=0, type="highpass")
+        self._mid = Filter(frequency=0, type="lowpass")
+        self._high = Filter(frequency=0, type="highpass")
+
+        self._low_frequency = Signal(units="frequency", value=low_frequency)
+        self._high_frequency = Signal(units="frequency", value=high_frequency)
+        self._q = Signal(units="positive", value=q)
+
+        super().__init__(in_gain, None, **kwargs)
+
+        # connections
+        with self._graph.hold_state():
+            in_gain.fan(self._low, self._high)
+            in_gain.chain(self._low_mid, self._mid)
+
+            self._low_frequency.fan(self._low.frequency, self._low_mid.frequency)
+            self._high_frequency.fan(self._mid.frequency, self._high.frequency)
+
+            self._q.fan(self._low.q, self._low_mid.q, self._mid.q, self._high.q)
+
+    @property
+    def low(self) -> Filter:
+        """returns the low band filter."""
+        return self._low
+
+    @property
+    def mid(self) -> Filter:
+        """returns the mid band filter."""
+        return self._mid
+
+    @property
+    def high(self) -> Filter:
+        """returns the high band filter."""
+        return self._high
+
+    @property
+    def low_frequency(self) -> Signal:
+        """Low/mid cross-over frequency."""
+        return self._low_frequency
+
+    @property
+    def high_frequency(self) -> Signal:
+        """Mid/high cross-over frequency."""
+        return self._high_frequency
+
+    @property
+    def q(self) -> Signal:
+        """Filter Q factor."""
+        return self._q
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        for key in ["low_frequency", "high_frequency", "q"]:
+            yield key
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._low.dispose()
+            self._low_mid.dispose()
+            self._mid.dispose()
+            self._high.dispose()
+            self._low_frequency.dispose()
+            self._high_frequency.dispose()
+            self._q.dispose()
+        return self
 
 
 class Mono(PyAudioNode):

@@ -248,7 +248,9 @@ export class PyInternalAudioNodeModel extends AudioNodeModel {
   }
 
   createNode(): PyToneAudioNode {
-    return new PyToneAudioNode(this.input.node, this.output.node);
+    const input_node = this.input === null ? undefined : this.input.node;
+    const output_node = this.output === null ? undefined : this.output.node;
+    return new PyToneAudioNode(input_node, output_node);
   }
 
   node: PyToneAudioNode;
