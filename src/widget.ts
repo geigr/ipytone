@@ -8,6 +8,7 @@ export {
 } from './widget_base';
 export * from './widget_channel';
 export * from './widget_core';
+export * from './widget_dynamics';
 export * from './widget_effect';
 export * from './widget_envelope';
 export * from './widget_filter';
