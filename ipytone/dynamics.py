@@ -84,3 +84,17 @@ class Compressor(AudioNode):
             self._release.dispose()
             self._knee.dispose()
         return self
+
+
+class Limiter(PyAudioNode):
+    """Simple limiter (i.e., compressor with fast attack/release and max compression ratio)."""
+
+    def __init__(self, threshold=-12, **kwargs):
+        self._comp = Compressor(threshold=threshold, ratio=20, attack=0.003, release=0.01)
+        kwargs.update({"_set_node_channels": False})
+        super().__init__(self._comp, self._comp, **kwargs)
+
+    @property
+    def threshold(self) -> Param:
+        """Threshold parameter."""
+        return self._comp.threshold

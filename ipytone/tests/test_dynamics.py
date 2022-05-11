@@ -1,5 +1,5 @@
 from ipytone.base import NativeAudioNode
-from ipytone.dynamics import Compressor
+from ipytone.dynamics import Compressor, Limiter
 
 
 def test_compressor():
@@ -29,3 +29,16 @@ def test_compressor():
     assert comp.attack.disposed is True
     assert comp.release.disposed is True
     assert comp.knee.disposed is True
+
+
+def test_limiter():
+    lim = Limiter()
+
+    assert isinstance(lim.input, Compressor)
+    assert lim.input is lim.output
+
+    assert lim.threshold.value == -12
+    assert lim.threshold is lim.output.threshold
+    assert lim.output.ratio.value == 20
+    assert lim.output.attack.value == 0.003
+    assert lim.output.release.value == 0.01
