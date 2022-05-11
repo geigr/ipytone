@@ -3,8 +3,9 @@ from traitlets import Bool, Enum, Instance, Int, Unicode
 from traittypes import Array
 
 from .base import AudioNode
-from .core import NativeAudioNode, Param
+from .core import Gain, NativeAudioNode, Param
 from .serialization import data_array_serialization
+from .signal import Signal
 
 BIQUAD_FILTER_TYPES = [
     "lowpass",
@@ -31,14 +32,14 @@ class BiquadFilter(AudioNode):
     _detune = Instance(Param).tag(sync=True, **widget_serialization)
     _gain = Instance(Param).tag(sync=True, **widget_serialization)
 
-    curve = Array(
+    array = Array(
         allow_none=True,
         default_value=None,
         read_only=True,
         help="frequency response curve data (20hz-20kh)",
     ).tag(sync=True, **data_array_serialization)
-    curve_length = Int(128, help="Curve data resolution (array length)").tag(sync=True)
-    sync_curve = Bool(False, help="If True, synchronize curve data").tag(sync=True)
+    array_length = Int(128, help="Curve data resolution (array length)").tag(sync=True)
+    sync_array = Bool(False, help="If True, synchronize curve data").tag(sync=True)
 
     def __init__(self, type="lowpass", frequency=350, q=1, detune=0, gain=0, **kwargs):
         bq_filter = NativeAudioNode(type="BiquadFilterNode")
@@ -79,6 +80,97 @@ class BiquadFilter(AudioNode):
 
     @property
     def gain(self) -> Param:
+        """Filter gain (value in decibels).
+
+        Only used for lowshelf, highshelf, and peaking filters.
+        """
+        return self._gain
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        for key in ["frequency", "q"]:
+            yield key
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._frequency.dispose()
+            self._q.dispose()
+            self._detune.dispose()
+            self._gain.dispose()
+        return self
+
+
+FILTER_ROLLOFF = [-12, -24, -48, -96]
+
+
+class Filter(AudioNode):
+    """Simple filter with rolloff (slope) parameter."""
+
+    _model_name = Unicode("FilterModel").tag(sync=True)
+
+    type = Enum(
+        BIQUAD_FILTER_TYPES, allow_none=False, default_value="lowpass", help="filter type"
+    ).tag(sync=True)
+    _frequency = Instance(Signal).tag(sync=True, **widget_serialization)
+    _q = Instance(Signal).tag(sync=True, **widget_serialization)
+    _detune = Instance(Signal).tag(sync=True, **widget_serialization)
+    _gain = Instance(Signal).tag(sync=True, **widget_serialization)
+    rolloff = Enum(
+        FILTER_ROLLOFF, allow_none=False, default_value=-12, help="filter rolloff (slope)"
+    ).tag(sync=True)
+
+    array = Array(
+        allow_none=True,
+        default_value=None,
+        read_only=True,
+        help="frequency response curve data (20hz-20kh)",
+    ).tag(sync=True, **data_array_serialization)
+    array_length = Int(128, help="Curve data resolution (array length)").tag(sync=True)
+    sync_array = Bool(False, help="If True, synchronize curve data").tag(sync=True)
+
+    def __init__(self, type="lowpass", frequency=350, q=1, detune=0, gain=0, rolloff=-12, **kwargs):
+        in_gain = Gain(_create_node=False)
+        out_gain = Gain(_create_node=False)
+
+        p_frequency = Signal(units="frequency", value=frequency, _create_node=False)
+        p_q = Signal(units="positive", value=q, _create_node=False)
+        p_detune = Signal(units="cents", value=detune, _create_node=False)
+        p_gain = Signal(units="decibels", value=gain, _create_node=False)
+
+        kwargs.update(
+            {
+                "type": type,
+                "_input": in_gain,
+                "_output": out_gain,
+                "_q": p_q,
+                "_frequency": p_frequency,
+                "_detune": p_detune,
+                "_gain": p_gain,
+                "rolloff": rolloff,
+            }
+        )
+
+        super().__init__(**kwargs)
+
+    @property
+    def frequency(self) -> Signal:
+        """Filter frequency."""
+        return self._frequency
+
+    @property
+    def q(self) -> Signal:
+        """Filter Q factor."""
+        return self._q
+
+    @property
+    def detune(self) -> Signal:
+        """Filter frequency detune."""
+        return self._detune
+
+    @property
+    def gain(self) -> Signal:
         """Filter gain (value in decibels).
 
         Only used for lowshelf, highshelf, and peaking filters.
