@@ -3,7 +3,13 @@ from traitlets import TraitError
 
 from ipytone.base import NativeAudioNode
 from ipytone.core import Gain
-from ipytone.filter import BiquadFilter, FeedbackCombFilter, Filter, OnePoleFilter
+from ipytone.filter import (
+    BiquadFilter,
+    FeedbackCombFilter,
+    Filter,
+    LowpassCombFilter,
+    OnePoleFilter,
+)
 
 
 def test_biquad_filter():
@@ -114,3 +120,23 @@ def test_feedback_comb_filter():
     fc_filter.dispose()
     assert fc_filter.delay_time.disposed is True
     assert fc_filter.resonance.disposed is True
+
+
+def test_lowpass_comb_filter():
+    lc_filter = LowpassCombFilter()
+
+    assert isinstance(lc_filter.input, OnePoleFilter)
+    assert isinstance(lc_filter.output, FeedbackCombFilter)
+
+    assert lc_filter.delay_time.value == 0.1
+    assert lc_filter.delay_time.units == "time"
+    assert lc_filter.delay_time is lc_filter.output.delay_time
+    assert lc_filter.resonance.value == 0.5
+    assert lc_filter.resonance.units == "normalRange"
+    assert lc_filter.resonance is lc_filter.output.resonance
+    assert lc_filter.dampening == 3000
+    assert lc_filter.dampening == lc_filter.input.frequency
+
+    assert "delay_time" in repr(lc_filter)
+    assert "resonance" in repr(lc_filter)
+    assert "dampening" in repr(lc_filter)

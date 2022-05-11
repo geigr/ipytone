@@ -2,7 +2,7 @@ from ipywidgets import widget_serialization
 from traitlets import Bool, Enum, Float, Instance, Int, Unicode, Union
 from traittypes import Array
 
-from .base import AudioNode
+from .base import AudioNode, PyAudioNode
 from .core import Gain, NativeAudioNode, Param
 from .serialization import data_array_serialization
 from .signal import Signal
@@ -283,3 +283,38 @@ class FeedbackCombFilter(AudioNode):
             self._delay_time.dispose()
             self._resonance.dispose()
         return self
+
+
+class LowpassCombFilter(PyAudioNode):
+    """Feedback comb + lowpass filter."""
+
+    def __init__(self, delay_time=0.1, resonance=0.5, dampening=3000, **kwargs):
+        self._fc_filter = FeedbackCombFilter(delay_time=delay_time, resonance=resonance)
+        self._lowpass_filter = OnePoleFilter(type="lowpass", frequency=dampening)
+        self._lowpass_filter.connect(self._fc_filter)
+        super().__init__(self._lowpass_filter, self._fc_filter, **kwargs)
+
+    @property
+    def delay_time(self) -> Param:
+        """Amount of delay of the comb filter."""
+        return self._fc_filter.delay_time
+
+    @property
+    def resonance(self) -> Param:
+        """Amount of feedback of the delayed signal."""
+        return self._fc_filter.resonance
+
+    @property
+    def dampening(self):
+        """Dampening control of the feedback."""
+        return self._lowpass_filter.frequency
+
+    @dampening.setter
+    def dampening(self, value):
+        self._lowpass_filter.frequency = value
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        for key in ["delay_time", "resonance", "dampening"]:
+            yield key
