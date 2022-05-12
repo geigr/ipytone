@@ -6,6 +6,8 @@ import {
 
 import * as tone from 'tone';
 
+import type { callbackArgs, callbackItem } from './utils';
+
 import { normalizeArguments } from './utils';
 
 import { NodeWithContextModel, ToneObjectModel } from './widget_base';
@@ -15,16 +17,6 @@ import { ParamModel } from './widget_core';
 import { SignalModel } from './widget_signal';
 
 type transportCallback = { (time: number): void };
-
-type callbackArgs = { [key: string]: { eval: boolean; value: any } };
-
-type callbackItem = {
-  method: string;
-  callee: string;
-  model: NodeWithContextModel;
-  args: callbackArgs;
-  arg_keys: string[];
-};
 
 export class TransportModel extends ToneObjectModel {
   defaults(): any {

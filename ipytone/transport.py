@@ -4,7 +4,7 @@ from ipywidgets import widget_serialization
 from traitlets import Bool, Float, Instance, Int, List, Unicode, Union
 
 from .base import ToneObject
-from .callback import ScheduleCallbackArg, add_or_send_event
+from .callback import TimeCallbackArg, add_or_send_event
 from .core import Param
 from .signal import Signal
 
@@ -73,7 +73,7 @@ class Transport(ToneObject):
         return self
 
     def _get_callback_items(self, callback):
-        callback_arg = ScheduleCallbackArg(self)
+        callback_arg = TimeCallbackArg(self)
         callback(callback_arg)
         items = callback_arg.items
         callback_arg._disposed = True
@@ -324,7 +324,7 @@ def schedule(time):
     >>> ipytone.transport.start()
 
     """
-    time_arg = ScheduleCallbackArg(transport)
+    time_arg = TimeCallbackArg(transport)
     event_id = transport._get_event_id_and_inc()
     yield time_arg, event_id
     transport.send(
@@ -346,7 +346,7 @@ def schedule_repeat(interval, start_time=0, duration=None):
     >>> ipytone.transport.start()
 
     """
-    time_arg = ScheduleCallbackArg(transport)
+    time_arg = TimeCallbackArg(transport)
     event_id = transport._get_event_id_and_inc()
     yield time_arg, event_id
     transport.send(
@@ -376,7 +376,7 @@ def schedule_once(time):
     >>> ipytone.transport.start()
 
     """
-    time_arg = ScheduleCallbackArg(transport)
+    time_arg = TimeCallbackArg(transport)
     event_id = transport._get_event_id_and_inc(append=False)
     yield time_arg, event_id
     transport.send(
