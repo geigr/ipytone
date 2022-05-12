@@ -41,7 +41,7 @@ class Event(NodeWithContext):
     loop_start = Union(
         (Float(), Unicode()), default_value=0, help="loop starting (transport) time"
     ).tag(sync=True)
-    loop_start = Union(
+    loop_end = Union(
         (Float(), Unicode()), default_value="1m", help="loop ending (transport) time"
     ).tag(sync=True)
 
@@ -97,3 +97,18 @@ class Event(NodeWithContext):
         """
         self.send({"event": "cancel", "time": time})
         return self
+
+    def dispose(self):
+        self.cancel()
+        super().dispose()
+        return self
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        if self.mute:
+            yield "mute"
+        if self.loop:
+            yield "loop"
+            yield "loop_start"
+            yield "loop_end"
