@@ -33,7 +33,11 @@ export class EventModel extends NodeWithContextModel {
   ): void {
     super.initialize(attributes, options);
 
-    this.event = new tone.ToneEvent({
+    this.event = this.createEvent();
+  }
+
+  protected createEvent(): tone.ToneEvent {
+    return new tone.ToneEvent({
       value: this.get('value'),
       humanize: this.get('humanize'),
       probability: this.get('probability'),
@@ -89,7 +93,7 @@ export class EventModel extends NodeWithContextModel {
     (this.event as any)[command.method](...argsArray);
   }
 
-  private handleMsg(command: any, buffers: any): void {
+  protected handleMsg(command: any, buffers: any): void {
     if (command.event === 'set_callback') {
       this.setCallback(command);
     } else if (command.event === 'play') {
@@ -133,4 +137,59 @@ export class EventModel extends NodeWithContextModel {
   event: tone.ToneEvent;
 
   static model_name = 'EventModel';
+}
+
+export class PartModel extends EventModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: PartModel.model_name,
+      _events: [],
+      length: 0,
+    };
+  }
+
+  protected createEvent(): tone.Part {
+    return new tone.Part({
+      events: this.get('_events'),
+      humanize: this.get('humanize'),
+      probability: this.get('probability'),
+      mute: this.get('mute'),
+      playbackRate: this.get('playback_rate'),
+      loopStart: this.get('loop_start'),
+      loopEnd: this.get('loop_end'),
+      loop: this.get('loop'),
+    });
+  }
+
+  protected handleMsg(command: any, buffers: any): void {
+    super.handleMsg(command, buffers);
+
+    if (command.event === 'add') {
+      this.event.add(command.arg);
+    } else if (command.event === 'at') {
+      this.event.at(command.time, command.value);
+    } else if (command.event === 'remove') {
+      // TODO: not working in Tone.js?
+      if (command.time === null) {
+        console.log(command.value);
+        console.log(this.event.at(command.value.time));
+        this.event.remove(command.value);
+      } else {
+        console.log(command);
+        console.log(this.event.at(command.time));
+        this.event.remove(command.time, command.value);
+      }
+    } else if (command.event === 'clear') {
+      this.event.clear();
+    }
+
+    // sync number of events
+    this.set('length', this.event.length);
+    this.save_changes();
+  }
+
+  event: tone.Part;
+
+  static model_name = 'PartModel';
 }

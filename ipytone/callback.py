@@ -12,8 +12,8 @@ class BaseCallbackArg:
         self._items = []
 
     def derive(self, value):
-        """Return a derived placeholder, which holds a new value but still
-        references items from the current placeholder.
+        """Return a new, derived placeholder, which may holds a different value
+        but still references items from the current placeholder.
 
         """
         new_obj = type(self)(self.caller, value=value)
@@ -51,16 +51,45 @@ class BaseCallbackArg:
 
 
 class TimeCallbackArg(BaseCallbackArg):
+    """Emulates the `time` argument of all Tone scheduling callbacks.
+
+    It has limited support for arithmetic operations.
+
+    TODO: add more arithmetic operators
+    TODO: support converting any Tone time string to seconds
+
+    """
+
     def __init__(self, *args, value="time", **kwargs):
         super().__init__(*args, value=value, **kwargs)
 
     def __add__(self, other):
+        # TODO: escape `other` converted string passed to self.derive
+        # in order to prevent any abuse in the front-end
         return self.derive(f"{self.value} + {other}")
 
 
 class EventValueCallbackArg(BaseCallbackArg):
+    """Emulates the second (value) argument of Tone Event callbacks.
+
+    Unlike in Tone.js, the value object attributes cannot be arbitrary.
+    Supported attributes are:
+
+    - note
+    - velocicty
+
+    """
+
     def __init__(self, *args, value="value", **kwargs):
         super().__init__(*args, value=value, **kwargs)
+
+    @property
+    def note(self):
+        return self.derive(str(self.value) + ".note")
+
+    @property
+    def velocity(self):
+        return self.derive(str(self.value) + ".velocity")
 
 
 def add_or_send_event(method, callee, args, event="trigger"):

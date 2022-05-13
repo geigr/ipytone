@@ -1,6 +1,8 @@
+from unittest.mock import call
+
 import pytest
 
-from ipytone.event import Event, _no_callback
+from ipytone.event import Event, Note, Part, _no_callback
 from ipytone.source import Oscillator
 
 
@@ -49,7 +51,7 @@ def test_event_callback(mocker):
                 },
                 "arg_keys": ["value", "ramp_time", "start_time"],
             }
-        ]
+        ],
     }
 
     event.send.assert_called_with(expected)
@@ -77,10 +79,117 @@ def test_event_play(mocker, method, args):
 
 
 @pytest.mark.parametrize("method", ["cancel", "dispose"])
-def test_even_cancel(mocker, method):
+def test_event_cancel(mocker, method):
     event = Event()
     mocker.patch.object(event, "send")
 
     e = getattr(event, method)()
     assert e is event
     event.send.assert_called_once_with({"event": "cancel", "time": None})
+
+
+def test_part():
+    part = Part()
+    assert part.length == 0
+    assert part.value is None
+
+
+def test_part_callback(mocker):
+    osc = Oscillator()
+
+    def clb(time, value):
+        osc.frequency.exp_ramp_to(value.note, 0.2, start_time=time)
+
+    part = Part(
+        events=[
+            {"time": "0:0", "note": "C3"},
+            Note(time="0:2", note="D3", velocity=0.5),
+        ]
+    )
+    mocker.patch.object(part, "send")
+    part.callback = clb
+
+    expected = {
+        "event": "set_callback",
+        "op": "",
+        "items": [
+            {
+                "method": "exponentialRampTo",
+                "callee": osc.frequency.model_id,
+                "args": {
+                    "value": {"value": "value.note", "eval": True},
+                    "ramp_time": {"value": 0.2, "eval": False},
+                    "start_time": {"value": "time", "eval": True},
+                },
+                "arg_keys": ["value", "ramp_time", "start_time"],
+            }
+        ],
+    }
+
+    part.send.assert_called_with(expected)
+
+    assert part._events == [
+        {"time": "0:0", "note": "C3", "velocity": 1},
+        {"time": "0:2", "note": "D3", "velocity": 0.5},
+    ]
+
+    with pytest.raises(ValueError, match="cannot interpret this value as a Note"):
+        Part(callback=clb, events=["invalid"])
+
+
+@pytest.mark.parametrize("note", [{"time": "0:0", "note": "C3"}, Note(time="0:0", note="C3")])
+def test_part_add(mocker, note):
+    part = Part()
+    mocker.patch.object(part, "send")
+
+    p = part.add(note)
+    assert p is part
+
+    expected = {"event": "add", "arg": {"time": "0:0", "note": "C3", "velocity": 1}}
+    part.send.assert_called_once_with(expected)
+
+
+@pytest.mark.parametrize("note", [{"time": "0:0", "note": "C3"}, Note(time="0:0", note="C3")])
+def test_part_at(mocker, note):
+    part = Part()
+    mocker.patch.object(part, "send")
+
+    part.at("0:0", note)
+
+    expected = {"event": "at", "time": "0:0", "value": {"time": "0:0", "note": "C3", "velocity": 1}}
+    part.send.assert_called_once_with(expected)
+
+
+@pytest.mark.parametrize("note", [{"time": "0:0", "note": "C3"}, Note(time="0:0", note="C3")])
+def test_part_remove(mocker, note):
+    part = Part()
+    mocker.patch.object(part, "send")
+
+    part.remove(time="0:0", note=note)
+
+    expected = {
+        "event": "remove",
+        "time": "0:0",
+        "value": {"time": "0:0", "note": "C3", "velocity": 1},
+    }
+    part.send.assert_called_once_with(expected)
+
+    with pytest.raises(ValueError, match="Please provide at least one value"):
+        part.remove()
+
+
+@pytest.mark.parametrize("method", ["clear", "dispose"])
+def test_part_clear(mocker, method):
+    part = Part()
+    mocker.patch.object(part, "send")
+
+    p = getattr(part, method)()
+    assert p is part
+
+    if method == "clear":
+        part.send.assert_called_once_with({"event": "clear"})
+    elif method == "dispose":
+        part.send.assert_has_calls(
+            [call({"event": "clear"}), call({"event": "cancel", "time": None})],
+            any_order=True,
+        )
