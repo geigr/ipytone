@@ -2,7 +2,7 @@ from unittest.mock import call
 
 import pytest
 
-from ipytone.event import Event, Note, Part, _no_callback
+from ipytone.event import Event, Note, Part, Sequence, _no_callback
 from ipytone.source import Oscillator
 
 
@@ -190,6 +190,66 @@ def test_part_clear(mocker, method):
         part.send.assert_called_once_with({"event": "clear"})
     elif method == "dispose":
         part.send.assert_has_calls(
+            [call({"event": "clear"}), call({"event": "cancel", "time": None})],
+            any_order=True,
+        )
+
+
+def test_sequence():
+    seq = Sequence()
+    assert seq.length == 0
+    assert seq.value is None
+    assert seq.events == []
+    assert seq.subdivision == "8n"
+    assert seq.loop is True
+    assert seq.loop_start == 0
+    assert seq.loop_end == 0
+
+
+def test_sequence_callback(mocker):
+    osc = Oscillator()
+
+    def clb(time, value):
+        osc.frequency.exp_ramp_to(value.note, 0.2, start_time=time)
+
+    seq = Sequence(events=["C4", ["E4", "D4", "E4"], "G4", ["A4", "G4"]])
+    mocker.patch.object(seq, "send")
+    seq.callback = clb
+
+    expected = {
+        "event": "set_callback",
+        "op": "",
+        "items": [
+            {
+                "method": "exponentialRampTo",
+                "callee": osc.frequency.model_id,
+                "args": {
+                    "value": {"value": "value.note", "eval": True},
+                    "ramp_time": {"value": 0.2, "eval": False},
+                    "start_time": {"value": "time", "eval": True},
+                },
+                "arg_keys": ["value", "ramp_time", "start_time"],
+            }
+        ],
+    }
+
+    seq.send.assert_called_with(expected)
+
+    assert seq.events == ["C4", ["E4", "D4", "E4"], "G4", ["A4", "G4"]]
+
+
+@pytest.mark.parametrize("method", ["clear", "dispose"])
+def test_sequence_clear(mocker, method):
+    seq = Sequence()
+    mocker.patch.object(seq, "send")
+
+    s = getattr(seq, method)()
+    assert s is seq
+
+    if method == "clear":
+        seq.send.assert_called_once_with({"event": "clear"})
+    elif method == "dispose":
+        seq.send.assert_has_calls(
             [call({"event": "clear"}), call({"event": "cancel", "time": None})],
             any_order=True,
         )

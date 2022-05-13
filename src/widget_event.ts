@@ -104,6 +104,8 @@ export class EventModel extends NodeWithContextModel {
   }
 
   initEventListeners(): void {
+    super.initEventListeners();
+
     this.on('change:value', () => {
       this.event.value = this.get('value');
     });
@@ -132,6 +134,10 @@ export class EventModel extends NodeWithContextModel {
       this.event.loop = this.get('loop');
     });
     this.on('msg:custom', this.handleMsg, this);
+  }
+
+  dispose(): void {
+    this.event.dispose();
   }
 
   event: tone.ToneEvent;
@@ -192,4 +198,54 @@ export class PartModel extends EventModel {
   event: tone.Part;
 
   static model_name = 'PartModel';
+}
+
+export class SequenceModel extends EventModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: SequenceModel.model_name,
+      events: [],
+      _subdivision: '8n',
+      length: 0,
+    };
+  }
+
+  protected createEvent(): tone.Sequence {
+    return new tone.Sequence({
+      events: this.get('events'),
+      subdivision: this.get('_subdivision'),
+      humanize: this.get('humanize'),
+      probability: this.get('probability'),
+      mute: this.get('mute'),
+      playbackRate: this.get('playback_rate'),
+      loopStart: this.get('loop_start'),
+      loopEnd: this.get('loop_end'),
+      loop: this.get('loop'),
+    });
+  }
+
+  protected handleMsg(command: any, buffers: any): void {
+    super.handleMsg(command, buffers);
+
+    if (command.event === 'clear') {
+      this.event.clear();
+    }
+
+    // sync number of events
+    this.set('length', this.event.length);
+    this.save_changes();
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:events', () => {
+      this.event.events = this.get('events');
+    });
+  }
+
+  event: tone.Sequence;
+
+  static model_name = 'SequenceModel';
 }

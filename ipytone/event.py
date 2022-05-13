@@ -1,4 +1,4 @@
-from collections import Mapping
+from collections.abc import Mapping
 from typing import Callable
 
 from traitlets import Any, Bool, Float, Int, List, Unicode, Union
@@ -162,6 +162,17 @@ class Part(Event):
     length = Int(0, read_only=True, help="number of scheduled notes in the part").tag(sync=True)
 
     def __init__(self, callback=None, events=None, **kwargs):
+        """
+
+        Parameters
+        ----------
+        callback : callable, optional
+             Scheduling callback, which must accept two arguments (time, value).
+        events : list, optional
+             A list of note events, i.e., each item being a :class:`Note` instance
+             or a dictionnary with "time", "note" (and optionally "velocity") keys.
+
+        """
         if events is None:
             events = []
         events = [_normalize_note(e).to_dict() for e in events]
@@ -213,6 +224,73 @@ class Part(Event):
 
         self.send({"event": "remove", "time": time, "value": note})
         return self
+
+    def clear(self):
+        """Remove all note events from the part."""
+        self.send({"event": "clear"})
+        return self
+
+    def dispose(self):
+        self.clear()
+        super().dispose()
+        return self
+
+
+class Sequence(Event):
+    """Alternate version of a Part where note events are spaced at a
+    given subdivision.
+
+    """
+
+    _model_name = Unicode("SequenceModel").tag(sync=True)
+
+    events = List(Any()).tag(sync=True)
+    _subdivision = Union((Float(), Unicode())).tag(sync=True)
+
+    length = Int(0, read_only=True, help="number of scheduled notes in the part").tag(sync=True)
+
+    def __init__(
+        self,
+        callback=None,
+        events=None,
+        subdivision="8n",
+        loop=True,
+        loop_start=0,
+        loop_end=0,
+        **kwargs,
+    ):
+        """
+
+        Parameters
+        ----------
+        callback : callable, optional
+             Scheduling callback, which must accept two arguments (time, value).
+        events : list, optional
+             A list of note events or a list of lists of note events. The notes in a
+             sub-list will be spaced by evenly sub-dividing the the step interval.
+        subdivision : str or float, optional
+            Subdivision of the sequence, i.e., interval between steps (default: eigth-note).
+
+        """
+        if events is None:
+            events = []
+
+        kw = {
+            "callback": callback,
+            "events": events,
+            "_subdivision": subdivision,
+            # sequence is looped by default
+            "loop": loop,
+            "loop_start": loop_start,
+            "loop_end": loop_end,
+        }
+        kwargs.update(kw)
+        super().__init__(**kwargs)
+
+    @property
+    def subdivision(self):
+        """Subdivision of the sequence."""
+        return self._subdivision
 
     def clear(self):
         """Remove all note events from the part."""
