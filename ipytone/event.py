@@ -12,7 +12,7 @@ from .callback import (
 )
 
 
-def _no_callback(time, value):
+def _no_callback(time, value=None):
     pass
 
 
@@ -301,3 +301,46 @@ class Sequence(Event):
         self.clear()
         super().dispose()
         return self
+
+
+class Loop(Event):
+    """Looped callback at a specified interval."""
+
+    _model_name = Unicode("LoopModel").tag(sync=True)
+
+    interval = Union((Float(), Unicode()), help="loop interval", default_value="8n").tag(sync=True)
+    iterations = Int(
+        allow_none=True,
+        default_value=None,
+        help="number of iterations of the loop (default: infinity)",
+    ).tag(sync=True)
+
+    loop = Union((Bool(), Int()), default_value=True, read_only=True).tag(sync=True)
+    loop_start = Union((Float(), Unicode()), read_only=True).tag(sync=True)
+    loop_end = Union((Float(), Unicode()), read_only=True).tag(sync=True)
+
+    def __init__(self, callback=None, interval="8n", **kwargs):
+        kwargs.update({"callback": callback, "interval": interval})
+        super().__init__(**kwargs)
+
+    def _set_js_callback(self):
+        time_arg = TimeCallbackArg(self)
+        self._callback(time_arg)
+
+        data = {
+            "event": "set_callback",
+            "op": "",
+            "items": time_arg.items,
+        }
+
+        time_arg._disposed = True
+
+        self.send(data)
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            if key not in ["loop", "loop_start", "loop_end"]:
+                yield key
+        yield "interval"
+        if self.iterations is not None:
+            yield "iterations"

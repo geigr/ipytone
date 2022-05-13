@@ -2,7 +2,8 @@ from unittest.mock import call
 
 import pytest
 
-from ipytone.event import Event, Note, Part, Sequence, _no_callback
+from ipytone.envelope import AmplitudeEnvelope
+from ipytone.event import Event, Loop, Note, Part, Sequence, _no_callback
 from ipytone.source import Oscillator
 
 
@@ -253,3 +254,46 @@ def test_sequence_clear(mocker, method):
             [call({"event": "clear"}), call({"event": "cancel", "time": None})],
             any_order=True,
         )
+
+
+def test_loop():
+    loop = Loop()
+    assert loop.interval == "8n"
+    assert loop.iterations is None
+
+    for key in ["loop=", "loop_start=", "loop_end="]:
+        assert key not in repr(loop)
+    assert "interval=" in repr(loop)
+
+    loop.iterations = 5
+    assert "iterations=" in repr(loop)
+
+
+def test_loop_callback(mocker):
+    env = AmplitudeEnvelope()
+
+    def clb(time):
+        env.trigger_attack_release(0.1, time)
+
+    loop = Loop()
+    mocker.patch.object(loop, "send")
+    loop.callback = clb
+
+    expected = {
+        "event": "set_callback",
+        "op": "",
+        "items": [
+            {
+                "method": "triggerAttackRelease",
+                "callee": env.model_id,
+                "args": {
+                    "duration": {"value": 0.1, "eval": False},
+                    "time": {"value": "time", "eval": True},
+                    "velocity": {"value": 1, "eval": False},
+                },
+                "arg_keys": ["duration", "time", "velocity"],
+            }
+        ],
+    }
+
+    loop.send.assert_called_with(expected)
