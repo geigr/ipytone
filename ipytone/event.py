@@ -126,15 +126,23 @@ class Note:
     with multiple notes (unlike Tone.js, every note passed as value to the
     callback must have a defined structure, i.e., no arbitrary attributes).
 
+    Note: duration units is seconds.
+
     """
 
-    def __init__(self, time, note, velocity=1):
+    def __init__(self, time, note, velocity=1, duration=0.1):
         self.time = time
         self.note = note
         self.velocity = velocity
+        self.duration = duration
 
     def to_dict(self):
-        return {"time": self.time, "note": self.note, "velocity": self.velocity}
+        return {
+            "time": self.time,
+            "note": self.note,
+            "velocity": self.velocity,
+            "duration": self.duration,
+        }
 
 
 def _normalize_note(value):

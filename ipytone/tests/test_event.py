@@ -130,8 +130,8 @@ def test_part_callback(mocker):
     part.send.assert_called_with(expected)
 
     assert part._events == [
-        {"time": "0:0", "note": "C3", "velocity": 1},
-        {"time": "0:2", "note": "D3", "velocity": 0.5},
+        {"time": "0:0", "note": "C3", "velocity": 1, "duration": 0.1},
+        {"time": "0:2", "note": "D3", "velocity": 0.5, "duration": 0.1},
     ]
 
     with pytest.raises(ValueError, match="cannot interpret this value as a Note"):
@@ -146,7 +146,10 @@ def test_part_add(mocker, note):
     p = part.add(note)
     assert p is part
 
-    expected = {"event": "add", "arg": {"time": "0:0", "note": "C3", "velocity": 1}}
+    expected = {
+        "event": "add",
+        "arg": {"time": "0:0", "note": "C3", "velocity": 1, "duration": 0.1},
+    }
     part.send.assert_called_once_with(expected)
 
 
@@ -157,7 +160,11 @@ def test_part_at(mocker, note):
 
     part.at("0:0", note)
 
-    expected = {"event": "at", "time": "0:0", "value": {"time": "0:0", "note": "C3", "velocity": 1}}
+    expected = {
+        "event": "at",
+        "time": "0:0",
+        "value": {"time": "0:0", "note": "C3", "velocity": 1, "duration": 0.1},
+    }
     part.send.assert_called_once_with(expected)
 
 
@@ -171,7 +178,7 @@ def test_part_remove(mocker, note):
     expected = {
         "event": "remove",
         "time": "0:0",
-        "value": {"time": "0:0", "note": "C3", "velocity": 1},
+        "value": {"time": "0:0", "note": "C3", "velocity": 1, "duration": 0.1},
     }
     part.send.assert_called_once_with(expected)
 
