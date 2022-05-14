@@ -3,7 +3,7 @@ from unittest.mock import call
 import pytest
 
 from ipytone.envelope import AmplitudeEnvelope
-from ipytone.event import Event, Loop, Note, Part, Sequence, _no_callback
+from ipytone.event import Event, Loop, Note, Part, Pattern, Sequence, _no_callback
 from ipytone.source import Oscillator
 
 
@@ -297,3 +297,45 @@ def test_loop_callback(mocker):
     }
 
     loop.send.assert_called_with(expected)
+
+
+def test_pattern():
+    pattern = Pattern()
+    assert pattern.interval == "8n"
+    assert pattern.iterations is None
+    assert pattern.pattern == "up"
+    assert pattern.values == []
+
+    assert "pattern=" in repr(pattern)
+
+
+def test_pattern_callback(mocker):
+    osc = Oscillator()
+
+    def clb(time, value):
+        osc.frequency.exp_ramp_to(value.note, 0.2, start_time=time)
+
+    pattern = Pattern(values=["C2", "D4", "E5", "A6"])
+    mocker.patch.object(pattern, "send")
+    pattern.callback = clb
+
+    expected = {
+        "event": "set_callback",
+        "op": "",
+        "items": [
+            {
+                "method": "exponentialRampTo",
+                "callee": osc.frequency.model_id,
+                "args": {
+                    "value": {"value": "value.note", "eval": True},
+                    "ramp_time": {"value": 0.2, "eval": False},
+                    "start_time": {"value": "time", "eval": True},
+                },
+                "arg_keys": ["value", "ramp_time", "start_time"],
+            }
+        ],
+    }
+
+    pattern.send.assert_called_with(expected)
+
+    assert pattern.values == ["C2", "D4", "E5", "A6"]

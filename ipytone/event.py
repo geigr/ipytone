@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from typing import Callable
 
-from traitlets import Any, Bool, Float, Int, List, Unicode, Union
+from traitlets import Any, Bool, Enum, Float, Int, List, Unicode, Union
 
 from .base import NodeWithContext
 from .callback import (
@@ -344,3 +344,56 @@ class Loop(Event):
         yield "interval"
         if self.iterations is not None:
             yield "iterations"
+
+
+PATTERN_TYPES = [
+    "up",
+    "down",
+    "upDown",
+    "downUp",
+    "alternateUp",
+    "alternateDown",
+    "random",
+    "randomOnce",
+    "randomWalk",
+]
+
+
+class Pattern(Loop):
+    """A loop that arpeggiates between the given notes in a given
+    pattern.
+
+    """
+
+    _model_name = Unicode("PatternModel").tag(sync=True)
+
+    pattern = Enum(PATTERN_TYPES, default_value="up", help="pattern type").tag(sync=True)
+    values = List(Any(), allow_none=True, default_value=None, help="pattern notes").tag(sync=True)
+
+    def __init__(self, callback=None, values=None, pattern="up", **kwargs):
+        if values is None:
+            values = []
+        kwargs.update({"callback": callback, "values": values, "pattern": pattern})
+        super().__init__(**kwargs)
+
+    def _set_js_callback(self):
+        time_arg = TimeCallbackArg(self)
+        value_arg = EventValueCallbackArg(self)
+        self._callback(time_arg, value_arg)
+
+        items = collect_and_merge_items(time_arg, value_arg)
+
+        time_arg._disposed = True
+        value_arg._disposed = True
+
+        data = {
+            "event": "set_callback",
+            "op": "",
+            "items": items,
+        }
+        self.send(data)
+
+    def _repr_keys(self):
+        for key in super()._repr_keys():
+            yield key
+        yield "pattern"

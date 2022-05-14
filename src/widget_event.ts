@@ -317,25 +317,18 @@ export class SequenceModel extends BaseEventModel<tone.Sequence> {
   static model_name = 'SequenceModel';
 }
 
-export class LoopModel extends BaseEventModel<tone.Loop> {
+interface Loop extends Event {
+  interval: tone.Unit.Time;
+  iterations: number | null;
+}
+
+abstract class BaseLoopModel<T extends Loop> extends BaseEventModel<T> {
   defaults(): any {
     return {
       ...super.defaults(),
-      _model_name: LoopModel.model_name,
       interval: '8n',
       iterations: null,
     };
-  }
-
-  protected createEvent(): tone.Loop {
-    return new tone.Loop({
-      interval: this.get('interval'),
-      iterations: this.iterations,
-      humanize: this.get('humanize'),
-      probability: this.get('probability'),
-      mute: this.get('mute'),
-      playbackRate: this.get('playback_rate'),
-    });
   }
 
   get iterations(): number {
@@ -356,6 +349,63 @@ export class LoopModel extends BaseEventModel<tone.Loop> {
       this.event.iterations = this.iterations;
     });
   }
+}
+
+export class LoopModel extends BaseLoopModel<tone.Loop> {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: LoopModel.model_name,
+    };
+  }
+
+  protected createEvent(): tone.Loop {
+    return new tone.Loop({
+      interval: this.get('interval'),
+      iterations: this.iterations,
+      humanize: this.get('humanize'),
+      probability: this.get('probability'),
+      mute: this.get('mute'),
+      playbackRate: this.get('playback_rate'),
+    });
+  }
 
   static model_name = 'LoopModel';
+}
+
+export class PatternModel extends BaseLoopModel<tone.Pattern<any>> {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: PatternModel.model_name,
+      pattern: 'up',
+      values: [],
+    };
+  }
+
+  protected createEvent(): tone.Pattern<any> {
+    return new tone.Pattern({
+      pattern: this.get('pattern'),
+      values: this.get('values'),
+      interval: this.get('interval'),
+      iterations: this.iterations,
+      humanize: this.get('humanize'),
+      probability: this.get('probability'),
+      mute: this.get('mute'),
+      playbackRate: this.get('playback_rate'),
+    });
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:pattern', () => {
+      this.event.pattern = this.get('pattern');
+    });
+    this.on('change:values', () => {
+      this.event.values = this.get('values');
+    });
+  }
+
+  static model_name = 'PatternModel';
 }
