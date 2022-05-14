@@ -583,15 +583,13 @@ export class OmniOscillatorModel extends BaseOscillatorModel {
   private setOptionalNodes(): void {
     if (this.node.sourceType === 'am' || this.node.sourceType === 'fm') {
       this.harmonicity.setNode(this.node.harmonicity as any);
-      (this.node.harmonicity as tone.Signal<'positive'>).value = this.get(
-        '_harmonicity'
-      ).get('value');
+      (this.node.harmonicity as tone.Signal<'positive'>).value =
+        this.get('_harmonicity').get('value');
 
       if (this.node.sourceType === 'fm') {
         this.modulationIndex.setNode(this.node.modulationIndex as any);
-        (this.node.modulationIndex as tone.Signal<'positive'>).value = this.get(
-          '_modulation_index'
-        ).get('value');
+        (this.node.modulationIndex as tone.Signal<'positive'>).value =
+          this.get('_modulation_index').get('value');
         this.node.modulationType = this.get('_modulation_type');
       }
     } else if (this.node.sourceType === 'fat') {
@@ -599,15 +597,12 @@ export class OmniOscillatorModel extends BaseOscillatorModel {
       this.node.count = this.get('count');
     } else if (this.node.sourceType === 'pulse') {
       this.width.setNode(this.node.width as any);
-      (this.node.width as tone.Signal<'audioRange'>).value = this.get(
-        '_width'
-      ).get('value');
+      (this.node.width as tone.Signal<'audioRange'>).value =
+        this.get('_width').get('value');
     } else if (this.node.sourceType === 'pwm') {
       this.modulation_frequency.setNode(this.node.modulationFrequency as any);
-      (this.node
-        .modulationFrequency as tone.Signal<'frequency'>).value = this.get(
-        '_modulation_frequency'
-      ).get('value');
+      (this.node.modulationFrequency as tone.Signal<'frequency'>).value =
+        this.get('_modulation_frequency').get('value');
     }
   }
 

@@ -13,12 +13,12 @@ import { MODULE_NAME, MODULE_VERSION } from './version';
 
 const EXTENSION_ID = 'ipytone:plugin';
 
-const ipytonePlugin: IPlugin<Application<Widget>, void> = ({
+const ipytonePlugin: IPlugin<Application<Widget>, void> = {
   id: EXTENSION_ID,
   requires: [IJupyterWidgetRegistry],
   activate: activateWidgetExtension,
   autoStart: true,
-} as unknown) as IPlugin<Application<Widget>, void>;
+} as unknown as IPlugin<Application<Widget>, void>;
 // the "as unknown as ..." typecast above is solely to support JupyterLab 1
 // and 2 in the same codebase and should be removed when we migrate to Lumino.
 
