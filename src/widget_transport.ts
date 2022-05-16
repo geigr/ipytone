@@ -1,8 +1,4 @@
-import {
-  WidgetModel,
-  ISerializers,
-  unpack_models,
-} from '@jupyter-widgets/base';
+import { ISerializers, unpack_models } from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
 
@@ -50,70 +46,60 @@ export class TransportModel extends ToneObjectModel {
     return this.get('_bpm');
   }
 
-  private getToneCallback(items: any): Promise<transportCallback> {
-    const itemsModel: callbackItem[] = items.map((data: any) => {
-      return Promise.resolve(this.widget_manager.get_model(data.callee)).then(
-        (model: WidgetModel | undefined) => {
-          const item = { ...data };
-          item.model = model as NodeWithContextModel;
-          return item;
-        }
-      );
+  // attach widget models to items
+  private async getCallbackItems(items: any): Promise<callbackItem[]> {
+    const itemsModel: callbackItem[] = items.map(async (data: any) => {
+      const model = await this.widget_manager.get_model(data.callee);
+      const item = { ...data };
+      item.model = model as NodeWithContextModel;
+      return item;
     });
 
-    return Promise.all(itemsModel).then((items) => {
-      const callback = (time: number) => {
-        items.forEach((item) => {
-          const args: callbackArgs = {};
-
-          for (const [k, v] of Object.entries(item.args)) {
-            if (v.eval) {
-              args[k] = { value: eval(v.value), eval: true };
-            } else {
-              args[k] = { value: v.value, eval: false };
-            }
-          }
-
-          const argsArray = normalizeArguments(args, item.arg_keys);
-          item.model.node[item.method](...argsArray);
-        });
-      };
-
-      return callback;
-    });
+    return Promise.all(itemsModel);
   }
 
-  private schedule(command: any): void {
-    const callback = Promise.resolve(this.getToneCallback(command.items));
+  private getToneCallback(items: callbackItem[]): transportCallback {
+    const callback = (time: number) => {
+      items.forEach((item) => {
+        const args: callbackArgs = {};
+
+        for (const [k, v] of Object.entries(item.args)) {
+          if (v.eval) {
+            args[k] = { value: eval(v.value), eval: true };
+          } else {
+            args[k] = { value: v.value, eval: false };
+          }
+        }
+
+        const argsArray = normalizeArguments(args, item.arg_keys);
+        item.model.node[item.method](...argsArray);
+      });
+    };
+
+    return callback;
+  }
+
+  private async schedule(command: any): Promise<void> {
+    const items = await this.getCallbackItems(command.items);
+    const callback = this.getToneCallback(items);
+
+    let event_id = 0;
 
     if (command.op === '') {
-      callback.then((clb) => {
-        this.py2jsEventID[command.id] = tone.Transport.schedule(
-          clb,
-          command.time
-        );
-      });
+      event_id = tone.Transport.schedule(callback, command.time);
     } else if (command.op === 'repeat') {
-      let duration = Infinity;
-      if (command.duration) {
-        duration = command.duration;
-      }
-      callback.then((clb) => {
-        this.py2jsEventID[command.id] = tone.Transport.scheduleRepeat(
-          clb,
-          command.interval,
-          command.start_time,
-          duration
-        );
-      });
+      const duration = command.duration ? command.duration : Infinity;
+      event_id = tone.Transport.scheduleRepeat(
+        callback,
+        command.interval,
+        command.start_time,
+        duration
+      );
     } else if (command.op === 'once') {
-      callback.then((clb) => {
-        this.py2jsEventID[command.id] = tone.Transport.scheduleOnce(
-          clb,
-          command.time
-        );
-      });
+      event_id = tone.Transport.scheduleOnce(callback, command.time);
     }
+
+    this.py2jsEventID[command.id] = event_id;
   }
 
   private syncPosition(): void {
@@ -135,22 +121,21 @@ export class TransportModel extends ToneObjectModel {
     delete this.py2jsEventID[pyEventID];
   }
 
-  private syncSignal(command: any): void {
-    Promise.resolve(this.widget_manager.get_model(command.signal)).then(
-      (model: WidgetModel | undefined) => {
-        const signalModel = model as SignalModel<any>;
-        if (command.op === 'sync') {
-          tone.Transport.syncSignal(signalModel.node, command.ratio);
-          signalModel.set('value', 0, { silent: true });
-          signalModel.save_changes();
-        } else if (command.op === 'unsync') {
-          tone.Transport.unsyncSignal(signalModel.node);
-        }
-      }
-    );
+  private async syncSignal(command: any): Promise<void> {
+    const signalModel = (await this.widget_manager.get_model(
+      command.signal
+    )) as SignalModel<any>;
+
+    if (command.op === 'sync') {
+      tone.Transport.syncSignal(signalModel.node, command.ratio);
+      signalModel.set('value', 0, { silent: true });
+      signalModel.save_changes();
+    } else if (command.op === 'unsync') {
+      tone.Transport.unsyncSignal(signalModel.node);
+    }
   }
 
-  private handleMsg(command: any, buffers: any): void {
+  private handleMsg(command: any, _buffers: any): void {
     if (command.event === 'schedule') {
       this.schedule(command);
     } else if (command.event === 'play') {
