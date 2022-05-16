@@ -133,7 +133,7 @@ export class LFOModel extends AudioNodeModel {
     this.on('msg:custom', this.handleMsg, this);
   }
 
-  private handleMsg(command: any, buffers: any): void {
+  private handleMsg(command: any, _buffers: any): void {
     if (command.event === 'trigger') {
       const argsArray = normalizeArguments(command.args, command.arg_keys);
       (this.node as any)[command.method](...argsArray);

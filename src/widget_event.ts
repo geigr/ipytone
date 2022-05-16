@@ -1,5 +1,3 @@
-import { WidgetModel } from '@jupyter-widgets/base';
-
 import * as tone from 'tone';
 
 import type { callbackArgs, callbackItem } from './utils';
@@ -49,43 +47,42 @@ abstract class BaseEventModel<T extends Event> extends NodeWithContextModel {
 
   protected abstract createEvent(): T;
 
-  private getToneCallback(items: any): Promise<eventCallback> {
-    const itemsModel: callbackItem[] = items.map((data: any) => {
-      return Promise.resolve(this.widget_manager.get_model(data.callee)).then(
-        (model: WidgetModel | undefined) => {
-          const item = { ...data };
-          item.model = model as NodeWithContextModel;
-          return item;
-        }
-      );
+  // attach widget models to items
+  private async getCallbackItems(items: any): Promise<callbackItem[]> {
+    const itemsModel: callbackItem[] = items.map(async (data: any) => {
+      const model = await this.widget_manager.get_model(data.callee);
+      const item = { ...data };
+      item.model = model as NodeWithContextModel;
+      return item;
     });
 
-    return Promise.all(itemsModel).then((items) => {
-      const callback = (time: number, value?: any) => {
-        items.forEach((item) => {
-          const args: callbackArgs = {};
-
-          for (const [k, v] of Object.entries(item.args)) {
-            if (v.eval) {
-              args[k] = { value: eval(v.value), eval: true };
-            } else {
-              args[k] = { value: v.value, eval: false };
-            }
-          }
-
-          const argsArray = normalizeArguments(args, item.arg_keys);
-          item.model.node[item.method](...argsArray);
-        });
-      };
-
-      return callback;
-    });
+    return Promise.all(itemsModel);
   }
 
-  private setCallback(command: any): void {
-    Promise.resolve(this.getToneCallback(command.items)).then((clb) => {
-      this.event.callback = clb;
-    });
+  private getToneCallback(items: callbackItem[]): eventCallback {
+    const callback = (time: number, value?: any) => {
+      items.forEach((item) => {
+        const args: callbackArgs = {};
+
+        for (const [k, v] of Object.entries(item.args)) {
+          if (v.eval) {
+            args[k] = { value: eval(v.value), eval: true };
+          } else {
+            args[k] = { value: v.value, eval: false };
+          }
+        }
+
+        const argsArray = normalizeArguments(args, item.arg_keys);
+        item.model.node[item.method](...argsArray);
+      });
+    };
+
+    return callback;
+  }
+
+  private async setCallback(command: any): Promise<void> {
+    const items = await this.getCallbackItems(command.items);
+    this.event.callback = this.getToneCallback(items);
   }
 
   private play(command: any): void {
@@ -93,7 +90,7 @@ abstract class BaseEventModel<T extends Event> extends NodeWithContextModel {
     (this.event as any)[command.method](...argsArray);
   }
 
-  protected handleMsg(command: any, buffers: any): void {
+  protected handleMsg(command: any, _buffers: any): void {
     if (command.event === 'set_callback') {
       this.setCallback(command);
     } else if (command.event === 'play') {
