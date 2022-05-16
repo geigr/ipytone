@@ -56,17 +56,22 @@ class TimeCallbackArg(BaseCallbackArg):
     It has limited support for arithmetic operations.
 
     TODO: add more arithmetic operators
-    TODO: support converting any Tone time string to seconds
 
     """
 
     def __init__(self, *args, value="time", **kwargs):
         super().__init__(*args, value=value, **kwargs)
 
+    def _normalize_value(self, value):
+        if isinstance(value, TimeCallbackArg):
+            return value.value
+        else:
+            # force converting any given value to seconds in the front-end
+            # TODO: escape value to prevent any abuse in the front-end
+            return f"this.toSeconds({value!r})"
+
     def __add__(self, other):
-        # TODO: escape `other` converted string passed to self.derive
-        # in order to prevent any abuse in the front-end
-        return self.derive(f"{self.value} + {other}")
+        return self.derive(f"{self.value} + {self._normalize_value(other)}")
 
 
 class EventValueCallbackArg(BaseCallbackArg):

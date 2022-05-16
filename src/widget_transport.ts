@@ -46,6 +46,14 @@ export class TransportModel extends ToneObjectModel {
     return this.get('_bpm');
   }
 
+  protected toSeconds(time: tone.Unit.Time): tone.Unit.Seconds {
+    return tone.Transport.toSeconds(time);
+  }
+
+  protected toFrequency(frequency: tone.Unit.Frequency): tone.Unit.Hertz {
+    return tone.Transport.toFrequency(frequency);
+  }
+
   // attach widget models to items
   private async getCallbackItems(items: any): Promise<callbackItem[]> {
     const itemsModel: callbackItem[] = items.map(async (data: any) => {

@@ -85,7 +85,7 @@ def test_transport_schedule(mocker, op, func, expected_id, args, kwargs):
             {
                 "method": "stop",
                 "callee": osc.model_id,
-                "args": {"time": {"value": "time + 1", "eval": True}},
+                "args": {"time": {"value": "time + this.toSeconds(1)", "eval": True}},
                 "arg_keys": ["time"],
             },
         ],
