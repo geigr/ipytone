@@ -18,6 +18,8 @@ interface Event {
   playbackRate: tone.Unit.Positive;
   cancel: (time?: tone.Unit.TransportTime) => void;
   dispose: () => void;
+  toSeconds: (time: tone.Unit.Time) => tone.Unit.Seconds;
+  toFrequency: (frequency: tone.Unit.Frequency) => tone.Unit.Hertz;
 }
 
 abstract class BaseEventModel<T extends Event> extends NodeWithContextModel {
@@ -46,6 +48,14 @@ abstract class BaseEventModel<T extends Event> extends NodeWithContextModel {
   }
 
   protected abstract createEvent(): T;
+
+  protected toSeconds(time: tone.Unit.Time): tone.Unit.Seconds {
+    return this.event.toSeconds(time);
+  }
+
+  protected toFrequency(frequency: tone.Unit.Frequency): tone.Unit.Hertz {
+    return this.event.toFrequency(frequency);
+  }
 
   // attach widget models to items
   private async getCallbackItems(items: any): Promise<callbackItem[]> {
