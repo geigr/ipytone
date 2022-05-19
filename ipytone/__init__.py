@@ -21,6 +21,7 @@ from .filter import (  # PhaseShiftAllpass,
     OnePoleFilter,
 )
 from .graph import get_audio_graph
+from .instrument import Instrument
 from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Scale, Signal, Subtract
 from .source import (
     LFO,
