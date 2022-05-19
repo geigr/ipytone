@@ -6,7 +6,7 @@ import { normalizeArguments } from './utils';
 
 import { AudioNodeModel } from './widget_base';
 
-import { ParamModel } from './widget_core';
+import { ParamModel, VolumeModel } from './widget_core';
 
 interface InternalNodes {
   [name: string]: tone.ToneAudioNode | tone.Param;
@@ -177,6 +177,10 @@ abstract class BaseInstrumentModel<
     };
   }
 
+  get volume(): ParamModel<'decibels'> {
+    return (this.output as VolumeModel).volume;
+  }
+
   abstract createNode(): T;
 
   replaceNode(): void {
@@ -230,7 +234,7 @@ export class InstrumentModel extends BaseInstrumentModel<IpytoneInstrument> {
 
   createNode(): IpytoneInstrument {
     return new IpytoneInstrument(
-      this.output.get('volume'),
+      this.volume.value,
       this.get('_trigger_attack'),
       this.get('_trigger_release'),
       this.internalNodes
@@ -254,7 +258,7 @@ export class MonophonicModel extends BaseInstrumentModel<IpytoneMonophonic> {
 
   createNode(): IpytoneMonophonic {
     return new IpytoneMonophonic(
-      this.output.get('volume'),
+      this.volume.value,
       this.get('_trigger_attack'),
       this.get('_trigger_release'),
       this.get('_get_level_at_time'),
