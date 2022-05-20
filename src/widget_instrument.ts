@@ -12,6 +12,14 @@ interface InternalNodes {
   [name: string]: tone.ToneAudioNode | tone.Param;
 }
 
+interface IpytoneInstrumentOptions {
+  volume: tone.Unit.Decibels;
+  triggerAttack: string;
+  triggerRelease: string;
+  internalNodes: InternalNodes;
+  context?: tone.Context;
+}
+
 // Hack: Tone.js abstract class ``Instrument`` is not exported
 // So we have to inherit here from a subclass.
 class IpytoneInstrument extends tone.PluckSynth {
@@ -29,23 +37,21 @@ class IpytoneInstrument extends tone.PluckSynth {
 
   private _internalNodes: InternalNodes;
 
-  constructor(
-    volume: tone.Unit.Decibels,
-    triggerAttack: string,
-    triggerRelease: string,
-    internalNodes: InternalNodes
-  ) {
-    super({ volume: volume });
+  constructor(options: IpytoneInstrumentOptions) {
+    super({ volume: options.volume });
 
-    this._internalNodes = internalNodes;
+    this._internalNodes = options.internalNodes;
 
     this._triggerAttackFunc = new Function(
       'note',
       'time',
       'velocity',
-      triggerAttack
+      options.triggerAttack
     ).bind(this);
-    this._triggerReleaseFunc = new Function('time', triggerRelease).bind(this);
+    this._triggerReleaseFunc = new Function(
+      'time',
+      options.triggerRelease
+    ).bind(this);
 
     // Super hacky: dispose PluckSynth internal nodes that we won't use here.
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -75,6 +81,15 @@ class IpytoneInstrument extends tone.PluckSynth {
   }
 }
 
+interface IpytoneMonophonicOptions extends IpytoneInstrumentOptions {
+  setNote: string;
+  getLevelAtTime: string;
+  frequency: tone.Signal<'frequency'>;
+  detune: tone.Signal<'cents'>;
+  portamento: number;
+  onsilence?: (instrument: tone.Synth) => void;
+}
+
 // Hack: Tone.js abstract class ``Monophonic`` is not exported
 // So we have to inherit here from a subclass.
 class IpytoneMonophonic extends tone.Synth {
@@ -102,31 +117,26 @@ class IpytoneMonophonic extends tone.Synth {
 
   private _internalNodes: InternalNodes;
 
-  constructor(
-    volume: tone.Unit.Decibels,
-    triggerAttack: string,
-    triggerRelease: string,
-    setNote: string,
-    getLevelAtTime: string,
-    internalNodes: InternalNodes,
-    frequency: tone.Signal<'frequency'>,
-    detune: tone.Signal<'cents'>,
-    portamento: number
-  ) {
-    super({ volume: volume, portamento: portamento });
+  constructor(options: IpytoneMonophonicOptions) {
+    super({ volume: options.volume, portamento: options.portamento });
 
-    this._internalNodes = internalNodes;
+    this._internalNodes = options.internalNodes;
 
     this._triggerAttackFunc = new Function(
       'time',
       'velocity',
-      triggerAttack
+      options.triggerAttack
     ).bind(this);
 
-    this._triggerReleaseFunc = new Function('time', triggerRelease).bind(this);
+    this._triggerReleaseFunc = new Function(
+      'time',
+      options.triggerRelease
+    ).bind(this);
 
-    if (setNote !== '') {
-      this._setNoteFunc = new Function('note', 'time', setNote).bind(this);
+    if (options.setNote !== '') {
+      this._setNoteFunc = new Function('note', 'time', options.setNote).bind(
+        this
+      );
     } else {
       this._setNoteFunc = (
         note: tone.Unit.Frequency,
@@ -136,7 +146,10 @@ class IpytoneMonophonic extends tone.Synth {
       };
     }
 
-    this._getLevelAtTimeFunc = new Function('time', getLevelAtTime).bind(this);
+    this._getLevelAtTimeFunc = new Function(
+      'time',
+      options.getLevelAtTime
+    ).bind(this);
 
     Object.defineProperty(this, 'frequency', {
       writable: true,
@@ -144,8 +157,8 @@ class IpytoneMonophonic extends tone.Synth {
     Object.defineProperty(this, 'detune', {
       writable: true,
     });
-    this.frequency = frequency;
-    this.detune = detune;
+    this.frequency = options.frequency;
+    this.detune = options.detune;
     Object.defineProperty(this, 'frequency', {
       writable: false,
     });
@@ -259,12 +272,12 @@ export class InstrumentModel extends BaseInstrumentModel<IpytoneInstrument> {
   }
 
   createNode(): IpytoneInstrument {
-    return new IpytoneInstrument(
-      this.volume.value,
-      this.get('_trigger_attack'),
-      this.get('_trigger_release'),
-      this.internalNodes
-    );
+    return new IpytoneInstrument({
+      volume: this.volume.value,
+      triggerAttack: this.get('_trigger_attack'),
+      triggerRelease: this.get('_trigger_release'),
+      internalNodes: this.internalNodes,
+    });
   }
 
   static model_name = 'InstrumentModel';
@@ -284,17 +297,21 @@ export class MonophonicModel extends BaseInstrumentModel<IpytoneMonophonic> {
   }
 
   createNode(): IpytoneMonophonic {
-    return new IpytoneMonophonic(
-      this.volume.value,
-      this.get('_trigger_attack'),
-      this.get('_trigger_release'),
-      this.get('_set_note'),
-      this.get('_get_level_at_time'),
-      this.internalNodes,
-      this.get('_frequency').node,
-      this.get('_detune').node,
-      this.get('portamento')
-    );
+    return new IpytoneMonophonic(this.getOptions());
+  }
+
+  getOptions(): IpytoneMonophonicOptions {
+    return {
+      volume: this.volume.value,
+      triggerAttack: this.get('_trigger_attack'),
+      triggerRelease: this.get('_trigger_release'),
+      setNote: this.get('_set_note'),
+      getLevelAtTime: this.get('_get_level_at_time'),
+      internalNodes: this.internalNodes,
+      frequency: this.get('_frequency').node,
+      detune: this.get('_detune').node,
+      portamento: this.get('portamento'),
+    };
   }
 
   initEventListeners(): void {
@@ -314,4 +331,49 @@ export class MonophonicModel extends BaseInstrumentModel<IpytoneMonophonic> {
   };
 
   static model_name = 'MonophonicModel';
+}
+
+export class PolySynthModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: PolySynthModel.model_name,
+      _dummy_voice: null,
+    };
+  }
+
+  get dummyVoice(): MonophonicModel {
+    return this.get('_dummy_voice');
+  }
+
+  createNode(): tone.PolySynth {
+    const options = this.dummyVoice.getOptions();
+    return new tone.PolySynth({
+      voice: IpytoneMonophonic,
+      options: options as any,
+    });
+  }
+
+  private handleMsg(command: any, _buffers: any): void {
+    if (command.event === 'trigger') {
+      console.log(this.node);
+      const argsArray = normalizeArguments(command.args, command.arg_keys);
+      (this.node as any)[command.method](...argsArray);
+    }
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('msg:custom', this.handleMsg, this);
+  }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _dummy_voice: { deserialize: unpack_models as any },
+  };
+
+  node: tone.PolySynth;
+
+  static model_name = 'PolySynthModel';
 }

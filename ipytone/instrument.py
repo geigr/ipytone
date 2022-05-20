@@ -693,3 +693,56 @@ class AMSynth(ModulationSynth):
             self._modulation_scale.dispose()
 
         return self
+
+
+class PolySynth(AudioNode):
+    """Need to figure out how to reconstruct the internal nodes
+    and their connections when the voice ``IpytoneMonophonic`` constructor
+    is called in the front-end (within tone.PolySynth).
+
+    This should be doable:
+
+    - for each internal node can re-call ``createNode`` from its
+    corresponding model in the front-end
+
+    - we could refactor how internal nodes are connected in Instrument
+    subclasses, e.g., create a trait List(Tuple(Unicode, Unicode)) representing
+    all connections (src, dest) so that it can be used for connecting the nodes
+    either in the backend or in the front-end.
+
+    - add an option to ``IpytoneMonophonic`` constructor to whether create new
+    nodes and connect them in the front-end or simply get the existing nodes
+    that were created from the backend.
+
+    """
+
+    _model_name = Unicode("PolySynthModel").tag(sync=True)
+
+    _dummy_voice = Instance(Monophonic).tag(sync=True, **widget_serialization)
+
+    def __init__(self, voice_cls=Synth, volume=0, **kwargs):
+        output = Volume(volume=volume, _create_node=False)
+
+        # only used to retrieve the voice constructor arguments in the front-end
+        dummy_voice = voice_cls()
+
+        kwargs.update({"_input": None, "_output": output, "_dummy_voice": dummy_voice})
+        super().__init__(**kwargs)
+
+    @property
+    def volume(self) -> Param:
+        return self._output.volume
+
+    def trigger_attack(self, notes, time=None, velocity=1):
+        args = {"notes": notes, "time": time, "velocity": velocity}
+        add_or_send_event("triggerAttack", self, args)
+        return self
+
+    def trigger_release(self, time=None):
+        add_or_send_event("triggerRelease", self, {"time": time})
+        return self
+
+    def trigger_attack_release(self, notes, duration, time=None, velocity=1):
+        args = {"notes": notes, "duration": duration, "time": time, "velocity": velocity}
+        add_or_send_event("triggerAttackRelease", self, args)
+        return self

@@ -31,6 +31,7 @@ from .instrument import (
     MonoSynth,
     NoiseSynth,
     PluckSynth,
+    PolySynth,
     Synth,
 )
 from .signal import (
