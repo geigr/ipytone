@@ -6,6 +6,7 @@ from ipytone.filter import Filter, LowpassCombFilter
 from ipytone.instrument import (
     DuoSynth,
     Instrument,
+    MembraneSynth,
     Monophonic,
     MonoSynth,
     NoiseSynth,
@@ -212,3 +213,22 @@ def test_duosynth(audio_graph):
     assert synth._vibrato_gain.disposed is True
     assert synth.frequency.disposed is True
     assert synth.detune.disposed is True
+
+
+def test_membranesynth():
+    synth = MembraneSynth()
+
+    assert synth.oscillator.type == "sine"
+    assert synth.envelope.attack == 0.001
+    assert synth.envelope.attack_curve == "exponential"
+    assert synth.envelope.decay == 0.4
+    assert synth.envelope.sustain == 0.01
+    assert synth.envelope.release == 1.4
+
+    assert synth.pitch_decay == 0.05
+    assert synth.octaves == 8
+
+    s = synth.dispose()
+    assert s is synth
+    assert synth._pitch_decay.disposed is True
+    assert synth._octaves.disposed is True

@@ -81,6 +81,7 @@ class Monophonic(Instrument):
 
     _model_name = Unicode("MonophonicModel").tag(sync=True)
 
+    _set_note = Unicode(help="set note JS callback").tag(sync=True)
     _get_level_at_time = Unicode(help="get level at time JS callback").tag(sync=True)
 
     _frequency = Instance(Signal).tag(sync=True, **widget_serialization)
@@ -90,6 +91,10 @@ class Monophonic(Instrument):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+    @validate("_set_note")
+    def _minify_set_note(self, proposal):
+        return minify_js_func(proposal["value"])
 
     @validate("_get_level_at_time")
     def _minify_get_level_at_time(self, proposal):
@@ -140,8 +145,11 @@ class Synth(Monophonic):
         return this.getNode('envelope').getValueAtTime(time);
         """
 
+        internal_nodes = kwargs.get("_internal_nodes", {})
+        internal_nodes.update({"envelope": self.envelope, "oscillator": self.oscillator})
+
         kw = {
-            "_internal_nodes": {"envelope": self.envelope, "oscillator": self.oscillator},
+            "_internal_nodes": internal_nodes,
             "_trigger_attack": attack_func,
             "_trigger_release": release_func,
             "_get_level_at_time": get_level_func,
@@ -474,5 +482,70 @@ class DuoSynth(Monophonic):
             self._harmonicity.dispose()
             self._vibrato.dispose()
             self._vibrato_gain.dispose()
+
+        return self
+
+
+class MembraneSynth(Synth):
+    """A synth that makes kick and tom sounds."""
+
+    def __init__(self, pitch_decay=0.05, octaves=8, **kwargs):
+        self._pitch_decay = Signal(value=pitch_decay, units="positive", min_value=0, max_value=0.5)
+        self._octaves = Signal(value=octaves, units="positive", min_value=0.5, max_value=8)
+
+        set_note_func = """
+        // conversions
+        const seconds = this.toSeconds(time);
+        const hertz = this.toFrequency(note);
+        // get nodes
+        const oscillator = this.getNode('oscillator');
+        const octaves = this.getNode('octaves');
+        const pitchDecay = this.getNode('pitch_decay');
+        //
+        const maxNote = hertz * octaves.value;
+        oscillator.frequency.setValueAtTime(maxNote, seconds);
+        oscillator.frequency.exponentialRampToValueAtTime(
+            hertz, seconds + this.toSeconds(pitchDecay.value)
+        );
+        """
+
+        kw = {
+            "_internal_nodes": {"pitch_decay": self._pitch_decay, "octaves": self._octaves},
+            "_set_note": set_note_func,
+        }
+
+        kwargs.update(kw)
+        super().__init__(**kwargs)
+
+        self.oscillator.type = "sine"
+        self.envelope.attack = 0.001
+        self.envelope.attack_curve = "exponential"
+        self.envelope.decay = 0.4
+        self.envelope.sustain = 0.01
+        self.envelope.release = 1.4
+
+    @property
+    def pitch_decay(self):
+        """Amount of time the frequency envelope takes."""
+        return self._pitch_decay.value
+
+    @pitch_decay.setter
+    def pitch_decay(self, value):
+        self._pitch_decay.value = value
+
+    @property
+    def octaves(self):
+        """The number of octaves the pitch envelope ramps."""
+        return self._octaves.value
+
+    @octaves.setter
+    def octaves(self, value):
+        self._octaves.value = value
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._pitch_decay.dispose()
+            self._octaves.dispose()
 
         return self

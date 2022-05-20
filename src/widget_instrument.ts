@@ -93,6 +93,11 @@ class IpytoneMonophonic extends tone.Synth {
 
   private _triggerReleaseFunc: (time: tone.Unit.Seconds) => void;
 
+  private _setNoteFunc: (
+    note: tone.Unit.Frequency,
+    time?: tone.Unit.Time
+  ) => void;
+
   private _getLevelAtTimeFunc: (time: tone.Unit.Time) => tone.Unit.NormalRange;
 
   private _internalNodes: InternalNodes;
@@ -101,6 +106,7 @@ class IpytoneMonophonic extends tone.Synth {
     volume: tone.Unit.Decibels,
     triggerAttack: string,
     triggerRelease: string,
+    setNote: string,
     getLevelAtTime: string,
     internalNodes: InternalNodes,
     frequency: tone.Signal<'frequency'>,
@@ -116,7 +122,20 @@ class IpytoneMonophonic extends tone.Synth {
       'velocity',
       triggerAttack
     ).bind(this);
+
     this._triggerReleaseFunc = new Function('time', triggerRelease).bind(this);
+
+    if (setNote !== '') {
+      this._setNoteFunc = new Function('note', 'time', setNote).bind(this);
+    } else {
+      this._setNoteFunc = (
+        note: tone.Unit.Frequency,
+        time?: tone.Unit.Time
+      ) => {
+        super.setNote(note, time);
+      };
+    }
+
     this._getLevelAtTimeFunc = new Function('time', getLevelAtTime).bind(this);
 
     Object.defineProperty(this, 'frequency', {
@@ -160,6 +179,11 @@ class IpytoneMonophonic extends tone.Synth {
     return this;
   }
 
+  setNote(note: tone.Unit.Frequency, time?: tone.Unit.Time): this {
+    this._setNoteFunc(note, time);
+    return this;
+  }
+
   getLevelAtTime(time: tone.Unit.Time): tone.Unit.NormalRange {
     return this._getLevelAtTimeFunc(time);
   }
@@ -184,7 +208,8 @@ abstract class BaseInstrumentModel<
   abstract createNode(): T;
 
   replaceNode(): void {
-    this.node.dispose();
+    //FIXME: the new node doesn't seem connected properly (no sound)
+    //this.node.dispose();
     this.node = this.createNode();
   }
 
@@ -210,6 +235,7 @@ abstract class BaseInstrumentModel<
   initEventListeners(): void {
     super.initEventListeners();
 
+    this.on('change:_internal_nodes', () => this.replaceNode());
     this.on('change:_trigger_attack', () => this.replaceNode());
     this.on('change:_trigger_release', () => this.replaceNode());
 
@@ -249,6 +275,7 @@ export class MonophonicModel extends BaseInstrumentModel<IpytoneMonophonic> {
     return {
       ...super.defaults(),
       _model_name: MonophonicModel.model_name,
+      _set_note: '',
       _get_level_at_time: '',
       _frequency: null,
       _detune: null,
@@ -261,6 +288,7 @@ export class MonophonicModel extends BaseInstrumentModel<IpytoneMonophonic> {
       this.volume.value,
       this.get('_trigger_attack'),
       this.get('_trigger_release'),
+      this.get('_set_note'),
       this.get('_get_level_at_time'),
       this.internalNodes,
       this.get('_frequency').node,
@@ -272,6 +300,7 @@ export class MonophonicModel extends BaseInstrumentModel<IpytoneMonophonic> {
   initEventListeners(): void {
     super.initEventListeners();
 
+    this.on('change:_set_note', () => this.replaceNode());
     this.on('change:_get_level_at_time', () => this.replaceNode());
     this.on('change:portamento', () => {
       this.node.portamento = this.get('portamento');
