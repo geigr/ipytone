@@ -9,7 +9,7 @@ from .callback import add_or_send_event
 from .core import AudioNode, Gain, Param, Volume
 from .envelope import AmplitudeEnvelope, FrequencyEnvelope
 from .filter import Filter, LowpassCombFilter
-from .signal import Multiply, Signal
+from .signal import AudioToGain, Multiply, Signal
 from .source import LFO, Noise, OmniOscillator
 
 
@@ -547,5 +547,149 @@ class MembraneSynth(Synth):
             super().dispose()
             self._pitch_decay.dispose()
             self._octaves.dispose()
+
+        return self
+
+
+class ModulationSynth(Monophonic):
+    """Base class used for FM/AM synthesis."""
+
+    def __init__(self, harmonicity=3, **kwargs):
+        self._carrier = Synth(volume=-10)
+        self._modulator = Synth(volume=-10)
+
+        self.oscillator = self._carrier.oscillator
+        self.envelope = self._carrier.envelope
+
+        self.oscillator.type = "sine"
+        self.envelope.attack = 0.01
+        self.envelope.decay = 0.01
+        self.envelope.sustain = 1
+        self.envelope.release = 0.5
+
+        self.modulation = self._modulator.oscillator
+        self.modulation_envelope = self._modulator.envelope
+
+        self.modulation.type = "square"
+        self.modulation_envelope.attack = 0.5
+        self.modulation_envelope.decay = 0
+        self.modulation_envelope.sustain = 1
+        self.modulation_envelope.release = 0.5
+
+        self._harmonicity = Multiply(units="positive", factor=harmonicity, min_value=0)
+        self._frequency = Signal(units="frequency", value=440)
+        self._detune = Signal(units="cents", value=0)
+        self._modulation_node = Gain(gain=0)
+
+        attack_func = """
+        this.getNode('carrier')._triggerEnvelopeAttack(time, velocity);
+        this.getNode('modulator')._triggerEnvelopeAttack(time, velocity);
+        """
+
+        release_func = """
+        this.getNode('carrier')._triggerEnvelopeRelease(time);
+        this.getNode('modulator')._triggerEnvelopeRelease(time);
+        """
+
+        get_level_func = """
+        time = this.toSeconds(time);
+        this.getNode('envelope').getValueAtTime(time);
+        """
+
+        kw = {
+            "_internal_nodes": {
+                "carrier": self._carrier,
+                "modulator": self._modulator,
+                "envelope": self.envelope,
+            },
+            "_trigger_attack": attack_func,
+            "_trigger_release": release_func,
+            "_get_level_at_time": get_level_func,
+            "_frequency": self._frequency,
+            "_detune": self._detune,
+        }
+        kwargs.update(kw)
+
+        super().__init__(**kwargs)
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._frequency.dispose()
+            self._detune.dispose()
+            self._harmonicity.dispose()
+            self._modulation_node.dispose()
+
+        return self
+
+    @property
+    def harmonicity(self) -> Multiply:
+        """Ratio between the two voices.
+
+        A harmonicity of 1 is no change. Harmonicity = 2 means a change
+        of an octave.
+
+        """
+        return self._harmonicity
+
+
+class FMSynth(ModulationSynth):
+    """A synth for FM synthesis that is built with two :class:`~ipytone.Synth`
+    instances, where one synth modulates the frequency of the second.
+
+    """
+
+    def __init__(self, modulation_index=10, **kwargs):
+        super().__init__(**kwargs)
+
+        self._modulation_index = Multiply(factor=modulation_index)
+
+        self.frequency.connect(self._carrier.frequency)
+        self.frequency.chain(self.harmonicity, self._modulator.frequency)
+        self.frequency.chain(self.modulation_index, self._modulation_node)
+        self.detune.fan(self._carrier.detune, self._modulator.detune)
+        self._modulator.connect(self._modulation_node.gain)
+        self._modulation_node.connect(self._carrier.frequency)
+        self._carrier.connect(self._output)
+
+    @property
+    def modulation_index(self) -> Multiply:
+        """Roughly corresponds to the depth or amount of the modulation.
+
+        Ratio of the frequency of the modulating signal (mf) to the amplitude of the
+        modulating signal (ma) -- as in ma/mf.
+
+        """
+        return self._modulation_index
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._modulation_index.dispose()
+
+        return self
+
+
+class AMSynth(ModulationSynth):
+    """A synth for FM synthesis that is built with two :class:`~ipytone.Synth`
+    instances, where one synth modulates the amplitude of the second.
+
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self._modulation_scale = AudioToGain()
+
+        self.frequency.connect(self._carrier.frequency)
+        self.frequency.chain(self.harmonicity, self._modulator.frequency)
+        self.detune.fan(self._carrier.detune, self._modulator.detune)
+        self._modulator.chain(self._modulation_scale, self._modulation_node.gain)
+        self._carrier.chain(self._modulation_node, self._output)
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._modulation_scale.dispose()
 
         return self

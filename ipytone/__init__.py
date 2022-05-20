@@ -22,7 +22,9 @@ from .filter import (  # PhaseShiftAllpass,
 )
 from .graph import get_audio_graph
 from .instrument import (
+    AMSynth,
     DuoSynth,
+    FMSynth,
     Instrument,
     MembraneSynth,
     Monophonic,
@@ -31,7 +33,18 @@ from .instrument import (
     PluckSynth,
     Synth,
 )
-from .signal import Abs, Add, GreaterThan, Multiply, Negate, Pow, Scale, Signal, Subtract
+from .signal import (
+    Abs,
+    Add,
+    AudioToGain,
+    GreaterThan,
+    Multiply,
+    Negate,
+    Pow,
+    Scale,
+    Signal,
+    Subtract,
+)
 from .source import (
     LFO,
     AMOscillator,

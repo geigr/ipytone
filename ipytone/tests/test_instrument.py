@@ -4,9 +4,12 @@ from ipytone.core import Gain, Volume
 from ipytone.envelope import AmplitudeEnvelope, FrequencyEnvelope
 from ipytone.filter import Filter, LowpassCombFilter
 from ipytone.instrument import (
+    AMSynth,
     DuoSynth,
+    FMSynth,
     Instrument,
     MembraneSynth,
+    ModulationSynth,
     Monophonic,
     MonoSynth,
     NoiseSynth,
@@ -232,3 +235,88 @@ def test_membranesynth():
     assert s is synth
     assert synth._pitch_decay.disposed is True
     assert synth._octaves.disposed is True
+
+
+def test_modulationsynth():
+    synth = ModulationSynth()
+
+    assert isinstance(synth._carrier, Synth)
+    assert isinstance(synth._modulator, Synth)
+
+    assert synth.oscillator is synth._carrier.oscillator
+    assert synth.envelope is synth._carrier.envelope
+    assert synth.oscillator.type == "sine"
+    assert synth.envelope.attack == 0.01
+    assert synth.envelope.decay == 0.01
+    assert synth.envelope.sustain == 1
+    assert synth.envelope.release == 0.5
+
+    assert synth.modulation is synth._modulator.oscillator
+    assert synth.modulation_envelope is synth._modulator.envelope
+    assert synth.modulation.type == "square"
+    assert synth.modulation_envelope.attack == 0.5
+    assert synth.modulation_envelope.decay == 0
+    assert synth.modulation_envelope.sustain == 1
+    assert synth.modulation_envelope.release == 0.5
+
+    assert synth.harmonicity.factor.value == 3
+    assert synth.harmonicity.factor.min_value == 0
+
+    assert synth.frequency.value == 440
+    assert synth.detune.value == 0
+
+    assert synth._modulation_node.gain.value == 0
+
+    s = synth.dispose()
+    assert s is synth
+    assert synth._carrier.disposed is True
+    assert synth._modulator.disposed is True
+    assert synth.frequency.disposed is True
+    assert synth.detune.disposed is True
+    assert synth._harmonicity.disposed is True
+    assert synth._modulation_node.disposed is True
+
+
+def test_fmsynth(audio_graph):
+    synth = FMSynth()
+
+    assert synth.modulation_index.factor.value == 10
+
+    assert (synth.frequency, synth._carrier.frequency, 0, 0) in audio_graph.connections
+    assert (synth.frequency, synth.harmonicity, 0, 0) in audio_graph.connections
+    assert (synth.harmonicity, synth._modulator.frequency, 0, 0) in audio_graph.connections
+    assert (synth.frequency, synth._modulation_index, 0, 0) in audio_graph.connections
+    assert (synth._modulation_index, synth._modulation_node, 0, 0) in audio_graph.connections
+
+    assert (synth.detune, synth._carrier.detune, 0, 0) in audio_graph.connections
+    assert (synth.detune, synth._modulator.detune, 0, 0) in audio_graph.connections
+
+    assert (synth._modulator, synth._modulation_node.gain, 0, 0) in audio_graph.connections
+    assert (synth._modulation_node, synth._carrier.frequency, 0, 0) in audio_graph.connections
+
+    assert (synth._carrier, synth.output, 0, 0) in audio_graph.connections
+
+    s = synth.dispose()
+    assert s is synth
+    assert synth.modulation_index.disposed is True
+
+
+def test_amsynth(audio_graph):
+    synth = AMSynth()
+
+    assert (synth.frequency, synth._carrier.frequency, 0, 0) in audio_graph.connections
+    assert (synth.frequency, synth.harmonicity, 0, 0) in audio_graph.connections
+    assert (synth.harmonicity, synth._modulator.frequency, 0, 0) in audio_graph.connections
+
+    assert (synth.detune, synth._carrier.detune, 0, 0) in audio_graph.connections
+    assert (synth.detune, synth._modulator.detune, 0, 0) in audio_graph.connections
+
+    assert (synth._modulator, synth._modulation_scale, 0, 0) in audio_graph.connections
+    assert (synth._modulation_scale, synth._modulation_node.gain, 0, 0) in audio_graph.connections
+
+    assert (synth._carrier, synth._modulation_node, 0, 0) in audio_graph.connections
+    assert (synth._modulation_node, synth.output, 0, 0) in audio_graph.connections
+
+    s = synth.dispose()
+    assert s is synth
+    assert synth._modulation_scale.disposed is True

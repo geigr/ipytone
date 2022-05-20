@@ -300,6 +300,20 @@ class GreaterThan(Signal):
         return self
 
 
+class AudioToGain(SignalOperator):
+    """A node that converts an input signal in audio range [-1, 1] to an output signal
+    in normal range [0, 1].
+
+    """
+
+    _model_name = Unicode("AudioToGainModel").tag(sync=True)
+
+    def __init__(self, *args, **kwargs):
+        node = InternalAudioNode(type="WaveShaper")
+        kwargs.update({"_input": node, "_output": node})
+        super().__init__(*args, **kwargs)
+
+
 class Abs(SignalOperator):
     """A node that outputs the absolute value of an incoming signal.
 
