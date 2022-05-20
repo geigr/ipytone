@@ -8,7 +8,7 @@ from .base import NodeWithContext
 from .callback import add_or_send_event
 from .core import AudioNode, Param, Volume
 from .envelope import AmplitudeEnvelope, FrequencyEnvelope
-from .filter import Filter
+from .filter import Filter, LowpassCombFilter
 from .signal import Signal
 from .source import Noise, OmniOscillator
 
@@ -266,3 +266,109 @@ class NoiseSynth(Instrument):
         super().__init__(**kwargs)
 
         self.noise.chain(self.envelope, self._output)
+
+
+class PluckSynth(Instrument):
+    """Karplus-Strong string synthesis."""
+
+    def __init__(self, attack_noise=1, dampening=4000, resonance=0.7, release=1, **kwargs):
+        self._attack_noise = Signal(
+            value=attack_noise, units="positive", min_value=0.1, max_value=20
+        )
+        self._resonance = Signal(value=resonance, units="normalRange")
+        self._release = Signal(value=release, units="positive")
+
+        self._noise = Noise(type="pink")
+        self._lfcf = LowpassCombFilter(dampening=dampening, resonance=resonance)
+
+        attack_func = """
+        // convert
+        const freq = this.toFrequency(note);
+        time = this.toSeconds(time);
+        // get nodes
+        const noise = this.getNode('noise');
+        const lfcfDelayTime = this.getNode('lfcf_delay_time');
+        const lfcfResonance = this.getNode('lfcf_resonance');
+        const delayAmount = 1 / freq;
+        //
+        lfcfDelayTime.setValueAtTime(delayAmount, time);
+        noise.start(time);
+        noise.stop(time + delayAmount * this.getNode('_attack_noise').value);
+        lfcfResonance.cancelScheduledValues(time);
+        lfcfResonance.setValueAtTime(this.getNode('_resonance').value, time);
+        """
+
+        release_func = """
+        time = this.toSeconds(time);
+        const lfcfResonance = this.getNode('lfcf_resonance');
+        const release = this.getNode('_release').value;
+        lfcfResonance.linearRampTo(0, release, time);
+        """
+
+        kw = {
+            "_internal_nodes": {
+                "_attack_noise": self._attack_noise,
+                "_resonance": self._resonance,
+                "_release": self._release,
+                "noise": self._noise,
+                "lfcf_delay_time": self._lfcf.delay_time,
+                "lfcf_resonance": self._lfcf.resonance,
+            },
+            "_trigger_attack": attack_func,
+            "_trigger_release": release_func,
+        }
+        kwargs.update(kw)
+
+        super().__init__(**kwargs)
+
+        self._noise.connect(self._lfcf)
+        self._lfcf.connect(self._output)
+
+    @property
+    def attack_noise(self):
+        """Amount of noise at the attack.
+
+        (range: 0.1-20)
+        """
+        return self._attack_noise.value
+
+    @attack_noise.setter
+    def attack_noise(self, value):
+        self._attack_noise.value = value
+
+    @property
+    def dampening(self):
+        """Dampening control, i.e. the lowpass filter frequency of the comb filter.
+
+        (range: 0-7000)
+        """
+        return self._lfcf.dampening
+
+    @dampening.setter
+    def dampening(self, value):
+        self._lfcf.dampening = value
+
+    @property
+    def resonance(self):
+        """amount of resonance of the pluck."""
+        return self._resonance.value
+
+    @resonance.setter
+    def resonance(self, value):
+        self._resonance.value = value
+
+    @property
+    def release(self):
+        """Release time which corresponds to a resonance ramp down to 0."""
+        return self._release.value
+
+    @release.setter
+    def release(self, value):
+        self._release.value = value
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._lfcf.dispose()
+
+        return self

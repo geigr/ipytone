@@ -2,8 +2,8 @@ import pytest
 
 from ipytone.core import Gain, Volume
 from ipytone.envelope import AmplitudeEnvelope, FrequencyEnvelope
-from ipytone.filter import Filter
-from ipytone.instrument import Instrument, Monophonic, MonoSynth, NoiseSynth, Synth
+from ipytone.filter import Filter, LowpassCombFilter
+from ipytone.instrument import Instrument, Monophonic, MonoSynth, NoiseSynth, PluckSynth, Synth
 from ipytone.source import Noise, OmniOscillator, Oscillator
 
 
@@ -139,3 +139,24 @@ def test_noisesynth(audio_graph):
     assert isinstance(synth.envelope, AmplitudeEnvelope)
     assert synth.envelope.decay == 0.1
     assert synth.envelope.sustain == 0
+
+
+def test_plucksynth(audio_graph):
+    synth = PluckSynth()
+
+    assert synth.attack_noise == 1
+    assert synth.dampening == 4000
+    assert synth.resonance == 0.7
+    assert synth.release == 1
+
+    assert isinstance(synth._noise, Noise)
+    assert synth._noise.type == "pink"
+    assert isinstance(synth._lfcf, LowpassCombFilter)
+    assert synth._lfcf.dampening == synth.dampening
+    assert synth._lfcf.resonance.value == synth.resonance
+
+    assert (synth._noise, synth._lfcf.widget, 0, 0) in audio_graph.connections
+    assert (synth._lfcf.widget, synth.output, 0, 0) in audio_graph.connections
+
+    synth.dispose()
+    assert synth._lfcf.disposed is True
