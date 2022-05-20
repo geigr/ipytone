@@ -3,7 +3,15 @@ import pytest
 from ipytone.core import Gain, Volume
 from ipytone.envelope import AmplitudeEnvelope, FrequencyEnvelope
 from ipytone.filter import Filter, LowpassCombFilter
-from ipytone.instrument import Instrument, Monophonic, MonoSynth, NoiseSynth, PluckSynth, Synth
+from ipytone.instrument import (
+    DuoSynth,
+    Instrument,
+    Monophonic,
+    MonoSynth,
+    NoiseSynth,
+    PluckSynth,
+    Synth,
+)
 from ipytone.source import Noise, OmniOscillator, Oscillator
 
 
@@ -158,5 +166,49 @@ def test_plucksynth(audio_graph):
     assert (synth._noise, synth._lfcf.widget, 0, 0) in audio_graph.connections
     assert (synth._lfcf.widget, synth.output, 0, 0) in audio_graph.connections
 
-    synth.dispose()
+    s = synth.dispose()
+    assert s is synth
     assert synth._lfcf.disposed is True
+
+
+def test_duosynth(audio_graph):
+    synth = DuoSynth()
+
+    assert isinstance(synth.voice0, MonoSynth)
+    assert isinstance(synth.voice1, MonoSynth)
+    for voice in (synth.voice0, synth.voice1):
+        for env in (voice.envelope, voice.filter_envelope):
+            assert env.attack == 0.01
+            assert env.decay == 0
+            assert env.sustain == 1
+            assert env.release == 0.5
+
+    assert synth.harmonicity.value == 1.5
+    assert synth.vibrato_rate.value == 5
+    assert synth.vibrato_amount.value == 0.5
+    assert synth.frequency.value == 440
+    assert synth.detune.value == 0
+
+    assert (synth.frequency, synth.voice0.frequency, 0, 0) in audio_graph.connections
+    assert (synth.frequency, synth._harmonicity, 0, 0) in audio_graph.connections
+    assert (synth._harmonicity, synth.voice1.frequency, 0, 0) in audio_graph.connections
+
+    assert (synth._vibrato, synth._vibrato_gain, 0, 0) in audio_graph.connections
+    assert (synth._vibrato_gain, synth.voice0.detune, 0, 0) in audio_graph.connections
+    assert (synth._vibrato_gain, synth.voice1.detune, 0, 0) in audio_graph.connections
+
+    assert (synth.detune, synth.voice0.detune, 0, 0) in audio_graph.connections
+    assert (synth.detune, synth.voice1.detune, 0, 0) in audio_graph.connections
+
+    assert (synth.voice0, synth.output, 0, 0) in audio_graph.connections
+    assert (synth.voice1, synth.output, 0, 0) in audio_graph.connections
+
+    s = synth.dispose()
+    assert s is synth
+    assert synth.voice0.disposed is True
+    assert synth.voice1.disposed is True
+    assert synth._harmonicity.disposed is True
+    assert synth._vibrato.disposed is True
+    assert synth._vibrato_gain.disposed is True
+    assert synth.frequency.disposed is True
+    assert synth.detune.disposed is True

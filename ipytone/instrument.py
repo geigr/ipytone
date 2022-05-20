@@ -6,11 +6,11 @@ from traitlets import Dict, Float, Instance, Unicode, validate
 
 from .base import NodeWithContext
 from .callback import add_or_send_event
-from .core import AudioNode, Param, Volume
+from .core import AudioNode, Gain, Param, Volume
 from .envelope import AmplitudeEnvelope, FrequencyEnvelope
 from .filter import Filter, LowpassCombFilter
-from .signal import Signal
-from .source import Noise, OmniOscillator
+from .signal import Multiply, Signal
+from .source import LFO, Noise, OmniOscillator
 
 
 def minify_js_func(func_str):
@@ -370,5 +370,109 @@ class PluckSynth(Instrument):
         with self._graph.hold_state():
             super().dispose()
             self._lfcf.dispose()
+
+        return self
+
+
+class DuoSynth(Monophonic):
+    """Monophonic synth composed of two :class:`~ipytone.MonoSynth` instances
+    run in parallel.
+
+    Also provides a control over the frequency ratio between the two voices
+    and a vibrato effect.
+
+    """
+
+    def __init__(self, harmonicity=1.5, vibrato_rate=5, vibrato_amount=0.5, **kwargs):
+        self.voice0 = MonoSynth()
+        self.voice1 = MonoSynth()
+
+        envelope_settings = {"attack": 0.01, "decay": 0.0, "sustain": 1, "release": 0.5}
+        for k, v in envelope_settings.items():
+            setattr(self.voice0.envelope, k, v)
+            setattr(self.voice0.filter_envelope, k, v)
+            setattr(self.voice1.envelope, k, v)
+            setattr(self.voice1.filter_envelope, k, v)
+
+        self._harmonicity = Multiply(units="positive", value=harmonicity)
+        self._vibrato = LFO(frequency=vibrato_rate, min=-50, max=50)
+        self._vibrato.start()
+        self._vibrato_gain = Gain(units="normalRange", gain=vibrato_amount)
+
+        self._frequency = Signal(units="frequency", value=440)
+        self._detune = Signal(units="cents", value=0)
+
+        attack_func = """
+        this.getNode('voice0')._triggerEnvelopeAttack(time, velocity);
+        this.getNode('voice1')._triggerEnvelopeAttack(time, velocity);
+        """
+
+        release_func = """
+        this.getNode('voice0')._triggerEnvelopeRelease(time);
+        this.getNode('voice1')._triggerEnvelopeRelease(time);
+        """
+
+        get_level_func = """
+        time = this.toSeconds(time);
+        const voice0 = this.getNode('voice0');
+        const voice1 = this.getNode('voice1');
+        return voice0.envelope.getValueAtTime(time) + voice1.envelope.getValueAtTime(time);
+        """
+
+        kw = {
+            "_internal_nodes": {
+                "voice0": self.voice0,
+                "voice1": self.voice1,
+            },
+            "_trigger_attack": attack_func,
+            "_trigger_release": release_func,
+            "_get_level_at_time": get_level_func,
+            "_frequency": self._frequency,
+            "_detune": self._detune,
+        }
+        kwargs.update(kw)
+
+        super().__init__(**kwargs)
+
+        # connections
+        self._frequency.connect(self.voice0.frequency)
+        self._frequency.chain(self._harmonicity, self.voice1.frequency)
+
+        self._vibrato.connect(self._vibrato_gain)
+        self._vibrato_gain.fan(self.voice0.detune, self.voice1.detune)
+
+        self._detune.fan(self.voice0.detune, self.voice1.detune)
+
+        self.voice0.connect(self._output)
+        self.voice1.connect(self._output)
+
+    @property
+    def harmonicity(self) -> Signal:
+        """Ratio between the two voices.
+
+        A harmonicity of 1 is no change. Harmonicity = 2 means a change
+        of an octave.
+
+        """
+        return self._harmonicity
+
+    @property
+    def vibrato_rate(self) -> Signal:
+        """Vibrato frequency."""
+        return self._vibrato.frequency
+
+    @property
+    def vibrato_amount(self) -> Param:
+        """Vibrato amount."""
+        return self._vibrato_gain.gain
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._frequency.dispose()
+            self._detune.dispose()
+            self._harmonicity.dispose()
+            self._vibrato.dispose()
+            self._vibrato_gain.dispose()
 
         return self
