@@ -33,7 +33,11 @@ function getInternalNodes(
 
   Object.entries(models).forEach(([key, model]) => {
     if (createNodes) {
-      nodes[key] = model.createNode();
+      if (model instanceof MonophonicModel) {
+        nodes[key] = model.createNode(true);
+      } else {
+        nodes[key] = model.createNode();
+      }
     } else {
       nodes[key] = model.node;
     }
@@ -348,8 +352,11 @@ export class MonophonicModel extends BaseInstrumentModel<IpytoneMonophonic> {
     };
   }
 
-  createNode(): IpytoneMonophonic {
-    return new IpytoneMonophonic(this.getOptions());
+  createNode(createInternalNodes = false): IpytoneMonophonic {
+    const options = this.getOptions();
+    options.createInternalNodes = createInternalNodes;
+
+    return new IpytoneMonophonic(options);
   }
 
   getOptions(): IpytoneMonophonicOptions {
