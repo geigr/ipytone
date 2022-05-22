@@ -14,6 +14,7 @@ from ipytone.instrument import (
     MonoSynth,
     NoiseSynth,
     PluckSynth,
+    PolySynth,
     Synth,
 )
 from ipytone.source import Noise, OmniOscillator, Oscillator
@@ -71,7 +72,7 @@ def test_instrument():
         ),
     ],
 )
-def test_enveloppe_trigger(mocker, method, js_method, kwargs):
+def test_instrument_trigger(mocker, method, js_method, kwargs):
     inst = DummyInstrument()
     mocker.patch.object(inst, "send")
 
@@ -296,3 +297,40 @@ def test_amsynth():
     s = synth.dispose()
     assert s is synth
     assert synth._modulation_scale.disposed is True
+
+
+def test_polysynth():
+    synth = PolySynth()
+
+    assert isinstance(synth._dummy_voice, Synth)
+    # dummy_voice should be already disposed (not used directly)
+    assert synth._dummy_voice.disposed is True
+
+    assert isinstance(synth.output, Volume)
+    assert synth.input is None
+
+    assert synth.output.volume.value == 0
+
+
+@pytest.mark.parametrize(
+    "method,js_method,kwargs",
+    [
+        ("trigger_attack", "triggerAttack", {"notes": ["C3", "C4"], "time": None, "velocity": 1}),
+        ("trigger_release", "triggerRelease", {"time": None}),
+        (
+            "trigger_attack_release",
+            "triggerAttackRelease",
+            {"notes": ["C3", "C4"], "duration": [1, 2], "time": None, "velocity": 1},
+        ),
+    ],
+)
+def test_polysynth_trigger(mocker, method, js_method, kwargs):
+    inst = PolySynth()
+    mocker.patch.object(inst, "send")
+
+    args = {k: {"value": v, "eval": False} for k, v in kwargs.items()}
+    expected = {"event": "trigger", "method": js_method, "args": args, "arg_keys": list(kwargs)}
+
+    i = getattr(inst, method)(**kwargs)
+    assert i is inst
+    inst.send.assert_called_once_with(expected)

@@ -759,14 +759,17 @@ class PolySynth(AudioNode):
 
     _dummy_voice = Instance(Monophonic).tag(sync=True, **widget_serialization)
 
-    def __init__(self, voice_cls=Synth, volume=0, **kwargs):
+    def __init__(self, voice=Synth, volume=0, **kwargs):
         output = Volume(volume=volume, _create_node=False)
 
         # only used to retrieve the voice constructor arguments in the front-end
-        dummy_voice = voice_cls()
+        # -> dispose below
+        dummy_voice = voice()
 
         kwargs.update({"_input": None, "_output": output, "_dummy_voice": dummy_voice})
         super().__init__(**kwargs)
+
+        dummy_voice.dispose()
 
     @property
     def volume(self) -> Param:
