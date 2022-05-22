@@ -2,7 +2,7 @@ import re
 from textwrap import dedent
 
 from ipywidgets import widget_serialization
-from traitlets import Dict, Float, Instance, Unicode, validate
+from traitlets import Dict, Float, Instance, List, Tuple, Unicode, Union, validate
 
 from .base import NodeWithContext
 from .callback import add_or_send_event
@@ -34,13 +34,36 @@ class Instrument(AudioNode):
     _internal_nodes = Dict(key_trait=Unicode(), value_trait=Instance(NodeWithContext)).tag(
         sync=True, **widget_serialization
     )
+    _after_init = Unicode(help="constructor JS callback").tag(sync=True)
     _trigger_attack = Unicode(help="trigger attack JS callback").tag(sync=True)
     _trigger_release = Unicode(help="trigger release JS callback").tag(sync=True)
 
     def __init__(self, volume=0, **kwargs):
         output = Volume(volume=volume, _create_node=False)
-        kwargs.update({"_input": None, "_output": output})
+
+        kw = {
+            "_input": None,
+            "_output": output,
+            "_internal_nodes": self._get_internal_nodes(),
+            "_trigger_attack": self._attack_func(),
+            "_trigger_release": self._release_func(),
+            "_after_init": self._after_init_func(),
+        }
+        kwargs.update(kw)
+
         super().__init__(**kwargs)
+
+    def _get_internal_nodes(self):
+        return {}
+
+    def _attack_func(self):
+        raise NotImplementedError()
+
+    def _release_func(self):
+        raise NotImplementedError()
+
+    def _after_init_func(self):
+        return ""
 
     @validate("_trigger_attack")
     def _minify_trigger_attack(self, proposal):
@@ -48,6 +71,10 @@ class Instrument(AudioNode):
 
     @validate("_trigger_release")
     def _minify_trigger_release(self, proposal):
+        return minify_js_func(proposal["value"])
+
+    @validate("_after_init")
+    def _minify_after_init(self, proposal):
         return minify_js_func(proposal["value"])
 
     @property
@@ -84,13 +111,22 @@ class Monophonic(Instrument):
     _set_note = Unicode(help="set note JS callback").tag(sync=True)
     _get_level_at_time = Unicode(help="get level at time JS callback").tag(sync=True)
 
-    _frequency = Instance(Signal).tag(sync=True, **widget_serialization)
-    _detune = Instance(Signal).tag(sync=True, **widget_serialization)
-
     portamento = Float(0, help="glide time between notes").tag(sync=True)
 
     def __init__(self, **kwargs):
+        kw = {
+            "_set_note": self._set_note_func(),
+            "_get_level_at_time": self._get_level_at_time_func(),
+        }
+        kwargs.update(kw)
+
         super().__init__(**kwargs)
+
+    def _set_note_func(self):
+        return ""
+
+    def _get_level_at_time_func(self):
+        raise NotImplementedError()
 
     @validate("_set_note")
     def _minify_set_note(self, proposal):
@@ -102,11 +138,17 @@ class Monophonic(Instrument):
 
     @property
     def frequency(self) -> Signal:
-        return self._frequency
+        if "frequency" in self._internal_nodes:
+            return self._internal_nodes["frequency"]
+        else:
+            return self._internal_nodes["oscillator"].frequency
 
     @property
     def detune(self) -> Signal:
-        return self._detune
+        if "detune" in self._internal_nodes:
+            return self._internal_nodes["detune"]
+        else:
+            return self._internal_nodes["oscillator"].detune
 
 
 class Synth(Monophonic):
@@ -119,7 +161,18 @@ class Synth(Monophonic):
         self.oscillator = OmniOscillator(type="triangle")
         self.envelope = AmplitudeEnvelope(attack=0.005, decay=0.1, sustain=0.3, release=1)
 
-        attack_func = """
+        super().__init__(**kwargs)
+
+    def _get_internal_nodes(self):
+        return {"oscillator": self.oscillator, "envelope": self.envelope}
+
+    def _after_init_func(self):
+        return """
+        this.getNode('oscillator').chain(this.getNode('envelope'), this.output);
+        """
+
+    def _attack_func(self):
+        return """
         const envelope = this.getNode('envelope');
         const oscillator = this.getNode('oscillator');
         // the envelopes
@@ -133,34 +186,19 @@ class Synth(Monophonic):
         }
         """
 
-        release_func = """
+    def _release_func(self):
+        return """
         const envelope = this.getNode('envelope');
         const oscillator = this.getNode('oscillator');
         envelope.triggerRelease(time);
         oscillator.stop(time + this.toSeconds(envelope.release));
         """
 
-        get_level_func = """
+    def _get_level_at_time_func(self):
+        return """
         time = this.toSeconds(time);
         return this.getNode('envelope').getValueAtTime(time);
         """
-
-        internal_nodes = kwargs.get("_internal_nodes", {})
-        internal_nodes.update({"envelope": self.envelope, "oscillator": self.oscillator})
-
-        kw = {
-            "_internal_nodes": internal_nodes,
-            "_trigger_attack": attack_func,
-            "_trigger_release": release_func,
-            "_get_level_at_time": get_level_func,
-            "_frequency": self.oscillator.frequency,
-            "_detune": self.oscillator.detune,
-        }
-        kwargs.update(kw)
-
-        super().__init__(**kwargs)
-
-        self.oscillator.chain(self.envelope, self._output)
 
 
 class MonoSynth(Monophonic):
@@ -178,7 +216,26 @@ class MonoSynth(Monophonic):
             attack=0.6, decay=0.2, sustain=0.5, release=2, base_frequency=200, octaves=3, exponent=2
         )
 
-        attack_func = """
+        super().__init__(**kwargs)
+
+    def _get_internal_nodes(self):
+        return {
+            "envelope": self.envelope,
+            "filter_envelope": self.filter_envelope,
+            "oscillator": self.oscillator,
+            "filter": self.filter,
+        }
+
+    def _after_init_func(self):
+        return """
+        this.getNode('oscillator').chain(
+          this.getNode('filter'), this.getNode('envelope'), this.output
+        );
+        this.getNode('filter_envelope').connect(this.getNode('filter').frequency);
+        """
+
+    def _attack_func(self):
+        return """
         const envelope = this.getNode('envelope');
         const filterEnvelope = this.getNode('filter_envelope');
         const oscillator = this.getNode('oscillator');
@@ -194,7 +251,8 @@ class MonoSynth(Monophonic):
         }
         """
 
-        release_func = """
+    def _release_func(self):
+        return """
         const envelope = this.getNode('envelope');
         const filterEnvelope = this.getNode('filter_envelope');
         const oscillator = this.getNode('oscillator');
@@ -203,30 +261,11 @@ class MonoSynth(Monophonic):
         oscillator.stop(time + this.toSeconds(envelope.release));
         """
 
-        get_level_func = """
+    def _get_level_at_time_func(self):
+        return """
         time = this.toSeconds(time);
         return this.getNode('envelope').getValueAtTime(time);
         """
-
-        kw = {
-            "_internal_nodes": {
-                "envelope": self.envelope,
-                "filter_envelope": self.filter_envelope,
-                "oscillator": self.oscillator,
-                "filter": self.filter,
-            },
-            "_trigger_attack": attack_func,
-            "_trigger_release": release_func,
-            "_get_level_at_time": get_level_func,
-            "_frequency": self.oscillator.frequency,
-            "_detune": self.oscillator.detune,
-        }
-        kwargs.update(kw)
-
-        super().__init__(**kwargs)
-
-        self.oscillator.chain(self.filter, self.envelope, self._output)
-        self.filter_envelope.connect(self.filter.frequency)
 
 
 class NoiseSynth(Instrument):
@@ -239,7 +278,18 @@ class NoiseSynth(Instrument):
         self.noise = Noise(type="white")
         self.envelope = AmplitudeEnvelope(decay=0.1, sustain=0)
 
-        attack_func = """
+        super().__init__(**kwargs)
+
+    def _get_internal_nodes(self):
+        return {"noise": self.noise, "envelope": self.envelope}
+
+    def _after_init_func(self):
+        return """
+        this.getNode('noise').chain(this.getNode('envelope'), this.output);
+        """
+
+    def _attack_func(self):
+        return """
         const envelope = this.getNode('envelope');
         const noise = this.getNode('noise');
         // the envelopes
@@ -253,27 +303,14 @@ class NoiseSynth(Instrument):
         }
         """
 
-        release_func = """
+    def _release_func(self):
+        return """
         time = this.toSeconds(time);
         const envelope = this.getNode('envelope');
         const noise = this.getNode('noise');
         envelope.triggerRelease(time);
         noise.stop(time + this.toSeconds(envelope.release));
         """
-
-        kw = {
-            "_internal_nodes": {
-                "envelope": self.envelope,
-                "noise": self.noise,
-            },
-            "_trigger_attack": attack_func,
-            "_trigger_release": release_func,
-        }
-        kwargs.update(kw)
-
-        super().__init__(**kwargs)
-
-        self.noise.chain(self.envelope, self._output)
 
 
 class PluckSynth(Instrument):
@@ -289,7 +326,23 @@ class PluckSynth(Instrument):
         self._noise = Noise(type="pink")
         self._lfcf = LowpassCombFilter(dampening=dampening, resonance=resonance)
 
-        attack_func = """
+        super().__init__(**kwargs)
+
+        self._noise.connect(self._lfcf)
+        self._lfcf.connect(self._output)
+
+    def _get_internal_nodes(self):
+        return {
+            "_attack_noise": self._attack_noise,
+            "_resonance": self._resonance,
+            "_release": self._release,
+            "noise": self._noise,
+            "lfcf_delay_time": self._lfcf.delay_time,
+            "lfcf_resonance": self._lfcf.resonance,
+        }
+
+    def _attack_func(self):
+        return """
         // convert
         const freq = this.toFrequency(note);
         time = this.toSeconds(time);
@@ -306,31 +359,13 @@ class PluckSynth(Instrument):
         lfcfResonance.setValueAtTime(this.getNode('_resonance').value, time);
         """
 
-        release_func = """
+    def _release_func(self):
+        return """
         time = this.toSeconds(time);
         const lfcfResonance = this.getNode('lfcf_resonance');
         const release = this.getNode('_release').value;
         lfcfResonance.linearRampTo(0, release, time);
         """
-
-        kw = {
-            "_internal_nodes": {
-                "_attack_noise": self._attack_noise,
-                "_resonance": self._resonance,
-                "_release": self._release,
-                "noise": self._noise,
-                "lfcf_delay_time": self._lfcf.delay_time,
-                "lfcf_resonance": self._lfcf.resonance,
-            },
-            "_trigger_attack": attack_func,
-            "_trigger_release": release_func,
-        }
-        kwargs.update(kw)
-
-        super().__init__(**kwargs)
-
-        self._noise.connect(self._lfcf)
-        self._lfcf.connect(self._output)
 
     @property
     def attack_noise(self):
@@ -404,55 +439,60 @@ class DuoSynth(Monophonic):
 
         self._harmonicity = Multiply(units="positive", value=harmonicity)
         self._vibrato = LFO(frequency=vibrato_rate, min=-50, max=50)
-        self._vibrato.start()
         self._vibrato_gain = Gain(units="normalRange", gain=vibrato_amount)
 
         self._frequency = Signal(units="frequency", value=440)
         self._detune = Signal(units="cents", value=0)
 
-        attack_func = """
+        super().__init__(**kwargs)
+
+    def _get_internal_nodes(self):
+        return {
+            "voice0": self.voice0,
+            "voice1": self.voice1,
+            "harmonicity": self._harmonicity,
+            "vibrato": self._vibrato,
+            "vibrato_gain": self._vibrato_gain,
+            "frequency": self._frequency,
+            "detune": self._detune,
+        }
+
+    def _after_init_func(self):
+        return """
+        this.getNode('vibrato').start();
+        // connections
+        this.frequency.connect(this.getNode('voice0').frequency);
+        this.frequency.chain(this.getNode('harmonicity'), this.getNode('voice1').frequency);
+        this.getNode('vibrato').connect(this.getNode('vibrato_gain'));
+        this.getNode('vibrato_gain').fan(
+          this.getNode('voice0').detune, this.getNode('voice1').detune
+        );
+        this.detune.fan(
+          this.getNode('voice0').detune, this.getNode('voice1').detune
+        );
+        this.getNode('voice0').connect(this.output);
+        this.getNode('voice1').connect(this.output);
+        """
+
+    def _attack_func(self):
+        return """
         this.getNode('voice0')._triggerEnvelopeAttack(time, velocity);
         this.getNode('voice1')._triggerEnvelopeAttack(time, velocity);
         """
 
-        release_func = """
+    def _release_func(self):
+        return """
         this.getNode('voice0')._triggerEnvelopeRelease(time);
         this.getNode('voice1')._triggerEnvelopeRelease(time);
         """
 
-        get_level_func = """
+    def _get_level_at_time_func(self):
+        return """
         time = this.toSeconds(time);
         const voice0 = this.getNode('voice0');
         const voice1 = this.getNode('voice1');
         return voice0.envelope.getValueAtTime(time) + voice1.envelope.getValueAtTime(time);
         """
-
-        kw = {
-            "_internal_nodes": {
-                "voice0": self.voice0,
-                "voice1": self.voice1,
-            },
-            "_trigger_attack": attack_func,
-            "_trigger_release": release_func,
-            "_get_level_at_time": get_level_func,
-            "_frequency": self._frequency,
-            "_detune": self._detune,
-        }
-        kwargs.update(kw)
-
-        super().__init__(**kwargs)
-
-        # connections
-        self._frequency.connect(self.voice0.frequency)
-        self._frequency.chain(self._harmonicity, self.voice1.frequency)
-
-        self._vibrato.connect(self._vibrato_gain)
-        self._vibrato_gain.fan(self.voice0.detune, self.voice1.detune)
-
-        self._detune.fan(self.voice0.detune, self.voice1.detune)
-
-        self.voice0.connect(self._output)
-        self.voice1.connect(self._output)
 
     @property
     def harmonicity(self) -> Signal:
@@ -474,17 +514,6 @@ class DuoSynth(Monophonic):
         """Vibrato amount."""
         return self._vibrato_gain.gain
 
-    def dispose(self):
-        with self._graph.hold_state():
-            super().dispose()
-            self._frequency.dispose()
-            self._detune.dispose()
-            self._harmonicity.dispose()
-            self._vibrato.dispose()
-            self._vibrato_gain.dispose()
-
-        return self
-
 
 class MembraneSynth(Synth):
     """A synth that makes kick and tom sounds."""
@@ -493,7 +522,22 @@ class MembraneSynth(Synth):
         self._pitch_decay = Signal(value=pitch_decay, units="positive", min_value=0, max_value=0.5)
         self._octaves = Signal(value=octaves, units="positive", min_value=0.5, max_value=8)
 
-        set_note_func = """
+        super().__init__(**kwargs)
+
+        self.oscillator.type = "sine"
+        self.envelope.attack = 0.001
+        self.envelope.attack_curve = "exponential"
+        self.envelope.decay = 0.4
+        self.envelope.sustain = 0.01
+        self.envelope.release = 1.4
+
+    def _get_internal_nodes(self):
+        nodes = super()._get_internal_nodes()
+        nodes.update({"pitch_decay": self._pitch_decay, "octaves": self._octaves})
+        return nodes
+
+    def _set_note_func(self):
+        return """
         // conversions
         const seconds = this.toSeconds(time);
         const hertz = this.toFrequency(note);
@@ -508,21 +552,6 @@ class MembraneSynth(Synth):
             hertz, seconds + this.toSeconds(pitchDecay.value)
         );
         """
-
-        kw = {
-            "_internal_nodes": {"pitch_decay": self._pitch_decay, "octaves": self._octaves},
-            "_set_note": set_note_func,
-        }
-
-        kwargs.update(kw)
-        super().__init__(**kwargs)
-
-        self.oscillator.type = "sine"
-        self.envelope.attack = 0.001
-        self.envelope.attack_curve = "exponential"
-        self.envelope.decay = 0.4
-        self.envelope.sustain = 0.01
-        self.envelope.release = 1.4
 
     @property
     def pitch_decay(self):
@@ -541,14 +570,6 @@ class MembraneSynth(Synth):
     @octaves.setter
     def octaves(self, value):
         self._octaves.value = value
-
-    def dispose(self):
-        with self._graph.hold_state():
-            super().dispose()
-            self._pitch_decay.dispose()
-            self._octaves.dispose()
-
-        return self
 
 
 class ModulationSynth(Monophonic):
@@ -581,46 +602,35 @@ class ModulationSynth(Monophonic):
         self._detune = Signal(units="cents", value=0)
         self._modulation_node = Gain(gain=0)
 
-        attack_func = """
+        super().__init__(**kwargs)
+
+    def _get_internal_nodes(self):
+        return {
+            "carrier": self._carrier,
+            "modulator": self._modulator,
+            "harmonicity": self._harmonicity,
+            "frequency": self._frequency,
+            "detune": self._detune,
+            "modulation_node": self._modulation_node,
+        }
+
+    def _attack_func(self):
+        return """
         this.getNode('carrier')._triggerEnvelopeAttack(time, velocity);
         this.getNode('modulator')._triggerEnvelopeAttack(time, velocity);
         """
 
-        release_func = """
+    def _release_func(self):
+        return """
         this.getNode('carrier')._triggerEnvelopeRelease(time);
         this.getNode('modulator')._triggerEnvelopeRelease(time);
         """
 
-        get_level_func = """
+    def _get_level_at_time_func(self):
+        return """
         time = this.toSeconds(time);
         this.getNode('envelope').getValueAtTime(time);
         """
-
-        kw = {
-            "_internal_nodes": {
-                "carrier": self._carrier,
-                "modulator": self._modulator,
-                "envelope": self.envelope,
-            },
-            "_trigger_attack": attack_func,
-            "_trigger_release": release_func,
-            "_get_level_at_time": get_level_func,
-            "_frequency": self._frequency,
-            "_detune": self._detune,
-        }
-        kwargs.update(kw)
-
-        super().__init__(**kwargs)
-
-    def dispose(self):
-        with self._graph.hold_state():
-            super().dispose()
-            self._frequency.dispose()
-            self._detune.dispose()
-            self._harmonicity.dispose()
-            self._modulation_node.dispose()
-
-        return self
 
     @property
     def harmonicity(self) -> Multiply:
@@ -640,17 +650,29 @@ class FMSynth(ModulationSynth):
     """
 
     def __init__(self, modulation_index=10, **kwargs):
-        super().__init__(**kwargs)
-
         self._modulation_index = Multiply(factor=modulation_index)
 
-        self.frequency.connect(self._carrier.frequency)
-        self.frequency.chain(self.harmonicity, self._modulator.frequency)
-        self.frequency.chain(self.modulation_index, self._modulation_node)
-        self.detune.fan(self._carrier.detune, self._modulator.detune)
-        self._modulator.connect(self._modulation_node.gain)
-        self._modulation_node.connect(self._carrier.frequency)
-        self._carrier.connect(self._output)
+        super().__init__(**kwargs)
+
+    def _get_internal_nodes(self):
+        nodes = super()._get_internal_nodes()
+        nodes.update({"modulation_index": self._modulation_index})
+        return nodes
+
+    def _after_init_func(self):
+        return """
+        const carrier = this.getNode('carrier');
+        const modulator = this.getNode('modulator');
+        const modulationNode = this.getNode('modulation_node');
+        // connections
+        this.frequency.connect(carrier.frequency);
+        this.frequency.chain(this.getNode('harmonicity'), modulator.frequency);
+        this.frequency.chain(this.getNode('modulation_index'), modulationNode);
+        this.detune.fan(carrier.detune, modulator.detune);
+        modulator.connect(modulationNode.gain);
+        modulationNode.connect(carrier.frequency);
+        carrier.connect(this.output);
+        """
 
     @property
     def modulation_index(self) -> Multiply:
@@ -662,13 +684,6 @@ class FMSynth(ModulationSynth):
         """
         return self._modulation_index
 
-    def dispose(self):
-        with self._graph.hold_state():
-            super().dispose()
-            self._modulation_index.dispose()
-
-        return self
-
 
 class AMSynth(ModulationSynth):
     """A synth for FM synthesis that is built with two :class:`~ipytone.Synth`
@@ -677,22 +692,27 @@ class AMSynth(ModulationSynth):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
         self._modulation_scale = AudioToGain()
 
-        self.frequency.connect(self._carrier.frequency)
-        self.frequency.chain(self.harmonicity, self._modulator.frequency)
-        self.detune.fan(self._carrier.detune, self._modulator.detune)
-        self._modulator.chain(self._modulation_scale, self._modulation_node.gain)
-        self._carrier.chain(self._modulation_node, self._output)
+        super().__init__(**kwargs)
 
-    def dispose(self):
-        with self._graph.hold_state():
-            super().dispose()
-            self._modulation_scale.dispose()
+    def _get_internal_nodes(self):
+        nodes = super()._get_internal_nodes()
+        nodes.update({"modulation_scale": self._modulation_scale})
+        return nodes
 
-        return self
+    def _after_init_func(self):
+        return """
+        const carrier = this.getNode('carrier');
+        const modulator = this.getNode('modulator');
+        const modulationNode = this.getNode('modulation_node');
+        // connections
+        this.frequency.connect(carrier.frequency);
+        this.frequency.chain(this.getNode('harmonicity'), modulator.frequency);
+        this.detune.fan(carrier.detune, modulator.detune);
+        modulator.chain(this.getNode('modulation_scale'), modulationNode.gain);
+        carrier.chain(modulationNode, this.output);
+        """
 
 
 class PolySynth(AudioNode):
