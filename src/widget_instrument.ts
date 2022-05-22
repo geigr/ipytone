@@ -168,7 +168,15 @@ class IpytoneMonophonic extends tone.Synth {
   private _internalNodes: InternalNodes;
 
   constructor(options: IpytoneMonophonicOptions) {
-    super({ volume: options.volume, portamento: options.portamento });
+    super({
+      volume: options.volume,
+      portamento: options.portamento,
+      onsilence: options.onsilence,
+    });
+
+    if (this.onsilence === undefined) {
+      this.onsilence = () => {};
+    }
 
     this._internalNodes = getInternalNodes(
       options.internalNodeModels,

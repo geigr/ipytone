@@ -168,6 +168,9 @@ class Synth(Monophonic):
 
     def _after_init_func(self):
         return """
+        // make sure polyphonic voices get released
+        this.getNode('oscillator').onstop = () => this.onsilence(this);
+        // connections
         this.getNode('oscillator').chain(this.getNode('envelope'), this.output);
         """
 
@@ -228,6 +231,9 @@ class MonoSynth(Monophonic):
 
     def _after_init_func(self):
         return """
+        // make sure polyphonic voices get released
+        this.getNode('oscillator').onstop = () => this.onsilence(this);
+        // connections
         this.getNode('oscillator').chain(
           this.getNode('filter'), this.getNode('envelope'), this.output
         );
@@ -459,19 +465,20 @@ class DuoSynth(Monophonic):
 
     def _after_init_func(self):
         return """
+        const voice0 = this.getNode('voice0');
+        const voice1 = this.getNode('voice1');
+        // make sure polyphonic voices get released
+        voice0.getNode('oscillator').onstop = () => this.onsilence(this);
+        // start vibrato right away
         this.getNode('vibrato').start();
         // connections
-        this.frequency.connect(this.getNode('voice0').frequency);
-        this.frequency.chain(this.getNode('harmonicity'), this.getNode('voice1').frequency);
+        this.frequency.connect(voice0.frequency);
+        this.frequency.chain(this.getNode('harmonicity'), voice1.frequency);
         this.getNode('vibrato').connect(this.getNode('vibrato_gain'));
-        this.getNode('vibrato_gain').fan(
-          this.getNode('voice0').detune, this.getNode('voice1').detune
-        );
-        this.detune.fan(
-          this.getNode('voice0').detune, this.getNode('voice1').detune
-        );
-        this.getNode('voice0').connect(this.output);
-        this.getNode('voice1').connect(this.output);
+        this.getNode('vibrato_gain').fan(voice0.detune, voice1.detune);
+        this.detune.fan(voice0.detune, voice1.detune);
+        voice0.connect(this.output);
+        voice1.connect(this.output);
         """
 
     def _attack_func(self):
@@ -614,6 +621,12 @@ class ModulationSynth(Monophonic):
             "modulation_node": self._modulation_node,
         }
 
+    def _after_init_func(self):
+        return """
+        // make sure polyphonic voices get released
+        this.getNode('carrier').onsilence = () => this.onsilence(this);
+        """
+
     def _attack_func(self):
         return """
         this.getNode('carrier')._triggerEnvelopeAttack(time, velocity);
@@ -660,7 +673,9 @@ class FMSynth(ModulationSynth):
         return nodes
 
     def _after_init_func(self):
-        return """
+        return (
+            super()._after_init_func()
+            + """
         const carrier = this.getNode('carrier');
         const modulator = this.getNode('modulator');
         const modulationNode = this.getNode('modulation_node');
@@ -673,6 +688,7 @@ class FMSynth(ModulationSynth):
         modulationNode.connect(carrier.frequency);
         carrier.connect(this.output);
         """
+        )
 
     @property
     def modulation_index(self) -> Multiply:
@@ -702,7 +718,9 @@ class AMSynth(ModulationSynth):
         return nodes
 
     def _after_init_func(self):
-        return """
+        return (
+            super()._after_init_func()
+            + """
         const carrier = this.getNode('carrier');
         const modulator = this.getNode('modulator');
         const modulationNode = this.getNode('modulation_node');
@@ -713,6 +731,7 @@ class AMSynth(ModulationSynth):
         modulator.chain(this.getNode('modulation_scale'), modulationNode.gain);
         carrier.chain(modulationNode, this.output);
         """
+        )
 
 
 class PolySynth(AudioNode):
