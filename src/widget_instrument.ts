@@ -175,7 +175,7 @@ class IpytoneMonophonic extends tone.Synth {
     });
 
     if (this.onsilence === undefined) {
-      this.onsilence = () => {};
+      this.onsilence = () => undefined;
     }
 
     this._internalNodes = getInternalNodes(
