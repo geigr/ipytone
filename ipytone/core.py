@@ -1,8 +1,9 @@
 import math
+import uuid
 
 import numpy as np
 from ipywidgets import Widget, widget_serialization
-from traitlets import Bool, Dict, Enum, Float, Instance, Int, Unicode, Union
+from traitlets import Bool, Dict, Enum, Float, Instance, Int, List, Unicode, Union
 from traittypes import Array
 
 from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext, ToneObject
@@ -56,6 +57,66 @@ class InternalAudioNode(AudioNode):
     def _repr_keys(self):
         if self.type:
             yield "type"
+
+
+class ScheduleObserveMixin(Widget):
+    """Adds the ability to observe from within Python the current value of
+    a Parameter / Signal or Meter node.
+
+    The ``current_value`` (read-only) trait is used so that it does not interfer
+    with the ``value`` trait of the Parameter / Signal, which can be set from the
+    Python side.
+
+    TODO: only one observed handler should be allowed. Multiple handlers could be
+    associated with updates of ``current_value`` at different intervals but they
+    will all be called at every update of ``current_value``, which makes not much
+    sense.
+
+    """
+
+    current_value = Union(
+        (Float(), Int(), Unicode()), help="Param / Signal / Meter current value", read_only=True
+    ).tag(sync=True)
+
+    def schedule_observe(self, handler, repeat_interval=1, transport=False):
+        """Setup a handler to be called at regular intervals with the updated
+        ``current_value`` trait of this param / signal / meter node.
+
+        Parameters
+        ----------
+        handler : callable
+            A callable that is called when the ``current_value`` trait is updated at
+            regular intervals. The signature of the callable is similar
+            to the signature expected by :func:`ipywidgets.Widget.observe`.
+            Note that the handler will only apply to the ``current_value`` trait.
+        repeat_interval : float or string, optional
+            The interval at which the ``current_value`` trait is updated in the front-end,
+            in seconds (default: 1). If ``transport=True``, any interval accepted by
+            :func:`~ipytone.transport.schedule_repeat` is also valid here.
+        transport : bool, optional
+            if True, the value update is scheduled on the :class:`ipytone.Transport`
+            timeline, i.e., the handler is not called until the transport starts and
+            will stop being called when the transport stops. If False (default),
+            the value update is done in real-time.
+
+        """
+        data = {
+            "event": "scheduleObserve",
+            "repeat_interval": repeat_interval,
+            "transport": transport,
+            "hash_handler": hash(handler),
+        }
+        self.send(data)
+
+        self.observe(handler, names="current_value")
+
+    def schedule_unobserve(self, handler):
+        """Cancel the scheduled updates of the ``current_value`` trait associated
+        with the given handler.
+
+        """
+        self.send({"event": "scheduleUnobserve", "hash_handler": hash(handler)})
+        self.unobserve(handler, names="current_value")
 
 
 class ParamScheduleMixin:
@@ -204,7 +265,7 @@ class ParamScheduleMixin:
         return self
 
 
-class Param(NodeWithContext, ParamScheduleMixin):
+class Param(NodeWithContext, ParamScheduleMixin, ScheduleObserveMixin):
     """Single, automatable parameter with units."""
 
     _model_name = Unicode("ParamModel").tag(sync=True)

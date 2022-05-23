@@ -4,7 +4,12 @@ import * as tone from 'tone';
 
 import { UnitMap, UnitName } from 'tone/Tone/core/type/Units';
 
-import { normalizeArguments } from './utils';
+import {
+  normalizeArguments,
+  ObserveEventMap,
+  scheduleObserve,
+  scheduleUnobserve,
+} from './utils';
 
 import {
   AudioNodeModel,
@@ -57,6 +62,7 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
       _create_node: true,
       _input: null,
       value: 0,
+      current_value: 0,
       convert: true,
       _units: 'number',
       _min_value: undefined,
@@ -84,6 +90,8 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
       });
       this.input.node = this.node.input;
     }
+
+    this.eventMap = {};
   }
 
   get input(): NativeAudioParamModel | NativeAudioNodeModel {
@@ -156,8 +164,22 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
     }
   }
 
-  private handleMsg(command: any, buffers: any): void {
-    if (command.event === 'trigger') {
+  eventMap: ObserveEventMap;
+
+  private handleMsg(command: any, _buffers: any): void {
+    if (command.event === 'scheduleObserve') {
+      const event = scheduleObserve(
+        this,
+        command.transport,
+        command.repeat_interval
+      );
+      this.eventMap[command.hash_handler] = event;
+      console.log(this.eventMap);
+    } else if (command.event === 'scheduleUnobserve') {
+      scheduleUnobserve(command.hash_handler, this.eventMap);
+      delete this.eventMap[command.hash_handler];
+      console.log(this.eventMap);
+    } else if (command.event === 'trigger') {
       const argsArray = normalizeArguments(command.args, command.arg_keys);
       (this.node as any)[command.method](...argsArray);
     }
