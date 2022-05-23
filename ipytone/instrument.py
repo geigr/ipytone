@@ -2,11 +2,11 @@ import re
 from textwrap import dedent
 
 from ipywidgets import widget_serialization
-from traitlets import Dict, Float, Instance, Int, List, Tuple, Unicode, Union, validate
+from traitlets import Bool, Dict, Enum, Float, Instance, Int, List, Tuple, Unicode, Union, validate
 
 from .base import NodeWithContext
 from .callback import add_or_send_event
-from .core import AudioNode, Gain, Param, Volume
+from .core import AudioNode, AudioBuffers, Gain, Param, Volume
 from .envelope import AmplitudeEnvelope, FrequencyEnvelope
 from .filter import Filter, LowpassCombFilter
 from .signal import AudioToGain, Multiply, Signal
@@ -833,4 +833,78 @@ class PolySynth(AudioNode):
 
     def release_all(self, time=None):
         add_or_send_event("releaseAll", self, {"time": time})
+        return self
+
+
+class Sampler(AudioNode):
+    """Plays loaded samples mapped to midi notes."""
+
+    _model_name = Unicode("SamplerModel").tag(sync=True)
+
+    _buffers = Instance(AudioBuffers).tag(sync=True, **widget_serialization)
+
+    attack = Float(0.0, help="Envelope attack").tag(sync=True)
+    release = Float(1.0, help="Envelope release").tag(sync=True)
+    curve = Enum(["linear", "exponential"], default_value="exponential", help="envelope curve").tag(
+        sync=True
+    )
+
+    def __init__(self, urls, base_url="", volume=0, **kwargs):
+        buffers = AudioBuffers(urls, base_url=base_url, _create_node=False)
+        output = Volume(volume=volume, _create_node=False)
+
+        kwargs.update({"_buffers": buffers, "_output": output})
+        super().__init__(**kwargs)
+
+    @property
+    def volume(self) -> Param:
+        """The volume parameter."""
+        return self._output.volume
+
+    @property
+    def loaded(self):
+        """Returns True if all audio buffers are loaded."""
+        return self._buffers.loaded
+
+    def add(self, note, url):
+        """Add a player.
+
+        Parameters
+        ----------
+        key : str
+            Buffer name.
+        url : str or :class:`AudioBuffer`.
+            Buffer file URL (str) or :class:`AudioBuffer` object.
+
+        """
+        if note in self._buffers.buffers:
+            raise ValueError(f"A buffer with name '{note}' already exists on this object.")
+
+        self._buffers.add(note, url)
+
+        return self
+
+    def trigger_attack(self, notes, time=None, velocity=1):
+        args = {"notes": notes, "time": time, "velocity": velocity}
+        add_or_send_event("triggerAttack", self, args)
+        return self
+
+    def trigger_release(self, time=None):
+        add_or_send_event("triggerRelease", self, {"time": time})
+        return self
+
+    def trigger_attack_release(self, notes, duration, time=None, velocity=1):
+        args = {"notes": notes, "duration": duration, "time": time, "velocity": velocity}
+        add_or_send_event("triggerAttackRelease", self, args)
+        return self
+
+    def release_all(self, time=None):
+        add_or_send_event("releaseAll", self, {"time": time})
+        return self
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._buffers.dispose()
+
         return self

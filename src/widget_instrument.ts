@@ -6,9 +6,10 @@ import { normalizeArguments } from './utils';
 
 import { AudioNodeModel } from './widget_base';
 
-import { ParamModel, VolumeModel } from './widget_core';
-import { Signal } from 'tone';
+import { AudioBuffersModel, ParamModel, VolumeModel } from './widget_core';
+
 import { SignalModel } from './widget_signal';
+
 import { OscillatorModel } from './widget_source';
 
 interface InternalNodeModels {
@@ -226,14 +227,14 @@ class IpytoneMonophonic extends tone.Synth {
       writable: true,
     });
     if ('frequency' in this._internalNodes) {
-      this.frequency = this.getNode('frequency') as Signal<'frequency'>;
+      this.frequency = this.getNode('frequency') as tone.Signal<'frequency'>;
     } else {
       this.frequency = (
         this.getNode('oscillator') as tone.Oscillator
       ).frequency;
     }
     if ('detune' in this._internalNodes) {
-      this.detune = this.getNode('detune') as Signal<'cents'>;
+      this.detune = this.getNode('detune') as tone.Signal<'cents'>;
     } else {
       this.detune = (this.getNode('oscillator') as tone.Oscillator).detune;
     }
@@ -532,4 +533,68 @@ export class PolySynthModel extends AudioNodeModel {
   node: tone.PolySynth;
 
   static model_name = 'PolySynthModel';
+}
+
+export class SamplerModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: SamplerModel.model_name,
+      _buffers: null,
+      attack: 0,
+      release: 1,
+      curve: 'exponential',
+    };
+  }
+
+  createNode(): tone.Sampler {
+    const sampler = new tone.Sampler({
+      attack: this.get('attack'),
+      release: this.get('release'),
+      curve: this.get('curve'),
+      urls: this.buffers.buffer_nodes,
+    });
+
+    // Hack: allows reusing AudioBuffers widget from the Python side
+    // TODO: tone.Sampler may convert buffer map keys to midi notes
+    // -> need to get it back as strings
+    //this.buffers.setNode((sampler as any)._buffers);
+
+    return sampler;
+  }
+
+  get buffers(): AudioBuffersModel {
+    return this.get('_buffers');
+  }
+
+  private handleMsg(command: any, _buffers: any): void {
+    if (command.event === 'trigger') {
+      const argsArray = normalizeArguments(command.args, command.arg_keys);
+      (this.node as any)[command.method](...argsArray);
+    }
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:attack', () => {
+      this.node.attack = this.get('attack');
+    });
+    this.on('change:release', () => {
+      this.node.release = this.get('release');
+    });
+    this.on('change:curve', () => {
+      this.node.curve = this.get('curve');
+    });
+    this.on('msg:custom', this.handleMsg, this);
+  }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _buffers: { deserialize: unpack_models as any },
+  };
+
+  node: tone.Sampler;
+
+  static model_name = 'SamplerModel';
 }
