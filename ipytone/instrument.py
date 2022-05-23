@@ -2,7 +2,7 @@ import re
 from textwrap import dedent
 
 from ipywidgets import widget_serialization
-from traitlets import Dict, Float, Instance, List, Tuple, Unicode, Union, validate
+from traitlets import Dict, Float, Instance, Int, List, Tuple, Unicode, Union, validate
 
 from .base import NodeWithContext
 from .callback import add_or_send_event
@@ -758,6 +758,7 @@ class PolySynth(AudioNode):
     _model_name = Unicode("PolySynthModel").tag(sync=True)
 
     _dummy_voice = Instance(Monophonic).tag(sync=True, **widget_serialization)
+    max_polyphony = Int(32, help="Max. number of polyphonic voices alloweed").tag(sync=True)
 
     def __init__(self, voice=Synth, volume=0, **kwargs):
         output = Volume(volume=volume, _create_node=False)

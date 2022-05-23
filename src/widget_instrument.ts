@@ -397,6 +397,7 @@ export class PolySynthModel extends AudioNodeModel {
       ...super.defaults(),
       _model_name: PolySynthModel.model_name,
       _dummy_voice: null,
+      max_polyphony: 32,
     };
   }
 
@@ -409,6 +410,7 @@ export class PolySynthModel extends AudioNodeModel {
     options.createInternalNodes = true;
 
     return new tone.PolySynth({
+      maxPolyphony: this.get('max_polyphony'),
       voice: IpytoneMonophonic,
       options: options as any,
     });
@@ -424,6 +426,9 @@ export class PolySynthModel extends AudioNodeModel {
   initEventListeners(): void {
     super.initEventListeners();
 
+    this.on('change:max_polyphony', () => {
+      this.node.maxPolyphony = this.get('max_polyphony');
+    });
     this.on('msg:custom', this.handleMsg, this);
   }
 

@@ -302,6 +302,8 @@ def test_amsynth():
 def test_polysynth():
     synth = PolySynth()
 
+    assert synth.max_polyphony == 32
+
     assert isinstance(synth._dummy_voice, Synth)
     # dummy_voice should be already disposed (not used directly)
     assert synth._dummy_voice.disposed is True
