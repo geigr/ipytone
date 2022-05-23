@@ -304,9 +304,10 @@ def test_polysynth():
 
     assert synth.max_polyphony == 32
 
-    assert isinstance(synth._dummy_voice, Synth)
+    assert isinstance(synth.voice, Synth)
+    assert synth.voice is synth._dummy_voice
     # dummy_voice should be already disposed (not used directly)
-    assert synth._dummy_voice.disposed is True
+    assert synth.voice.disposed is True
 
     assert isinstance(synth.output, Volume)
     assert synth.input is None

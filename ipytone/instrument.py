@@ -111,12 +111,17 @@ class Monophonic(Instrument):
     _set_note = Unicode(help="set note JS callback").tag(sync=True)
     _get_level_at_time = Unicode(help="get level at time JS callback").tag(sync=True)
 
+    _settings = Dict(key_trait=Unicode(), value_trait=List(Unicode())).tag(
+        sync=True, **widget_serialization
+    )
+
     portamento = Float(0, help="glide time between notes").tag(sync=True)
 
     def __init__(self, **kwargs):
         kw = {
             "_set_note": self._set_note_func(),
             "_get_level_at_time": self._get_level_at_time_func(),
+            "_settings": self._get_settings(),
         }
         kwargs.update(kw)
 
@@ -127,6 +132,9 @@ class Monophonic(Instrument):
 
     def _get_level_at_time_func(self):
         raise NotImplementedError()
+
+    def _get_settings(self):
+        return {}
 
     @validate("_set_note")
     def _minify_set_note(self, proposal):
@@ -165,6 +173,12 @@ class Synth(Monophonic):
 
     def _get_internal_nodes(self):
         return {"oscillator": self.oscillator, "envelope": self.envelope}
+
+    def _get_settings(self):
+        return {
+            "oscillator": ["type"],
+            "envelope": ["attack", "decay", "sustain", "release"],
+        }
 
     def _after_init_func(self):
         return """
@@ -227,6 +241,14 @@ class MonoSynth(Monophonic):
             "filter_envelope": self.filter_envelope,
             "oscillator": self.oscillator,
             "filter": self.filter,
+        }
+
+    def _get_settings(self):
+        return {
+            "oscillator": ["type"],
+            "envelope": ["attack", "decay", "sustain", "release"],
+            "filter": ["type", "rolloff", "q"],
+            "filter_envelope": ["attack", "decay", "sustain", "release"],
         }
 
     def _after_init_func(self):
@@ -443,7 +465,7 @@ class DuoSynth(Monophonic):
             setattr(self.voice1.envelope, k, v)
             setattr(self.voice1.filter_envelope, k, v)
 
-        self._harmonicity = Multiply(units="positive", value=harmonicity)
+        self._harmonicity = Multiply(units="positive", factor=harmonicity)
         self._vibrato = LFO(frequency=vibrato_rate, min=-50, max=50)
         self._vibrato_gain = Gain(units="normalRange", gain=vibrato_amount)
 
@@ -461,6 +483,19 @@ class DuoSynth(Monophonic):
             "vibrato_gain": self._vibrato_gain,
             "frequency": self._frequency,
             "detune": self._detune,
+        }
+
+    def _get_settings(self):
+        return {
+            # TODO: voice0 / voice1 nested settings (reuse self.voice0._get_settings(), etc.)
+            # also nested settings via Signal value.
+            # Note: Tone.js may have different names for the option to set and its corresponding property
+            # (e.g., Multiply.factor initialized with option.value)
+            #"harmonicity": ["factor"],
+            # Note: different names between the widget model trait name (e.g., LFO._frequency) and the
+            # Tone.js property or option to set.
+            #"vibrato": ["frequency"],
+            #"vibrato_gain": ["gain"],
         }
 
     def _after_init_func(self):
@@ -735,25 +770,7 @@ class AMSynth(ModulationSynth):
 
 
 class PolySynth(AudioNode):
-    """Need to figure out how to reconstruct the internal nodes
-    and their connections when the voice ``IpytoneMonophonic`` constructor
-    is called in the front-end (within tone.PolySynth).
-
-    This should be doable:
-
-    - for each internal node can re-call ``createNode`` from its
-    corresponding model in the front-end
-
-    - we could refactor how internal nodes are connected in Instrument
-    subclasses, e.g., create a trait List(Tuple(Unicode, Unicode)) representing
-    all connections (src, dest) so that it can be used for connecting the nodes
-    either in the backend or in the front-end.
-
-    - add an option to ``IpytoneMonophonic`` constructor to whether create new
-    nodes and connect them in the front-end or simply get the existing nodes
-    that were created from the backend.
-
-    """
+    """A PolySynth allows any given monophonic synthesizer to be polyphonic."""
 
     _model_name = Unicode("PolySynthModel").tag(sync=True)
 
@@ -761,20 +778,44 @@ class PolySynth(AudioNode):
     max_polyphony = Int(32, help="Max. number of polyphonic voices alloweed").tag(sync=True)
 
     def __init__(self, voice=Synth, volume=0, **kwargs):
+        """
+
+        Parameters
+        ----------
+        voice : subclass of :class:`~ipytone.Monophonic`
+            Any monophonic type used to create each voice of the poly-synth.
+        volume : int
+            Output volume (in decibels).
+
+        """
         output = Volume(volume=volume, _create_node=False)
 
-        # only used to retrieve the voice constructor arguments in the front-end
+        # only used to retrieve the voice constructor arguments in the front-end and to
+        # change synth parameters
         # -> dispose below
-        dummy_voice = voice()
+        self._dummy_voice = voice(volume=volume)
 
-        kwargs.update({"_input": None, "_output": output, "_dummy_voice": dummy_voice})
+        kwargs.update({"_input": None, "_output": output, "_dummy_voice": self._dummy_voice})
         super().__init__(**kwargs)
 
-        dummy_voice.dispose()
+        self._dummy_voice.dispose()
 
     @property
     def volume(self) -> Param:
         return self._output.volume
+
+    @property
+    def voice(self) -> Monophonic:
+        """Returns an instance of the :class:`~ipytone.Monophonic` class used to
+        create all the voices of this PolySynth.
+
+        Although the individual voices used by the ``PolySynth`` to generate the
+        single notes are not accessible, you can use this (deactivated) voice to change
+        some parameters of this PolySynth. Changing the value of a trait accessed
+        through this property will automatically update all active voices.
+
+        """
+        return self._dummy_voice
 
     def trigger_attack(self, notes, time=None, velocity=1):
         args = {"notes": notes, "time": time, "velocity": velocity}

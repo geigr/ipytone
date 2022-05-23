@@ -8,6 +8,8 @@ import { AudioNodeModel } from './widget_base';
 
 import { ParamModel, VolumeModel } from './widget_core';
 import { Signal } from 'tone';
+import { SignalModel } from './widget_signal';
+import { OscillatorModel } from './widget_source';
 
 interface InternalNodeModels {
   [name: string]: AudioNodeModel;
@@ -104,16 +106,9 @@ class IpytoneInstrument extends tone.PluckSynth {
     this._lfcf.dispose();
   }
 
-  dispose(): this {
-    super.dispose();
-
-    Object.values(this._internalNodes).forEach((node) => {
-      node.dispose();
-    });
-
-    return this;
-  }
-
+  /*
+   * Allows getting internal (Tone) node instances by their name.
+   */
   getNode(name: string): tone.ToneAudioNode | tone.Param {
     return this._internalNodes[name];
   }
@@ -129,6 +124,16 @@ class IpytoneInstrument extends tone.PluckSynth {
 
   triggerRelease(...args: any[]): this {
     this._triggerReleaseFunc(...args);
+    return this;
+  }
+
+  dispose(): this {
+    super.dispose();
+
+    Object.values(this._internalNodes).forEach((node) => {
+      node.dispose();
+    });
+
     return this;
   }
 }
@@ -251,16 +256,9 @@ class IpytoneMonophonic extends tone.Synth {
     this.envelope.dispose();
   }
 
-  dispose(): this {
-    super.dispose();
-
-    Object.values(this._internalNodes).forEach((node) => {
-      node.dispose();
-    });
-
-    return this;
-  }
-
+  /*
+   * Allows getting internal (Tone) node instances by their name.
+   */
   getNode(name: string): tone.ToneAudioNode | tone.Param {
     return this._internalNodes[name];
   }
@@ -285,6 +283,35 @@ class IpytoneMonophonic extends tone.Synth {
 
   getLevelAtTime(time: tone.Unit.Time): tone.Unit.NormalRange {
     return this._getLevelAtTimeFunc(time);
+  }
+
+  /*
+   * Overwrite the `set` function to allow updating settings of internal nodes.
+   * This is used internally via PolySynth.
+   */
+  set(props: any): this {
+    Object.entries(props).forEach(([nodeName, nodeProps]) => {
+      const node = this.getNode(nodeName);
+
+      Object.entries(nodeProps as any).forEach(([propName, value]) => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        //@ts-ignore
+        //node.set({type: 'sine'});
+        node.set({ [propName]: value });
+      });
+    });
+
+    return this;
+  }
+
+  dispose(): this {
+    super.dispose();
+
+    Object.values(this._internalNodes).forEach((node) => {
+      node.dispose();
+    });
+
+    return this;
   }
 }
 
@@ -349,6 +376,10 @@ export class InstrumentModel extends BaseInstrumentModel<IpytoneInstrument> {
   static model_name = 'InstrumentModel';
 }
 
+interface MonophonicSettings {
+  [key: string]: string[];
+}
+
 export class MonophonicModel extends BaseInstrumentModel<IpytoneMonophonic> {
   defaults(): any {
     return {
@@ -356,18 +387,24 @@ export class MonophonicModel extends BaseInstrumentModel<IpytoneMonophonic> {
       _model_name: MonophonicModel.model_name,
       _set_note: '',
       _get_level_at_time: '',
+      _settings: {},
       portamento: 0,
     };
   }
 
+  /*
+   * createInternalNodes = true allows to create a new IpytoneMonophonic
+   * instance that itself encapsulates other IpytoneMonophonic instances
+   * (e.g., a DuoSynth instance encapsulates two MonoSynth instrances).
+   */
   createNode(createInternalNodes = false): IpytoneMonophonic {
-    const options = this.getOptions();
+    const options = this.nodeOptions;
     options.createInternalNodes = createInternalNodes;
 
     return new IpytoneMonophonic(options);
   }
 
-  getOptions(): IpytoneMonophonicOptions {
+  get nodeOptions(): IpytoneMonophonicOptions {
     return {
       volume: this.volume.value,
       triggerAttack: this.get('_trigger_attack'),
@@ -375,9 +412,25 @@ export class MonophonicModel extends BaseInstrumentModel<IpytoneMonophonic> {
       afterInit: this.get('_after_init'),
       setNote: this.get('_set_note'),
       getLevelAtTime: this.get('_get_level_at_time'),
-      internalNodeModels: this.get('_internal_nodes'),
+      internalNodeModels: this.internalNodeModels,
       portamento: this.get('portamento'),
     };
+  }
+
+  get settings(): MonophonicSettings {
+    return this.get('_settings');
+  }
+
+  get internalNodeModels(): InternalNodeModels {
+    return this.get('_internal_nodes');
+  }
+
+  get detune(): SignalModel<'cents'> {
+    if ('detune' in this.internalNodeModels) {
+      return this.internalNodeModels['detune'] as SignalModel<'cents'>;
+    } else {
+      return (this.internalNodeModels['oscillator'] as OscillatorModel).detune;
+    }
   }
 
   initEventListeners(): void {
@@ -406,7 +459,7 @@ export class PolySynthModel extends AudioNodeModel {
   }
 
   createNode(): tone.PolySynth {
-    const options = this.dummyVoice.getOptions();
+    const options = this.dummyVoice.nodeOptions;
     options.createInternalNodes = true;
 
     return new tone.PolySynth({
@@ -423,8 +476,38 @@ export class PolySynthModel extends AudioNodeModel {
     }
   }
 
+  /*
+   * Add event listeners that allow to update each voice of the
+   * PolySynth when any setting of its dummy voice is updated.
+   */
+  addSettingsEventListeners(): void {
+    const detuneModel = this.dummyVoice.detune;
+
+    detuneModel.on('change:value', () => {
+      this.node.set({detune: detuneModel.get('value')});
+    });
+
+    const settings = this.dummyVoice.settings;
+
+    Object.entries(settings).forEach(([nodeName, propNames]) => {
+      const nodeModel = this.dummyVoice.internalNodeModels[nodeName];
+
+      Object.values(propNames).forEach((propName) => {
+        nodeModel.on(`change:${propName}`, () => {
+          const props: { [key: string]: { [key: string]: any } } = {};
+          props[nodeName] = {};
+          props[nodeName][propName] = nodeModel.get(propName);
+
+          this.node.set(props);
+        });
+      });
+    });
+  }
+
   initEventListeners(): void {
     super.initEventListeners();
+
+    this.addSettingsEventListeners();
 
     this.on('change:max_polyphony', () => {
       this.node.maxPolyphony = this.get('max_polyphony');
