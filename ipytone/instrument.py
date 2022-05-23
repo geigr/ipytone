@@ -871,8 +871,8 @@ class Sampler(AudioNode):
 
         Parameters
         ----------
-        key : str
-            Buffer name.
+        note : str
+            Buffer key (must be a midi note).
         url : str or :class:`AudioBuffer`.
             Buffer file URL (str) or :class:`AudioBuffer` object.
 

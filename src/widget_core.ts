@@ -480,8 +480,18 @@ export class AudioBuffersModel extends ToneObjectModel {
   setNode(node: tone.ToneAudioBuffers): void {
     this.node = node;
 
-    this.buffers.forEach((buf: AudioBufferModel, key: string) => {
-      buf.setNode(node.get(key));
+    this.buffers.forEach((buf: AudioBufferModel, key: string | number) => {
+      let bufferNode: tone.ToneAudioBuffer;
+
+      if (node.has(key)) {
+        bufferNode = node.get(key);
+      } else {
+        // try with key converted to Midi (case of tone.Sampler)
+        const keyMidi = new tone.FrequencyClass(tone.context, key).toMidi();
+        bufferNode = node.get(keyMidi);
+      }
+
+      buf.setNode(bufferNode);
     });
   }
 

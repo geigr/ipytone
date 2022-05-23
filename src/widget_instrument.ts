@@ -556,9 +556,7 @@ export class SamplerModel extends AudioNodeModel {
     });
 
     // Hack: allows reusing AudioBuffers widget from the Python side
-    // TODO: tone.Sampler may convert buffer map keys to midi notes
-    // -> need to get it back as strings
-    //this.buffers.setNode((sampler as any)._buffers);
+    this.buffers.setNode((sampler as any)._buffers);
 
     return sampler;
   }

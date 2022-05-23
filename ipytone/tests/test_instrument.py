@@ -15,6 +15,7 @@ from ipytone.instrument import (
     NoiseSynth,
     PluckSynth,
     PolySynth,
+    Sampler,
     Synth,
 )
 from ipytone.source import Noise, OmniOscillator, Oscillator
@@ -338,3 +339,53 @@ def test_polysynth_trigger(mocker, method, js_method, kwargs):
     i = getattr(inst, method)(**kwargs)
     assert i is inst
     inst.send.assert_called_once_with(expected)
+
+
+def test_sampler():
+    sampler = Sampler({"A1": "a1.wav", "A2": "a2.wav"})
+
+    assert isinstance(sampler.output, Volume)
+    assert sampler.volume.value == 0
+    assert sampler.loaded is False
+    assert sampler.attack == 0
+    assert sampler.release == 1
+    assert sampler.curve == "exponential"
+
+    assert "A1" in sampler._buffers.buffers
+    assert "A2" in sampler._buffers.buffers
+
+    s = sampler.add("A3", "a3.mp3")
+    assert s is sampler
+    assert "A3" in sampler._buffers.buffers
+
+    with pytest.raises(ValueError, match=r"A buffer with name.*"):
+        sampler.add("A3", "a3_alt.mp3")
+
+    s = sampler.dispose()
+    assert s is sampler
+    assert sampler._buffers.disposed is True
+
+
+@pytest.mark.parametrize(
+    "method,js_method,kwargs",
+    [
+        ("trigger_attack", "triggerAttack", {"notes": ["C3", "C4"], "time": None, "velocity": 1}),
+        ("trigger_release", "triggerRelease", {"time": None}),
+        (
+            "trigger_attack_release",
+            "triggerAttackRelease",
+            {"notes": ["C3", "C4"], "duration": [1, 2], "time": None, "velocity": 1},
+        ),
+        ("release_all", "releaseAll", {"time": None}),
+    ],
+)
+def test_sampler_trigger(mocker, method, js_method, kwargs):
+    sampler = Sampler({})
+    mocker.patch.object(sampler, "send")
+
+    args = {k: {"value": v, "eval": False} for k, v in kwargs.items()}
+    expected = {"event": "trigger", "method": js_method, "args": args, "arg_keys": list(kwargs)}
+
+    i = getattr(sampler, method)(**kwargs)
+    assert i is sampler
+    sampler.send.assert_called_once_with(expected)
