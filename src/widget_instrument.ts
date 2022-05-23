@@ -291,7 +291,13 @@ class IpytoneMonophonic extends tone.Synth {
    */
   set(props: any): this {
     Object.entries(props).forEach(([nodeName, nodeProps]) => {
-      const node = this.getNode(nodeName);
+      let node: tone.ToneAudioNode | tone.Param;
+
+      if (nodeName === 'detune') {
+        node = this.detune;
+      } else {
+        node = this.getNode(nodeName);
+      }
 
       Object.entries(nodeProps as any).forEach(([propName, value]) => {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -484,7 +490,10 @@ export class PolySynthModel extends AudioNodeModel {
     const detuneModel = this.dummyVoice.detune;
 
     detuneModel.on('change:value', () => {
-      this.node.set({detune: detuneModel.get('value')});
+      const props: { [key: string]: { [key: string]: any } } = {};
+      props['detune'] = {};
+      props['detune']['value'] = detuneModel.get('value');
+      this.node.set(props);
     });
 
     const settings = this.dummyVoice.settings;
