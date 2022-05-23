@@ -205,7 +205,7 @@ def test_duosynth():
             assert env.sustain == 1
             assert env.release == 0.5
 
-    assert synth.harmonicity.value == 1.5
+    assert synth.harmonicity.factor.value == 1.5
     assert synth.vibrato_rate.value == 5
     assert synth.vibrato_amount.value == 0.5
     assert synth.frequency.value == 440
@@ -325,6 +325,7 @@ def test_polysynth():
             "triggerAttackRelease",
             {"notes": ["C3", "C4"], "duration": [1, 2], "time": None, "velocity": 1},
         ),
+        ("release_all", "releaseAll", {"time": None}),
     ],
 )
 def test_polysynth_trigger(mocker, method, js_method, kwargs):

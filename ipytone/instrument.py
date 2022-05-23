@@ -491,11 +491,11 @@ class DuoSynth(Monophonic):
             # also nested settings via Signal value.
             # Note: Tone.js may have different names for the option to set and its corresponding property
             # (e.g., Multiply.factor initialized with option.value)
-            #"harmonicity": ["factor"],
+            # "harmonicity": ["factor"],
             # Note: different names between the widget model trait name (e.g., LFO._frequency) and the
             # Tone.js property or option to set.
-            #"vibrato": ["frequency"],
-            #"vibrato_gain": ["gain"],
+            # "vibrato": ["frequency"],
+            # "vibrato_gain": ["gain"],
         }
 
     def _after_init_func(self):
@@ -537,7 +537,7 @@ class DuoSynth(Monophonic):
         """
 
     @property
-    def harmonicity(self) -> Signal:
+    def harmonicity(self) -> Multiply:
         """Ratio between the two voices.
 
         A harmonicity of 1 is no change. Harmonicity = 2 means a change
@@ -829,4 +829,8 @@ class PolySynth(AudioNode):
     def trigger_attack_release(self, notes, duration, time=None, velocity=1):
         args = {"notes": notes, "duration": duration, "time": time, "velocity": velocity}
         add_or_send_event("triggerAttackRelease", self, args)
+        return self
+
+    def release_all(self, time=None):
+        add_or_send_event("releaseAll", self, {"time": time})
         return self
