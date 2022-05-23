@@ -2,11 +2,11 @@ import re
 from textwrap import dedent
 
 from ipywidgets import widget_serialization
-from traitlets import Bool, Dict, Enum, Float, Instance, Int, List, Tuple, Unicode, Union, validate
+from traitlets import Dict, Enum, Float, Instance, Int, List, Unicode, validate
 
 from .base import NodeWithContext
 from .callback import add_or_send_event
-from .core import AudioNode, AudioBuffers, Gain, Param, Volume
+from .core import AudioBuffers, AudioNode, Gain, Param, Volume
 from .envelope import AmplitudeEnvelope, FrequencyEnvelope
 from .filter import Filter, LowpassCombFilter
 from .signal import AudioToGain, Multiply, Signal
