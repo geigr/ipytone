@@ -212,6 +212,23 @@ export class GreaterThanModel extends SignalModel<'number'> {
   static model_name = 'GreaterThanModel';
 }
 
+export class AudioToGainModel extends SignalOperatorModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: AudioToGainModel.model_name,
+    };
+  }
+
+  createNode(): tone.AudioToGain {
+    return new tone.AudioToGain();
+  }
+
+  node: tone.AudioToGain;
+
+  static model_name = 'AudioToGainModel';
+}
+
 export class AbsModel extends SignalOperatorModel {
   defaults(): any {
     return {

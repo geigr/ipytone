@@ -223,7 +223,7 @@ abstract class BaseOscillatorModel extends SourceModel {
 
     this.on('change:type', () => {
       // partials changed -> tone updates the type)
-      if (!this.get('type').endsWidth('custom')) {
+      if (!this.get('type').endsWith('custom')) {
         this.node.type = this.get('type');
         this.maybeSetArray();
       }

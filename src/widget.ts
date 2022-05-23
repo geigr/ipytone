@@ -14,6 +14,7 @@ export * from './widget_event';
 export * from './widget_envelope';
 export * from './widget_filter';
 export * from './widget_graph';
+export * from './widget_instrument';
 export * from './widget_signal';
 export * from './widget_source';
 export * from './widget_transport';
