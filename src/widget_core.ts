@@ -4,7 +4,7 @@ import * as tone from 'tone';
 
 import { UnitMap, UnitName } from 'tone/Tone/core/type/Units';
 
-import { normalizeArguments } from './utils';
+import { assert, normalizeArguments } from './utils';
 
 import { ObservableModel } from './widget_observe';
 
@@ -137,11 +137,13 @@ export class ParamModel<T extends UnitName>
     return opts;
   }
 
-  getValueAtTime(time: tone.Unit.Seconds): UnitMap[T] {
+  getValueAtTime(traitName: string, time: tone.Unit.Seconds): UnitMap[T] {
+    assert(traitName === 'value', 'param only supports "value" trait');
     return this.node.getValueAtTime(time);
   }
 
-  getValue(): UnitMap[T] {
+  getValue(traitName: string): UnitMap[T] {
+    assert(traitName === 'value', 'param only supports "value" trait');
     return this.node.value;
   }
 

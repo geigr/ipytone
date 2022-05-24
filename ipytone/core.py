@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 from ipywidgets import Widget, widget_serialization
-from traitlets import Bool, Dict, Enum, Float, Instance, Int, Unicode, Union
+from traitlets import Bool, Dict, Enum, Float, Instance, Int, List, Unicode, Union
 from traittypes import Array
 
 from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext, ToneObject
@@ -222,6 +222,8 @@ class Param(NodeWithContext, ParamScheduleMixin, ScheduleObserveMixin):
     _swappable = Bool(False).tag(sync=True)
     overridden = Bool(False).tag(sync=True)
     convert = Bool(help="If True, convert the value into the specified units").tag(sync=True)
+
+    _observable_traits = List(["value"])
 
     def __init__(
         self,

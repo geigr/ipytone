@@ -1,5 +1,11 @@
 import { NodeWithContextModel } from './widget_base';
 
+export function assert(statement: boolean, error: string): asserts statement {
+  if (!statement) {
+    throw new Error(error);
+  }
+}
+
 export type callbackArgs = { [key: string]: { eval: boolean; value: any } };
 
 export type callbackItem = {

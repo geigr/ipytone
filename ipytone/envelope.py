@@ -36,6 +36,8 @@ class Envelope(AudioNode, ScheduleObserveMixin):
     array_length = Int(1024, help="Envelope data resolution (array length)").tag(sync=True)
     sync_array = Bool(False, help="If True, synchronize envelope data").tag(sync=True)
 
+    _observable_traits = List(["value"])
+
     def __init__(self, **kwargs):
         if "_output" not in kwargs:
             out_node = Signal(units="normalRange", _create_node=False)

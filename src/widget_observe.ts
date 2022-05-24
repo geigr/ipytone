@@ -16,9 +16,11 @@ type ScheduleObserverCommand = {
   draw: boolean;
 };
 
+type TraitValue = tone.Unit.Unit | tone.PlaybackState;
+
 export interface ObservableModel {
-  getValueAtTime: (time: tone.Unit.Seconds) => tone.Unit.Unit;
-  getValue: () => tone.Unit.Unit;
+  getValueAtTime: (traitName: string, time: tone.Unit.Seconds) => TraitValue;
+  getValue: (traitName: string) => TraitValue;
 }
 
 export class ScheduleObserverModel extends ToneWidgetModel {
@@ -28,9 +30,11 @@ export class ScheduleObserverModel extends ToneWidgetModel {
       _model_name: ScheduleObserverModel.model_name,
       observed_widget: null,
       observed_trait: 'value',
+      observe_time: false,
       time: 0.0,
       value: 0.0,
       time_value: [],
+      state: 'stopped',
     };
   }
 
@@ -53,16 +57,29 @@ export class ScheduleObserverModel extends ToneWidgetModel {
     return this.get('observed_trait');
   }
 
-  private setObservedTrait(
-    time: tone.Unit.Seconds,
-    value: tone.Unit.Unit
-  ): void {
-    if (this.observedTrait === 'value') {
-      this.set('value', value);
-    } else if (this.observedTrait === 'time') {
-      this.set('time', time);
-    } else if (this.observedTrait === 'time_value') {
-      this.set('time_value', [time, value]);
+  get observeTime(): boolean {
+    return this.get('observe_time');
+  }
+
+  private setObservedTrait(time: tone.Unit.Seconds, transport: boolean): void {
+    const model = this.observedWidget;
+    const traitName = this.observedTrait;
+    let traitValue: TraitValue = 0;
+
+    if (traitName === 'time') {
+      traitValue = time;
+    } else {
+      if (transport) {
+        traitValue = model.getValueAtTime(traitName, time);
+      } else {
+        traitValue = model.getValue(traitName);
+      }
+    }
+
+    if (this.observeTime) {
+      this.set('time_value', [time, traitValue]);
+    } else {
+      this.set(traitName, traitValue);
     }
 
     this.save_changes();
@@ -73,22 +90,21 @@ export class ScheduleObserverModel extends ToneWidgetModel {
     updateInterval: number | string,
     draw: boolean
   ): void {
-    const model = this.observedWidget;
     let eid: number | ReturnType<typeof setInterval>;
 
     if (transport) {
       eid = tone.Transport.scheduleRepeat((time) => {
         if (draw) {
           tone.Draw.schedule(() => {
-            this.setObservedTrait(time, model.getValueAtTime(time));
+            this.setObservedTrait(time, transport);
           }, time);
         } else {
-          this.setObservedTrait(time, model.getValueAtTime(time));
+          this.setObservedTrait(time, transport);
         }
       }, updateInterval);
     } else {
       eid = setInterval(() => {
-        this.setObservedTrait(tone.now(), model.getValue());
+        this.setObservedTrait(tone.now(), transport);
       }, (updateInterval as number) * 1000);
     }
 

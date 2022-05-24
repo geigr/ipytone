@@ -2,11 +2,13 @@ import { ISerializers, unpack_models } from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
 
-import { normalizeArguments } from './utils';
+import { assert, normalizeArguments } from './utils';
 
 import { AudioNodeModel } from './widget_base';
 
 import { AudioBufferModel, AudioBuffersModel, ParamModel } from './widget_core';
+
+import { ObservableModel } from './widget_observe';
 
 import { SignalModel, MultiplyModel } from './widget_signal';
 
@@ -19,11 +21,12 @@ import {
 interface SourceInterface extends tone.ToneAudioNode {
   mute: boolean;
   volume: tone.Param<'decibels'>;
+  state: tone.BasicPlaybackState;
   sync(): this;
   unsync(): this;
 }
 
-abstract class SourceModel extends AudioNodeModel {
+abstract class SourceModel extends AudioNodeModel implements ObservableModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -41,6 +44,18 @@ abstract class SourceModel extends AudioNodeModel {
     return this.get('_volume');
   }
 
+  getValueAtTime(
+    traitName: string,
+    _time: tone.Unit.Seconds
+  ): tone.BasicPlaybackState {
+    return this.getValue(traitName);
+  }
+
+  getValue(traitName: string): tone.BasicPlaybackState {
+    assert(traitName === 'state', 'param only supports "state" trait');
+    return this.node.state;
+  }
+
   initEventListeners(): void {
     super.initEventListeners();
 
@@ -53,7 +68,7 @@ abstract class SourceModel extends AudioNodeModel {
     this.on('msg:custom', this.handleMsg, this);
   }
 
-  private handleMsg(command: any, buffers: any): void {
+  private handleMsg(command: any, _buffers: any): void {
     if (command.event === 'trigger') {
       const argsArray = normalizeArguments(command.args, command.arg_keys);
       (this.node as any)[command.method](...argsArray);

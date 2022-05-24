@@ -1,5 +1,5 @@
 from ipywidgets import Widget, dlink, jsdlink, widget_serialization
-from traitlets import Dict, Enum, Float, HasTraits, Instance, Int, Tuple, Unicode, Union
+from traitlets import Bool, Dict, Enum, Float, HasTraits, Instance, Int, List, Tuple, Unicode, Union
 
 from .base import NodeWithContext, ToneWidgetBase
 
@@ -14,9 +14,12 @@ class ToneDirectionalLink:
         self.observer.schedule_cancel()
 
 
+VALID_OBSERVED_TRAITS = ["time", "value", "state"]
+
+
 class ScheduleObserver(ToneWidgetBase):
-    """Used internally to observe from Python the current time and/or value of a
-    Tone.js instance at a given, regular interval.
+    """Used internally to observe from Python the curent value of an
+    attribute of a Tone.js instance at a given, regular interval.
 
     Implementing this in a separate widget is more composable. It allows setting
     multiple handlers on the same observed instance, possibly with different
@@ -32,7 +35,10 @@ class ScheduleObserver(ToneWidgetBase):
         help="observed Param / Signal / Meter widget",
     ).tag(sync=True, **widget_serialization)
 
-    observed_trait = Enum(["time", "value", "time_value"], default_value="value").tag(sync=True)
+    observed_trait = Enum(VALID_OBSERVED_TRAITS, default_value="value").tag(sync=True)
+    observe_time = Bool(False, help="if True, observe time along with the observed trait").tag(
+        sync=True
+    )
 
     time = Float(help="current observed time", read_only=True).tag(sync=True)
 
@@ -42,10 +48,17 @@ class ScheduleObserver(ToneWidgetBase):
         read_only=True,
     ).tag(sync=True)
 
+    state = Enum(
+        ["started", "stopped", "paused"],
+        default_value="stopped",
+        help="current playback state",
+        read_only=True,
+    ).tag(sync=True)
+
     time_value = Tuple(
         Float(),
         Union((Float(), Int(), Unicode())),
-        help="Both current observed time and value",
+        help="Both current observed time and trait value",
         allow_none=True,
         read_only=True,
     ).tag(sync=True)
@@ -62,13 +75,19 @@ class ScheduleObserver(ToneWidgetBase):
     def schedule_cancel(self):
         self.send({"event": "scheduleCancel"})
 
+    def _get_trait_name(self):
+        if self.observe_time:
+            return "time_value"
+        else:
+            return self.observed_trait
+
     def schedule_observe(self, handler, update_interval, transport):
         self.schedule_repeat(update_interval, transport)
-        self.observe(handler, names=self.observed_trait)
+        self.observe(handler, names=self._get_trait_name())
 
     def schedule_unobserve(self, handler):
         self.schedule_cancel()
-        self.unobserve(handler, names=self.observed_trait)
+        self.unobserve(handler, names=self._get_trait_name())
 
     def schedule_dlink(self, target, update_interval, transport, js=False):
         if js and transport:
@@ -96,6 +115,22 @@ class ScheduleObserveMixin(HasTraits):
 
     _observers = Dict(key_trait=Int(), value_trait=Instance(ScheduleObserver))
 
+    # redefine those properties in subclass to restrict the list of valid observable traits.
+    _observable_traits = List(VALID_OBSERVED_TRAITS)
+    _default_observed_trait = "value"
+
+    def _validate_trait_name(self, proposal):
+        if proposal is None:
+            proposal = self._default_observed_trait
+
+        if proposal not in self._observable_traits + ["time"]:
+            raise ValueError(
+                f"invalid observable trait name, should be one of {self._observable_traits}, "
+                f"found {proposal}"
+            )
+
+        return proposal
+
     def _add_observer(self, key, observer):
         observers = self._observers.copy()
         observers[key] = observer
@@ -108,7 +143,9 @@ class ScheduleObserveMixin(HasTraits):
         # observer.close()
         self._observers = observers
 
-    def schedule_observe(self, handler, update_interval=1, transport=False, name="value"):
+    def schedule_observe(
+        self, handler, update_interval=1, transport=False, name=None, observe_time=False
+    ):
         """Setup a handler to be called at regular intervals with the updated
         time / value of this ipytone widget.
 
@@ -129,15 +166,16 @@ class ScheduleObserveMixin(HasTraits):
             timeline, i.e., the handler is not called until the transport starts and
             will stop being called when the transport stops. If False (default),
             the trait update is done with respect to the active audio context.
-        name : { "time", "value", "time_value" }
+        name : { "time", "value" }, optional
             The name of the trait to observe. It accepts one of the following:
 
             - "value" (default): the current value of the Tone.js corresponding instance.
             - "time": the current time (either transport time or audio context time).
-            - "time_value": both time and value returned as a tuple.
 
         """
         key = hash(handler)
+
+        name = self._validate_trait_name(name)
 
         if key in self._observers:
             raise ValueError(
@@ -145,7 +183,9 @@ class ScheduleObserveMixin(HasTraits):
                 "want to apply this handler on another interval."
             )
 
-        observer = ScheduleObserver(observed_widget=self, observed_trait=name)
+        observer = ScheduleObserver(
+            observed_widget=self, observed_trait=name, observe_time=observe_time
+        )
         observer.schedule_observe(handler, update_interval, transport)
 
         self._add_observer(key, observer)
@@ -162,7 +202,7 @@ class ScheduleObserveMixin(HasTraits):
 
         self._remove_observer(key)
 
-    def _schedule_dlink(self, target, update_interval, transport, js=False):
+    def _schedule_dlink(self, target, update_interval, transport, name, js=False):
         widget, trait = target
 
         if not isinstance(widget, Widget):
@@ -170,10 +210,12 @@ class ScheduleObserveMixin(HasTraits):
         if not hasattr(widget, trait):
             raise ValueError(f"{trait!r} is not a trait of widget {widget!r}")
 
-        observer = ScheduleObserver(observed_widget=self, observed_trait="value")
+        name = self._validate_trait_name(name)
+
+        observer = ScheduleObserver(observed_widget=self, observed_trait=name)
         return observer.schedule_dlink(target, update_interval, transport, js=js)
 
-    def schedule_dlink(self, target, update_interval=1, transport=False):
+    def schedule_dlink(self, target, update_interval=1, transport=False, name=None):
         """Link this ipytone widget value with a target widget attribute.
 
         As the value of this widget may refer to a continuously updated value
@@ -196,9 +238,9 @@ class ScheduleObserveMixin(HasTraits):
             the target attribute update is done with respect to the active audio context.
 
         """
-        return self._schedule_dlink(target, update_interval, transport, js=False)
+        return self._schedule_dlink(target, update_interval, transport, name, js=False)
 
-    def schedule_jsdlink(self, target, update_interval=0.08, transport=False):
+    def schedule_jsdlink(self, target, update_interval=0.08, transport=False, name=None):
         """Link this ipytone widget value with a target widget attribute.
 
         The link is created in the front-end and does not rely on a roundtrip
@@ -224,4 +266,4 @@ class ScheduleObserveMixin(HasTraits):
             the target attribute update is done with respect to the active audio context.
 
         """
-        return self._schedule_dlink(target, update_interval, transport, js=True)
+        return self._schedule_dlink(target, update_interval, transport, name, js=True)

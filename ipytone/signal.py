@@ -1,5 +1,5 @@
 from ipywidgets import widget_serialization
-from traitlets import Bool, Float, Instance, Int, Unicode, Union
+from traitlets import Bool, Float, Instance, Int, List, Unicode, Union
 
 from .base import AudioNode, ToneObject
 from .core import Gain, InternalAudioNode, Param, ParamScheduleMixin
@@ -80,6 +80,8 @@ class Signal(SignalOperator, ParamScheduleMixin, ScheduleObserveMixin):
     value = Union((Float(), Int(), Unicode()), help="Signal value").tag(sync=True)
 
     _side_signal_prop_name = None
+
+    _observable_traits = List(["value"])
 
     def __init__(self, value=0, units="number", min_value=None, max_value=None, **kwargs):
         if "_input" not in kwargs:

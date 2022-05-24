@@ -2,7 +2,7 @@ import { ISerializers } from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
 
-import { normalizeArguments } from './utils';
+import { assert, normalizeArguments } from './utils';
 
 import { AudioNodeModel } from './widget_base';
 
@@ -83,11 +83,16 @@ export class EnvelopeModel extends AudioNodeModel implements ObservableModel {
     this.maybeSetArray();
   }
 
-  getValueAtTime(time: tone.Unit.Seconds): tone.Unit.NormalRange {
+  getValueAtTime(
+    traitName: string,
+    time: tone.Unit.Seconds
+  ): tone.Unit.NormalRange {
+    assert(traitName === 'value', 'envelope only supports "value" trait');
     return this.node.getValueAtTime(time);
   }
 
-  getValue(): tone.Unit.NormalRange {
+  getValue(traitName: string): tone.Unit.NormalRange {
+    assert(traitName === 'value', 'envelope only supports "value" trait');
     return this.node.value;
   }
 
