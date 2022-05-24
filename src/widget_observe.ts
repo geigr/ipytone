@@ -71,16 +71,16 @@ export class ScheduleObserverModel extends ToneWidgetModel {
     transport: boolean,
     repeatInterval: number | string
   ): void {
-    const obj = this.observedWidget;
+    const model = this.observedWidget;
     let eid: number | ReturnType<typeof setInterval>;
 
     if (transport) {
       eid = tone.Transport.scheduleRepeat((time) => {
-        this.setObservedTrait(time, obj.getValueAtTime(time));
+        this.setObservedTrait(time, model.getValueAtTime(time));
       }, repeatInterval);
     } else {
       eid = setInterval(() => {
-        this.setObservedTrait(tone.now(), obj.getValue());
+        this.setObservedTrait(tone.now(), model.getValue());
       }, (repeatInterval as number) * 1000);
     }
 

@@ -3,6 +3,7 @@ from traitlets import Bool, Float, Instance, Int, Unicode, Union
 
 from .base import AudioNode, ToneObject
 from .core import Gain, InternalAudioNode, Param, ParamScheduleMixin
+from .observe import ScheduleObserveMixin
 
 
 class SignalOperator(AudioNode):
@@ -47,7 +48,7 @@ class SignalOperator(AudioNode):
         return self._create_simple_op_signal(Pow, value=value)
 
 
-class Signal(SignalOperator, ParamScheduleMixin):
+class Signal(SignalOperator, ParamScheduleMixin, ScheduleObserveMixin):
     """A node that defines a value that can be modulated or calculated
     at the audio sample-level accuracy.
 

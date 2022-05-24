@@ -6,13 +6,15 @@ import { normalizeArguments } from './utils';
 
 import { AudioNodeModel } from './widget_base';
 
+import { ObservableModel } from './widget_observe';
+
 import {
   ArrayProperty,
   dataarray_serialization,
   getArrayProp,
 } from './serializers';
 
-export class EnvelopeModel extends AudioNodeModel {
+export class EnvelopeModel extends AudioNodeModel implements ObservableModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -81,7 +83,15 @@ export class EnvelopeModel extends AudioNodeModel {
     this.maybeSetArray();
   }
 
-  private handleMsg(command: any, buffers: any): void {
+  getValueAtTime(time: tone.Unit.Seconds): tone.Unit.NormalRange {
+    return this.node.getValueAtTime(time);
+  }
+
+  getValue(): tone.Unit.NormalRange {
+    return this.node.value;
+  }
+
+  private handleMsg(command: any, _buffers: any): void {
     if (command.event === 'trigger') {
       const argsArray = normalizeArguments(command.args, command.arg_keys);
       (this.node as any)[command.method](...argsArray);

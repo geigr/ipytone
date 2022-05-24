@@ -4,6 +4,7 @@ from traittypes import Array
 from .base import AudioNode
 from .callback import add_or_send_event
 from .core import Gain
+from .observe import ScheduleObserveMixin
 from .serialization import data_array_serialization
 from .signal import Pow, Scale, Signal
 
@@ -11,7 +12,7 @@ BASIC_CURVES = ["linear", "exponential"]
 CURVES = BASIC_CURVES + ["sine", "cosine", "bounce", "ripple", "step"]
 
 
-class Envelope(AudioNode):
+class Envelope(AudioNode, ScheduleObserveMixin):
     """ADSR envelope generator.
 
     Envelope outputs a signal which can be connected to a :class:`Signal`.

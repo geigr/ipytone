@@ -10,6 +10,8 @@ import { AudioNodeModel } from './widget_base';
 
 import { ParamModel } from './widget_core';
 
+import { ObservableModel } from './widget_observe';
+
 abstract class SignalOperatorModel extends AudioNodeModel {
   defaults(): any {
     return {
@@ -21,7 +23,10 @@ abstract class SignalOperatorModel extends AudioNodeModel {
   static model_name = 'SignalOperatorModel';
 }
 
-export class SignalModel<T extends UnitName> extends SignalOperatorModel {
+export class SignalModel<T extends UnitName>
+  extends SignalOperatorModel
+  implements ObservableModel
+{
   defaults(): any {
     return {
       ...super.defaults(),
@@ -65,6 +70,14 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
   connectInputCallback(): void {
     // new connected incoming signal overrides this signal value
     this.updateOverridden();
+  }
+
+  getValueAtTime(time: tone.Unit.Seconds): UnitMap[T] {
+    return this.node.getValueAtTime(time);
+  }
+
+  getValue(): UnitMap[T] {
+    return this.node.value;
   }
 
   private handleMsg(command: any, buffers: any): void {
