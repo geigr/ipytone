@@ -5,6 +5,7 @@ import type { callbackArgs, callbackItem } from './utils';
 import { normalizeArguments } from './utils';
 
 import { NodeWithContextModel } from './widget_base';
+import { ObservableModel } from './widget_observe';
 
 type eventCallback = { (time: number, value: any): void };
 
@@ -22,7 +23,10 @@ interface Event {
   toFrequency: (frequency: tone.Unit.Frequency) => tone.Unit.Hertz;
 }
 
-abstract class BaseEventModel<T extends Event> extends NodeWithContextModel {
+abstract class BaseEventModel<T extends Event>
+  extends NodeWithContextModel
+  implements ObservableModel
+{
   defaults(): any {
     return {
       ...super.defaults(),
@@ -93,6 +97,23 @@ abstract class BaseEventModel<T extends Event> extends NodeWithContextModel {
   private async setCallback(command: any): Promise<void> {
     const items = await this.getCallbackItems(command.items);
     this.event.callback = this.getToneCallback(items);
+  }
+
+  getValueAtTime(
+    traitName: string,
+    _time: tone.Unit.Seconds
+  ): tone.BasicPlaybackState | tone.Unit.NormalRange {
+    return this.getValue(traitName);
+  }
+
+  getValue(traitName: string): tone.BasicPlaybackState | tone.Unit.NormalRange {
+    if (traitName === 'state') {
+      return (this.event as unknown as tone.ToneEvent).state;
+    } else if (traitName === 'progress') {
+      return (this.event as unknown as tone.ToneEvent).progress;
+    } else {
+      throw new Error('unsupported trait name ' + traitName);
+    }
   }
 
   private play(command: any): void {

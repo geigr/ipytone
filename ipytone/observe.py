@@ -14,7 +14,7 @@ class ToneDirectionalLink:
         self.observer.schedule_cancel()
 
 
-VALID_OBSERVED_TRAITS = ["time", "value", "state"]
+VALID_OBSERVED_TRAITS = ["time", "value", "state", "progress"]
 
 
 class ScheduleObserver(ToneWidgetBase):
@@ -54,6 +54,8 @@ class ScheduleObserver(ToneWidgetBase):
         help="current playback state",
         read_only=True,
     ).tag(sync=True)
+
+    progress = Float(0.0, help="current progress (loop intervals)").tag(sync=True)
 
     time_value = Tuple(
         Float(),
@@ -100,9 +102,9 @@ class ScheduleObserver(ToneWidgetBase):
         self.schedule_repeat(update_interval, transport, draw=draw)
 
         if js:
-            link = jsdlink((self, "value"), target)
+            link = jsdlink((self, self.observed_trait), target)
         else:
-            link = dlink((self, "value"), target)
+            link = dlink((self, self.observed_trait), target)
 
         return ToneDirectionalLink(self, link)
 

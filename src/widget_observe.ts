@@ -33,8 +33,9 @@ export class ScheduleObserverModel extends ToneWidgetModel {
       observe_time: false,
       time: 0.0,
       value: 0.0,
-      time_value: [],
       state: 'stopped',
+      progress: 0.0,
+      time_value: [],
     };
   }
 
