@@ -13,6 +13,7 @@ type ScheduleObserverCommand = {
   event: string;
   transport: boolean;
   update_interval: string | number;
+  draw: boolean;
 };
 
 export interface ObservableModel {
@@ -69,14 +70,21 @@ export class ScheduleObserverModel extends ToneWidgetModel {
 
   private scheduleRepeat(
     transport: boolean,
-    updateInterval: number | string
+    updateInterval: number | string,
+    draw: boolean
   ): void {
     const model = this.observedWidget;
     let eid: number | ReturnType<typeof setInterval>;
 
     if (transport) {
       eid = tone.Transport.scheduleRepeat((time) => {
-        this.setObservedTrait(time, model.getValueAtTime(time));
+        if (draw) {
+          tone.Draw.schedule(() => {
+            this.setObservedTrait(time, model.getValueAtTime(time));
+          }, time);
+        } else {
+          this.setObservedTrait(time, model.getValueAtTime(time));
+        }
       }, updateInterval);
     } else {
       eid = setInterval(() => {
@@ -97,7 +105,11 @@ export class ScheduleObserverModel extends ToneWidgetModel {
 
   private handleMsg(command: ScheduleObserverCommand, _buffers: any): void {
     if (command.event === 'scheduleRepeat') {
-      this.scheduleRepeat(command.transport, command.update_interval);
+      this.scheduleRepeat(
+        command.transport,
+        command.update_interval,
+        command.draw
+      );
     } else if (command.event === 'scheduleCancel') {
       this.scheduleCancel();
     }

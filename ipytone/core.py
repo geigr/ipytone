@@ -2,16 +2,10 @@ import math
 
 import numpy as np
 from ipywidgets import Widget, widget_serialization
-from traitlets import Bool, Dict, Enum, Float, Instance, Int, List, Tuple, Unicode, Union
+from traitlets import Bool, Dict, Enum, Float, Instance, Int, Unicode, Union
 from traittypes import Array
 
-from .base import (
-    AudioNode,
-    NativeAudioNode,
-    NativeAudioParam,
-    NodeWithContext,
-    ToneObject,
-)
+from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext, ToneObject
 from .callback import add_or_send_event
 from .observe import ScheduleObserveMixin
 from .serialization import data_array_serialization

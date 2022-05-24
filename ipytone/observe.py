@@ -50,11 +50,12 @@ class ScheduleObserver(ToneWidgetBase):
         read_only=True,
     ).tag(sync=True)
 
-    def schedule_repeat(self, update_interval, transport):
+    def schedule_repeat(self, update_interval, transport, draw=False):
         data = {
             "event": "scheduleRepeat",
             "update_interval": update_interval,
             "transport": transport,
+            "draw": draw,
         }
         self.send(data)
 
@@ -70,7 +71,15 @@ class ScheduleObserver(ToneWidgetBase):
         self.unobserve(handler, names=self.observed_trait)
 
     def schedule_dlink(self, target, update_interval, transport, js=False):
-        self.schedule_repeat(update_interval, transport)
+        if js and transport:
+            # use Tone.js Draw for better synchronization
+            # of sound and visuals
+            draw = True
+        else:
+            draw = False
+
+        self.schedule_repeat(update_interval, transport, draw=draw)
+
         if js:
             link = jsdlink((self, "value"), target)
         else:
@@ -189,7 +198,7 @@ class ScheduleObserveMixin(HasTraits):
         """
         return self._schedule_dlink(target, update_interval, transport, js=False)
 
-    def schedule_jsdlink(self, target, update_interval=0.04, transport=False):
+    def schedule_jsdlink(self, target, update_interval=0.08, transport=False):
         """Link this ipytone widget value with a target widget attribute.
 
         The link is created in the front-end and does not rely on a roundtrip
