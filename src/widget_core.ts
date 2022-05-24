@@ -4,12 +4,9 @@ import * as tone from 'tone';
 
 import { UnitMap, UnitName } from 'tone/Tone/core/type/Units';
 
-import {
-  normalizeArguments,
-  ObserveEventMap,
-  scheduleObserve,
-  scheduleUnobserve,
-} from './utils';
+import { normalizeArguments } from './utils';
+
+import { ObservableModel } from './widget_observe';
 
 import {
   AudioNodeModel,
@@ -54,7 +51,10 @@ interface ParamProperties<T extends UnitName> {
   gain?: UnitMap[T];
 }
 
-export class ParamModel<T extends UnitName> extends NodeWithContextModel {
+export class ParamModel<T extends UnitName>
+  extends NodeWithContextModel
+  implements ObservableModel
+{
   defaults(): any {
     return {
       ...super.defaults(),
@@ -62,7 +62,6 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
       _create_node: true,
       _input: null,
       value: 0,
-      current_value: 0,
       convert: true,
       _units: 'number',
       _min_value: undefined,
@@ -90,8 +89,6 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
       });
       this.input.node = this.node.input;
     }
-
-    this.eventMap = {};
   }
 
   get input(): NativeAudioParamModel | NativeAudioNodeModel {
@@ -140,6 +137,14 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
     return opts;
   }
 
+  getValueAtTime(time: tone.Unit.Seconds): UnitMap[T] {
+    return this.node.getValueAtTime(time);
+  }
+
+  getValue(): UnitMap[T] {
+    return this.node.value;
+  }
+
   private normalizeMinMax(value: number | null): number | undefined {
     return value === null ? undefined : value;
   }
@@ -164,22 +169,8 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
     }
   }
 
-  eventMap: ObserveEventMap;
-
   private handleMsg(command: any, _buffers: any): void {
-    if (command.event === 'scheduleObserve') {
-      const event = scheduleObserve(
-        this,
-        command.transport,
-        command.repeat_interval
-      );
-      this.eventMap[command.hash_handler] = event;
-      console.log(this.eventMap);
-    } else if (command.event === 'scheduleUnobserve') {
-      scheduleUnobserve(command.hash_handler, this.eventMap);
-      delete this.eventMap[command.hash_handler];
-      console.log(this.eventMap);
-    } else if (command.event === 'trigger') {
+    if (command.event === 'trigger') {
       const argsArray = normalizeArguments(command.args, command.arg_keys);
       (this.node as any)[command.method](...argsArray);
     }
