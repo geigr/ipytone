@@ -5,8 +5,8 @@ from .base import NodeWithContext, ToneWidgetBase
 
 
 class ScheduleObserver(ToneWidgetBase):
-    """Used internally to observe the current time and/or value of a Tone.js
-    Param / Signal / Meter instance at a given, regular interval.
+    """Used internally to observe from Python the current time and/or value of a
+    Tone.js instance at a given, regular interval.
 
     Implementing this in a separate widget is more composable. It allows setting
     multiple handlers on the same observed instance, possibly with different
@@ -57,7 +57,7 @@ class ScheduleObserver(ToneWidgetBase):
 
 class ScheduleObserveMixin(HasTraits):
     """Adds the ability to observe from within Python the current value
-    (and/or current time) of a Parameter / Signal or Meter node.
+    of an ipytone widget (e.g., Param, Signal, Envelope, Meter, etc.).
 
     """
 
@@ -65,7 +65,7 @@ class ScheduleObserveMixin(HasTraits):
 
     def schedule_observe(self, handler, repeat_interval=1, transport=False, name="value"):
         """Setup a handler to be called at regular intervals with the updated
-        time / value of this param / signal / meter node.
+        time / value of this ipytone widget.
 
         Parameters
         ----------
@@ -74,7 +74,7 @@ class ScheduleObserveMixin(HasTraits):
             regular intervals. The signature of the callable is similar
             to the signature expected by :func:`ipywidgets.Widget.observe`.
             Note that the handler will only apply to the trait given by the
-            ``name`` argument.
+            ``name`` argument here.
         repeat_interval : float or string, optional
             The interval at which the trait is updated in the front-end,
             in seconds (default: 1). If ``transport=True``, any interval accepted by
@@ -83,12 +83,12 @@ class ScheduleObserveMixin(HasTraits):
             if True, the trait update is scheduled along the :class:`ipytone.Transport`
             timeline, i.e., the handler is not called until the transport starts and
             will stop being called when the transport stops. If False (default),
-            the trait update is done in the active context.
+            the trait update is done with respect to the active audio context.
         name : { "time", "value", "time_value" }
-            The name of the trait to observe.
+            The name of the trait to observe. It accepts one of the following:
 
-            - "value" (default): the current value of the param / signal / meter node.
-            - "time": the current time (either transport time or context time).
+            - "value" (default): the current value of the Tone.js corresponding instance.
+            - "time": the current time (either transport time or audio context time).
             - "time_value": both time and value returned as a tuple.
 
         """
@@ -117,5 +117,6 @@ class ScheduleObserveMixin(HasTraits):
         observers = self._observers.copy()
         observer = observers.pop(key)
         observer.schedule_unobserve(handler)
-        observer.close()
+        # TODO: it this the cause of "no comm in channel included" error?
+        # observer.close()
         self._observers = observers
