@@ -12,7 +12,7 @@ type ObserveEvent = {
 type ScheduleObserverCommand = {
   event: string;
   transport: boolean;
-  repeat_interval: string | number;
+  update_interval: string | number;
 };
 
 export interface ObservableModel {
@@ -67,9 +67,9 @@ export class ScheduleObserverModel extends ToneWidgetModel {
     this.save_changes();
   }
 
-  private scheduleObserve(
+  private scheduleRepeat(
     transport: boolean,
-    repeatInterval: number | string
+    updateInterval: number | string
   ): void {
     const model = this.observedWidget;
     let eid: number | ReturnType<typeof setInterval>;
@@ -77,17 +77,17 @@ export class ScheduleObserverModel extends ToneWidgetModel {
     if (transport) {
       eid = tone.Transport.scheduleRepeat((time) => {
         this.setObservedTrait(time, model.getValueAtTime(time));
-      }, repeatInterval);
+      }, updateInterval);
     } else {
       eid = setInterval(() => {
         this.setObservedTrait(tone.now(), model.getValue());
-      }, (repeatInterval as number) * 1000);
+      }, (updateInterval as number) * 1000);
     }
 
     this.event = { id: eid, transport: transport };
   }
 
-  private scheduleUnobserve(): void {
+  private scheduleCancel(): void {
     if (this.event.transport) {
       tone.Transport.cancel(this.event.id as number);
     } else {
@@ -96,10 +96,10 @@ export class ScheduleObserverModel extends ToneWidgetModel {
   }
 
   private handleMsg(command: ScheduleObserverCommand, _buffers: any): void {
-    if (command.event === 'scheduleObserve') {
-      this.scheduleObserve(command.transport, command.repeat_interval);
-    } else if (command.event === 'scheduleUnobserve') {
-      this.scheduleUnobserve();
+    if (command.event === 'scheduleRepeat') {
+      this.scheduleRepeat(command.transport, command.update_interval);
+    } else if (command.event === 'scheduleCancel') {
+      this.scheduleCancel();
     }
   }
 
