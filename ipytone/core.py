@@ -2,11 +2,12 @@ import math
 
 import numpy as np
 from ipywidgets import Widget, widget_serialization
-from traitlets import Bool, Dict, Enum, Float, Instance, Int, Unicode, Union
+from traitlets import Bool, Dict, Enum, Float, Instance, Int, List, Unicode, Union
 from traittypes import Array
 
 from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext, ToneObject
 from .callback import add_or_send_event
+from .observe import ScheduleObserveMixin
 from .serialization import data_array_serialization
 
 UNITS = [
@@ -204,7 +205,7 @@ class ParamScheduleMixin:
         return self
 
 
-class Param(NodeWithContext, ParamScheduleMixin):
+class Param(NodeWithContext, ParamScheduleMixin, ScheduleObserveMixin):
     """Single, automatable parameter with units."""
 
     _model_name = Unicode("ParamModel").tag(sync=True)
@@ -221,6 +222,8 @@ class Param(NodeWithContext, ParamScheduleMixin):
     _swappable = Bool(False).tag(sync=True)
     overridden = Bool(False).tag(sync=True)
     convert = Bool(help="If True, convert the value into the specified units").tag(sync=True)
+
+    _observable_traits = List(["value"])
 
     def __init__(
         self,

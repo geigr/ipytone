@@ -4,7 +4,9 @@ import * as tone from 'tone';
 
 import { UnitMap, UnitName } from 'tone/Tone/core/type/Units';
 
-import { normalizeArguments } from './utils';
+import { assert, normalizeArguments } from './utils';
+
+import { ObservableModel } from './widget_observe';
 
 import {
   AudioNodeModel,
@@ -49,7 +51,10 @@ interface ParamProperties<T extends UnitName> {
   gain?: UnitMap[T];
 }
 
-export class ParamModel<T extends UnitName> extends NodeWithContextModel {
+export class ParamModel<T extends UnitName>
+  extends NodeWithContextModel
+  implements ObservableModel
+{
   defaults(): any {
     return {
       ...super.defaults(),
@@ -132,6 +137,16 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
     return opts;
   }
 
+  getValueAtTime(traitName: string, time: tone.Unit.Seconds): UnitMap[T] {
+    assert(traitName === 'value', 'param only supports "value" trait');
+    return this.node.getValueAtTime(time);
+  }
+
+  getValue(traitName: string): UnitMap[T] {
+    assert(traitName === 'value', 'param only supports "value" trait');
+    return this.node.value;
+  }
+
   private normalizeMinMax(value: number | null): number | undefined {
     return value === null ? undefined : value;
   }
@@ -156,7 +171,7 @@ export class ParamModel<T extends UnitName> extends NodeWithContextModel {
     }
   }
 
-  private handleMsg(command: any, buffers: any): void {
+  private handleMsg(command: any, _buffers: any): void {
     if (command.event === 'trigger') {
       const argsArray = normalizeArguments(command.args, command.arg_keys);
       (this.node as any)[command.method](...argsArray);

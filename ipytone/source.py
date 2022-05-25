@@ -7,18 +7,22 @@ from traittypes import Array
 from .base import AudioNode
 from .callback import add_or_send_event
 from .core import AudioBuffer, AudioBuffers, Param, Volume
+from .observe import ScheduleObserveMixin
 from .serialization import data_array_serialization
 from .signal import Multiply, Scale, Signal
 from .utils import OSC_TYPES, parse_osc_type
 
 
-class Source(AudioNode):
+class Source(AudioNode, ScheduleObserveMixin):
     """Audio source node."""
 
     _model_name = Unicode("SourceModel").tag(sync=True)
 
     mute = Bool(False, help="Mute source").tag(sync=True)
     _volume = Instance(Param).tag(sync=True, **widget_serialization)
+
+    _observable_traits = List(["state"])
+    _default_observed_trait = "state"
 
     def __init__(self, volume=0, mute=False, **kwargs):
         out_node = Volume(volume=volume, mute=mute, _create_node=False)

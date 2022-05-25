@@ -4,11 +4,13 @@ import * as tone from 'tone';
 
 import { UnitName, UnitMap } from 'tone/Tone/core/type/Units';
 
-import { normalizeArguments } from './utils';
+import { assert, normalizeArguments } from './utils';
 
 import { AudioNodeModel } from './widget_base';
 
 import { ParamModel } from './widget_core';
+
+import { ObservableModel } from './widget_observe';
 
 abstract class SignalOperatorModel extends AudioNodeModel {
   defaults(): any {
@@ -21,7 +23,10 @@ abstract class SignalOperatorModel extends AudioNodeModel {
   static model_name = 'SignalOperatorModel';
 }
 
-export class SignalModel<T extends UnitName> extends SignalOperatorModel {
+export class SignalModel<T extends UnitName>
+  extends SignalOperatorModel
+  implements ObservableModel
+{
   defaults(): any {
     return {
       ...super.defaults(),
@@ -67,7 +72,17 @@ export class SignalModel<T extends UnitName> extends SignalOperatorModel {
     this.updateOverridden();
   }
 
-  private handleMsg(command: any, buffers: any): void {
+  getValueAtTime(traitName: string, time: tone.Unit.Seconds): UnitMap[T] {
+    assert(traitName === 'value', 'param only supports "value" trait');
+    return this.node.getValueAtTime(time);
+  }
+
+  getValue(traitName: string): UnitMap[T] {
+    assert(traitName === 'value', 'param only supports "value" trait');
+    return this.node.value;
+  }
+
+  private handleMsg(command: any, _buffers: any): void {
     if (command.event === 'trigger') {
       const argsArray = normalizeArguments(command.args, command.arg_keys);
       (this.node as any)[command.method](...argsArray);

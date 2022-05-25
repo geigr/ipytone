@@ -15,6 +15,7 @@ export * from './widget_envelope';
 export * from './widget_filter';
 export * from './widget_graph';
 export * from './widget_instrument';
+export { ScheduleObserverModel } from './widget_observe';
 export * from './widget_signal';
 export * from './widget_source';
 export * from './widget_transport';

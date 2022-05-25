@@ -10,13 +10,14 @@ from .callback import (
     add_or_send_event,
     collect_and_merge_items,
 )
+from .observe import ScheduleObserveMixin
 
 
 def _no_callback(time, value=None):
     pass
 
 
-class Event(NodeWithContext):
+class Event(NodeWithContext, ScheduleObserveMixin):
     """Represents a single or repeatable event along the transport timeline.
 
     It abstracts away :func:`ipytone.transport.schedule`.
@@ -49,6 +50,9 @@ class Event(NodeWithContext):
     loop_end = Union(
         (Float(), Unicode()), default_value="1m", help="loop ending (transport) time"
     ).tag(sync=True)
+
+    _observable_traits = List(["state", "progress"])
+    _default_observed_trait = "state"
 
     def __init__(self, callback=None, value=None, **kwargs):
         if callback is None:

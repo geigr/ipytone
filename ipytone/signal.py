@@ -1,8 +1,9 @@
 from ipywidgets import widget_serialization
-from traitlets import Bool, Float, Instance, Int, Unicode, Union
+from traitlets import Bool, Float, Instance, Int, List, Unicode, Union
 
 from .base import AudioNode, ToneObject
 from .core import Gain, InternalAudioNode, Param, ParamScheduleMixin
+from .observe import ScheduleObserveMixin
 
 
 class SignalOperator(AudioNode):
@@ -47,7 +48,7 @@ class SignalOperator(AudioNode):
         return self._create_simple_op_signal(Pow, value=value)
 
 
-class Signal(SignalOperator, ParamScheduleMixin):
+class Signal(SignalOperator, ParamScheduleMixin, ScheduleObserveMixin):
     """A node that defines a value that can be modulated or calculated
     at the audio sample-level accuracy.
 
@@ -79,6 +80,8 @@ class Signal(SignalOperator, ParamScheduleMixin):
     value = Union((Float(), Int(), Unicode()), help="Signal value").tag(sync=True)
 
     _side_signal_prop_name = None
+
+    _observable_traits = List(["value"])
 
     def __init__(self, value=0, units="number", min_value=None, max_value=None, **kwargs):
         if "_input" not in kwargs:
