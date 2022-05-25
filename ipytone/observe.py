@@ -1,4 +1,5 @@
-from ipywidgets import Widget, dlink, jsdlink, widget_serialization
+import ipywidgets
+from ipywidgets import widget_serialization
 from traitlets import Bool, Dict, Enum, Float, HasTraits, Instance, Int, List, Tuple, Unicode, Union
 
 from .base import ToneObject, ToneWidgetBase
@@ -40,11 +41,12 @@ class ScheduleObserver(ToneWidgetBase):
         sync=True
     )
 
-    time = Float(help="current observed time", read_only=True).tag(sync=True)
+    time = Float(0.0, help="current observed time", read_only=True).tag(sync=True)
 
     value = Union(
         (Float(), Int(), Unicode()),
         help="Param / Signal / Meter current observed value",
+        default_value=0,
         read_only=True,
     ).tag(sync=True)
 
@@ -55,7 +57,7 @@ class ScheduleObserver(ToneWidgetBase):
         read_only=True,
     ).tag(sync=True)
 
-    progress = Float(0.0, help="current progress (loop intervals)").tag(sync=True)
+    progress = Float(0.0, help="current progress (loop intervals)", read_only=True).tag(sync=True)
 
     position = Unicode(
         "0:0:0", help="current transport position in Bars:Beats:Sixteenths", read_only=True
@@ -112,9 +114,9 @@ class ScheduleObserver(ToneWidgetBase):
         self.schedule_repeat(update_interval, transport, draw=draw)
 
         if js:
-            link = jsdlink((self, self.observed_trait), target)
+            link = ipywidgets.jsdlink((self, self.observed_trait), target)
         else:
-            link = dlink((self, self.observed_trait), target)
+            link = ipywidgets.dlink((self, self.observed_trait), target)
 
         return ToneDirectionalLink(self, link)
 
@@ -235,13 +237,6 @@ class ScheduleObserveMixin(HasTraits):
         self._remove_observer(key)
 
     def _schedule_dlink(self, target, update_interval, transport, name, js=False):
-        widget, trait = target
-
-        if not isinstance(widget, Widget):
-            raise ValueError("the first item of target must be a Widget instance")
-        if not hasattr(widget, trait):
-            raise ValueError(f"{trait!r} is not a trait of widget {widget!r}")
-
         name = self._validate_trait_name(name)
 
         observer = ScheduleObserver(observed_widget=self, observed_trait=name)
