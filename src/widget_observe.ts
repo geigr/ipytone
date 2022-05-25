@@ -4,6 +4,10 @@ import * as tone from 'tone';
 
 import { ToneWidgetModel } from './widget_base';
 
+import {
+  dataarray_serialization,
+} from './serializers';
+
 type ObserveEvent = {
   id: number | ReturnType<typeof setInterval>;
   transport: boolean;
@@ -16,7 +20,7 @@ type ScheduleObserverCommand = {
   draw: boolean;
 };
 
-type TraitValue = tone.Unit.Unit | tone.PlaybackState;
+type TraitValue = tone.Unit.Unit | tone.PlaybackState | Float32Array | Float32Array[];
 
 export interface ObservableModel {
   getValueAtTime: (traitName: string, time: tone.Unit.Seconds) => TraitValue;
@@ -35,6 +39,10 @@ export class ScheduleObserverModel extends ToneWidgetModel {
       value: 0.0,
       state: 'stopped',
       progress: 0.0,
+      position: '0:0:0',
+      ticks: 0,
+      seconds: 0.0,
+      array: [],
       time_value: [],
     };
   }
@@ -67,6 +75,13 @@ export class ScheduleObserverModel extends ToneWidgetModel {
     const traitName = this.observedTrait;
     let traitValue: TraitValue = 0;
 
+    if (traitName === 'array') {
+      // bug when array elements aren't changing, then it's never
+      // synced again even if it gets updated again later?
+      // -> reset array value silently
+      this.set('array', new Float32Array([0]), { silent: true });
+    }
+
     if (traitName === 'time') {
       traitValue = time;
     } else {
@@ -79,7 +94,7 @@ export class ScheduleObserverModel extends ToneWidgetModel {
 
     if (this.observeTime) {
       this.set('time_value', [time, traitValue]);
-    } else {
+    }  else {
       this.set(traitName, traitValue);
     }
 
@@ -139,6 +154,7 @@ export class ScheduleObserverModel extends ToneWidgetModel {
   static serializers: ISerializers = {
     ...ToneWidgetModel.serializers,
     observed_widget: { deserialize: unpack_models as any },
+    array: dataarray_serialization,
   };
 
   static model_name = 'ScheduleObserverModel';

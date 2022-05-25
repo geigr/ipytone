@@ -1,6 +1,7 @@
 // Copyright (c) Benoit Bovy
 // Distributed under the terms of the Modified BSD License.
 
+export * from './widget_analysis';
 export {
   NativeAudioNodeModel,
   NativeAudioParamModel,
