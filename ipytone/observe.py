@@ -122,14 +122,18 @@ class ScheduleObserver(ToneWidgetBase):
 
 
 class ScheduleObserveMixin(HasTraits):
-    """Adds the ability to observe from within Python or the current value
-    of an attribute of an ipytone widget (e.g., Param, Signal, Envelope, Meter, etc.),
+    """Adds the ability to observe from within Python the current value of an
+    attribute of an ipytone widget (e.g., Param, Signal, Envelope, Meter, etc.)
     or link it with another widget attribute.
 
-    It is similar to ipywidgets's ``observe``, ``dlink`` and ``jsdlink``, but adds
-    the ability to observe or link ipytone widget attributes that may be updated
-    continuously in the front-end (e.g., value of an audio signal or an envelope,
-    position of the transport timeline, etc.).
+    It is similar to ipywidgets's ``observe``, ``dlink`` and ``jsdlink``, with
+    the extra ability here to observe or link ipytone widget attributes that may
+    be updated continuously in the front-end (e.g., value of an audio signal or
+    an envelope, position of the transport timeline, etc.).
+
+    The values of those ipytone widget attributes are sampled at given, regular
+    intervals, either along Tone.js' main transport timeline or with respect to
+    the active audio context.
 
     """
 
