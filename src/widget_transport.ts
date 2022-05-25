@@ -10,11 +10,13 @@ import { NodeWithContextModel, ToneObjectModel } from './widget_base';
 
 import { ParamModel } from './widget_core';
 
+import { ObservableModel } from './widget_observe';
+
 import { SignalModel } from './widget_signal';
 
 type transportCallback = { (time: number): void };
 
-export class TransportModel extends ToneObjectModel {
+export class TransportModel extends ToneObjectModel implements ObservableModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -64,6 +66,34 @@ export class TransportModel extends ToneObjectModel {
     });
 
     return Promise.all(itemsModel);
+  }
+
+  getValueAtTime(traitName: string, time: tone.Unit.Seconds): tone.Unit.Unit {
+    switch (traitName) {
+      case 'ticks':
+        return tone.Transport.getTicksAtTime(time);
+      case 'seconds':
+        return tone.Transport.getSecondsAtTime(time);
+      default:
+        return this.getValue(traitName);
+    }
+  }
+
+  getValue(traitName: string): tone.Unit.Unit {
+    switch (traitName) {
+      case 'ticks':
+        return tone.Transport.ticks;
+      case 'seconds':
+        return tone.Transport.seconds;
+      case 'progress':
+        return tone.Transport.progress;
+      case 'position':
+        return tone.Transport.position;
+      case 'state':
+        return tone.Transport.state;
+      default:
+        throw new Error('unsupported trait name ' + traitName);
+    }
   }
 
   private getToneCallback(items: callbackItem[]): transportCallback {

@@ -6,10 +6,11 @@ from traitlets import Bool, Float, Instance, Int, List, Unicode, Union
 from .base import ToneObject
 from .callback import TimeCallbackArg, add_or_send_event
 from .core import Param
+from .observe import ScheduleObserveMixin
 from .signal import Signal
 
 
-class Transport(ToneObject):
+class Transport(ToneObject, ScheduleObserveMixin):
     """Transport for timing musical events.
 
     Note: the transport position is not updated until changing the playback state
@@ -45,6 +46,9 @@ class Transport(ToneObject):
     seconds = Float(0, help="transport position in seconds").tag(sync=True)
     progress = Float(0, help="transport loop relative position", read_only=True).tag(sync=True)
     ticks = Int(0, help="transport position in ticks").tag(sync=True)
+
+    _observable_traits = List(["state", "progress", "position", "ticks", "seconds"])
+    _default_observed_trait = "state"
 
     def __new__(cls):
         if Transport._singleton is None:

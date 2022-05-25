@@ -1,7 +1,7 @@
 from ipywidgets import Widget, dlink, jsdlink, widget_serialization
 from traitlets import Bool, Dict, Enum, Float, HasTraits, Instance, Int, List, Tuple, Unicode, Union
 
-from .base import NodeWithContext, ToneWidgetBase
+from .base import ToneObject, ToneWidgetBase
 
 
 class ToneDirectionalLink:
@@ -14,11 +14,11 @@ class ToneDirectionalLink:
         self.observer.schedule_cancel()
 
 
-VALID_OBSERVED_TRAITS = ["time", "value", "state", "progress"]
+VALID_OBSERVED_TRAITS = ["time", "value", "state", "progress", "position", "ticks", "seconds"]
 
 
 class ScheduleObserver(ToneWidgetBase):
-    """Used internally to observe from Python the curent value of an
+    """Used internally to observe or link the curent value of an
     attribute of a Tone.js instance at a given, regular interval.
 
     Implementing this in a separate widget is more composable. It allows setting
@@ -31,8 +31,8 @@ class ScheduleObserver(ToneWidgetBase):
     _model_name = Unicode("ScheduleObserverModel").tag(sync=True)
 
     observed_widget = Instance(
-        NodeWithContext,
-        help="observed Param / Signal / Meter widget",
+        ToneObject,
+        help="observed ipytone widget instance",
     ).tag(sync=True, **widget_serialization)
 
     observed_trait = Enum(VALID_OBSERVED_TRAITS, default_value="value").tag(sync=True)
@@ -56,6 +56,16 @@ class ScheduleObserver(ToneWidgetBase):
     ).tag(sync=True)
 
     progress = Float(0.0, help="current progress (loop intervals)").tag(sync=True)
+
+    position = Unicode(
+        "0:0:0", help="current transport position in Bars:Beats:Sixteenths", read_only=True
+    ).tag(sync=True)
+
+    ticks = Int(0, help="current transport tick position", read_only=True).tag(sync=True)
+
+    seconds = Float(0.0, help="current transport position in seconds", read_only=True).tag(
+        sync=True
+    )
 
     time_value = Tuple(
         Float(),
@@ -110,8 +120,14 @@ class ScheduleObserver(ToneWidgetBase):
 
 
 class ScheduleObserveMixin(HasTraits):
-    """Adds the ability to observe from within Python the current value
-    of an ipytone widget (e.g., Param, Signal, Envelope, Meter, etc.).
+    """Adds the ability to observe from within Python or the current value
+    of an attribute of an ipytone widget (e.g., Param, Signal, Envelope, Meter, etc.),
+    or link it with another widget attribute.
+
+    It is similar to ipywidgets's ``observe``, ``dlink`` and ``jsdlink``, but adds
+    the ability to observe or link ipytone widget attributes that may be updated
+    continuously in the front-end (e.g., value of an audio signal or an envelope,
+    position of the transport timeline, etc.).
 
     """
 
@@ -154,7 +170,7 @@ class ScheduleObserveMixin(HasTraits):
         Parameters
         ----------
         handler : callable
-            A callable that is called when the time and/or value is updated at
+            A callable that is called when the trait value is updated at
             regular intervals. The signature of the callable is similar
             to the signature expected by :func:`ipywidgets.Widget.observe`.
             Note that the handler will only apply to the trait given by the
@@ -168,11 +184,25 @@ class ScheduleObserveMixin(HasTraits):
             timeline, i.e., the handler is not called until the transport starts and
             will stop being called when the transport stops. If False (default),
             the trait update is done with respect to the active audio context.
-        name : { "time", "value" }, optional
-            The name of the trait to observe. It accepts one of the following:
+        name : str, optional
+            The name of the Tone.js attribute to observe. Note that it doesn't
+            necessarily correspond to a trait of this ipytone widget. Instead, it
+            may accept one of the following names (depending the observed ipytone
+            widget, only a few may be supported):
 
-            - "value" (default): the current value of the Tone.js corresponding instance.
             - "time": the current time (either transport time or audio context time).
+            - "value": the current value of the Tone.js corresponding instance.
+            - "state": current playback state
+            - "progress": current progress (of an event or transport loop)
+            - "position": current transport position in Bars:Beats:Sixteenths
+            - "ticks": current transport tick position
+            - "seconds": current transport time in seconds
+
+            The default name also depends on the observed ipytone widget.
+        observe_time : bool, optional
+            If True, both the (current audio context or transport) time and trait value
+            are passed to the handler as a ``(time, trait_value)`` tuple when the trait
+            value is updated (default: False).
 
         """
         key = hash(handler)
@@ -218,11 +248,12 @@ class ScheduleObserveMixin(HasTraits):
         return observer.schedule_dlink(target, update_interval, transport, js=js)
 
     def schedule_dlink(self, target, update_interval=1, transport=False, name=None):
-        """Link this ipytone widget value with a target widget attribute.
+        """Link a source attribute of this ipytone widget with a target widget
+        attribute.
 
-        As the value of this widget may refer to a continuously updated value
+        As the source attribute may have a continuously updated value
         (e.g., the gain of an audio signal, the current value of a parameter, etc.),
-        The target widget attribute is synchronized on a given, finite resolution.
+        The target widget attribute is synchronized at a given, finite resolution.
 
         Parameters
         ----------
@@ -238,19 +269,29 @@ class ScheduleObserveMixin(HasTraits):
             timeline, i.e., no update happens until the transport starts and
             updates stop when the transport stops. If False (default),
             the target attribute update is done with respect to the active audio context.
+        name : str, optional
+            The name of the (source) Tone.js attribute to link. See ``schedule_observe``
+            for more details and for a list of available names.
+
+        Returns
+        -------
+        link : ToneDirectionalLink
+            A link object that can be used to unlink the widget attributes (using the
+            ``.unlink()`` method).
 
         """
         return self._schedule_dlink(target, update_interval, transport, name, js=False)
 
     def schedule_jsdlink(self, target, update_interval=0.08, transport=False, name=None):
-        """Link this ipytone widget value with a target widget attribute.
+        """Link a source attribute of this ipytone widget with a target widget
+        attribute.
 
         The link is created in the front-end and does not rely on a roundtrip
         to the backend.
 
-        As the value of this widget may refer to a continuously updated value
+        As the source attribute may have a continuously updated value
         (e.g., the gain of an audio signal, the current value of a parameter, etc.),
-        The target widget attribute is synchronized on a given, finite resolution.
+        The target widget attribute is synchronized at a given, finite resolution.
 
         Parameters
         ----------
@@ -266,6 +307,15 @@ class ScheduleObserveMixin(HasTraits):
             timeline, i.e., no update happens until the transport starts and
             updates stop when the transport stops. If False (default),
             the target attribute update is done with respect to the active audio context.
+        name : str, optional
+            The name of the (source) Tone.js attribute to link. See ``schedule_observe``
+            for more details and for a list of available names.
+
+        Returns
+        -------
+        link : ToneDirectionalLink
+            A link object that can be used to unlink the widget attributes (using the
+            ``.unlink()`` method).
 
         """
         return self._schedule_dlink(target, update_interval, transport, name, js=True)
