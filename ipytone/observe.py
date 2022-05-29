@@ -17,7 +17,16 @@ class ToneDirectionalLink:
         self.observer.schedule_cancel()
 
 
-VALID_OBSERVED_TRAITS = ["time", "value", "state", "progress", "position", "ticks", "seconds", "array"]
+VALID_OBSERVED_TRAITS = [
+    "time",
+    "value",
+    "state",
+    "progress",
+    "position",
+    "ticks",
+    "seconds",
+    "array",
+]
 
 
 class ScheduleObserver(ToneWidgetBase):

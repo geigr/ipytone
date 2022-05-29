@@ -31,6 +31,8 @@ def json_to_array(value, widget):
 def data_array_to_json(value, widget, force_contiguous=True):
     if isinstance(value, Widget):
         return widget_serialization["to_json"](value, widget)
+    elif isinstance(value, list):
+        return [array_to_binary(element, widget, force_contiguous) for element in value]
     else:
         return array_to_binary(value, widget, force_contiguous)
 
@@ -39,6 +41,9 @@ def json_to_data_array(value, widget):
     if isinstance(value, str) and value.startswith("IPY_MODEL_"):
         # Array widget
         return widget_serialization["from_json"](value, widget)
+    elif isinstance(value, list):
+        # list of arrays
+        return [json_to_array(element, widget) for element in value]
     else:
         return json_to_array(value, widget)
 

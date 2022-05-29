@@ -1,4 +1,4 @@
-from traitlets import Enum, Int, Float, List, Unicode, validate
+from traitlets import Enum, Float, Int, List, Unicode, validate
 
 from .core import AudioNode, Gain
 from .observe import ScheduleObserveMixin
