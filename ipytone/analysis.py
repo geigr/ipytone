@@ -1,10 +1,14 @@
-from traitlets import Enum, Float, Int, List, Unicode, validate
+from traitlets import Bool, Enum, Float, Int, List, Unicode, validate
 
 from .core import AudioNode, Gain
 from .observe import ScheduleObserveMixin
 
 
 class Analyser(AudioNode, ScheduleObserveMixin):
+    """A node that may be used to extract frequency (FFT) or waveform data
+    from an incoming audio signal.
+
+    """
 
     _model_name = Unicode("AnalyserModel").tag(sync=True)
 
@@ -34,3 +38,49 @@ class Analyser(AudioNode, ScheduleObserveMixin):
     def channels(self):
         """Number of channels the analyser does the analysis on."""
         return self._channels
+
+
+class BaseMeter(AudioNode, ScheduleObserveMixin):
+    """Base class for metering nodes."""
+
+    _model_name = Unicode("BaseMeterModel").tag(sync=True)
+
+    def __init__(self, **kwargs):
+        self._analyser = Analyser(_create_node=False, **self._get_analyser_options())
+
+        kwargs.update({"_input": self._analyser, "_output": self._analyser})
+        super().__init__(**kwargs)
+
+    def _get_analyser_options(self):
+        return {"size": 256, "type": "waveform"}
+
+
+class Meter(BaseMeter):
+    """A node to get the RMS value of an input audio signal."""
+
+    _model_name = Unicode("MeterModel").tag(sync=True)
+
+    _channels = Int(1).tag(sync=True)
+
+    normal_range = Bool(False, help="value in range [0-1] (True) or decibels (False)").tag(
+        sync=True
+    )
+    smoothing = Float(0.8, help="controls the time averaging window").tag(sync=True)
+
+    def __init__(self, channel_count=1, **kwargs):
+        self._channels = channel_count
+        super().__init__(**kwargs)
+
+    def _get_analyser_options(self):
+        return {"size": 256, "type": "waveform", "channels": self._channels}
+
+    @property
+    def channels(self):
+        """Number of channels of the meter."""
+        return self._analyser.channels
+
+
+class DCMeter(BaseMeter):
+    """A node to get the raw value of an input audio signal."""
+
+    _model_name = Unicode("DCMeterModel").tag(sync=True)

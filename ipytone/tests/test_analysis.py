@@ -1,7 +1,7 @@
 import pytest
 from traitlets.traitlets import TraitError
 
-from ipytone.analysis import Analyser
+from ipytone.analysis import Analyser, DCMeter, Meter
 from ipytone.core import Gain
 
 
@@ -26,3 +26,26 @@ def test_analyser():
         analyser.size = 10
 
     assert analyser.smoothing == 0.8
+
+
+def test_meter():
+    meter = Meter()
+
+    assert meter.input is meter.output
+    assert isinstance(meter.output, Analyser)
+
+    assert meter.normal_range is False
+    assert meter.smoothing == 0.8
+    assert meter.channels == 1
+
+    # analyser settings
+    assert meter.output.channels == 1
+    assert meter.output.size == 256
+    assert meter.output.type == "waveform"
+
+
+def test_dcmeter():
+    meter = DCMeter()
+
+    assert meter.output.size == 256
+    assert meter.output.type == "waveform"

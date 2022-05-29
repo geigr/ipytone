@@ -4,9 +4,7 @@ import * as tone from 'tone';
 
 import { ToneWidgetModel } from './widget_base';
 
-import {
-  dataarray_serialization,
-} from './serializers';
+import { dataarray_serialization } from './serializers';
 
 type ObserveEvent = {
   id: number | ReturnType<typeof setInterval>;
@@ -20,7 +18,13 @@ type ScheduleObserverCommand = {
   draw: boolean;
 };
 
-type TraitValue = tone.Unit.Unit | tone.PlaybackState | Float32Array | Float32Array[];
+type TraitValue =
+  | tone.Unit.Unit
+  | tone.PlaybackState
+  | Float32Array
+  | Float32Array[]
+  | number
+  | number[];
 
 export interface ObservableModel {
   getValueAtTime: (traitName: string, time: tone.Unit.Seconds) => TraitValue;
@@ -94,7 +98,7 @@ export class ScheduleObserverModel extends ToneWidgetModel {
 
     if (this.observeTime) {
       this.set('time_value', [time, traitValue]);
-    }  else {
+    } else {
       this.set(traitName, traitValue);
     }
 

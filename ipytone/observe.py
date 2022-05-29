@@ -55,7 +55,7 @@ class ScheduleObserver(ToneWidgetBase):
     time = Float(0.0, help="current observed time", read_only=True).tag(sync=True)
 
     value = Union(
-        (Float(), Int(), Unicode()),
+        (Float(), Int(), Unicode(), List(Float())),
         help="Param / Signal / Meter current observed value",
         default_value=0,
         read_only=True,
