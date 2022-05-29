@@ -2,7 +2,7 @@ import ipywidgets
 import pytest
 from traitlets import Float, Int, Unicode, Union
 
-from ipytone.analysis import Analyser
+from ipytone.analysis import FFT, Analyser, DCMeter, Meter, Waveform
 from ipytone.core import Param
 from ipytone.envelope import Envelope
 from ipytone.event import Event
@@ -11,8 +11,23 @@ from ipytone.signal import Signal
 from ipytone.source import Source
 from ipytone.transport import Transport
 
+OBSERVABLE_CLASSES = [
+    Param,
+    Signal,
+    Envelope,
+    Event,
+    Signal,
+    Source,
+    Transport,
+    Analyser,
+    Meter,
+    DCMeter,
+    FFT,
+    Waveform,
+]
 
-@pytest.fixture(params=[Param, Signal, Envelope, Event, Signal, Source, Transport, Analyser])
+
+@pytest.fixture(params=OBSERVABLE_CLASSES)
 def widget(request):
     widget_cls = request.param
     yield widget_cls()

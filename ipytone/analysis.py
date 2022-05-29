@@ -1,7 +1,12 @@
+import numpy as np
 from traitlets import Bool, Enum, Float, Int, List, Unicode, validate
 
 from .core import AudioNode, Gain
 from .observe import ScheduleObserveMixin
+
+
+def is_pow2(value):
+    return (value & (value - 1) == 0) and value != 0
 
 
 class Analyser(AudioNode, ScheduleObserveMixin):
@@ -29,8 +34,7 @@ class Analyser(AudioNode, ScheduleObserveMixin):
     @validate("size")
     def _is_power_of_two(self, proposal):
         size = proposal["value"]
-        pow2 = (size & (size - 1) == 0) and size != 0
-        if not pow2:
+        if not is_pow2(size):
             raise ValueError(f"size must be a power of two, found {size}")
         return size
 
@@ -70,6 +74,7 @@ class Meter(BaseMeter):
     def __init__(self, channel_count=1, **kwargs):
         self._channels = channel_count
         super().__init__(**kwargs)
+        self._analyser.smoothing = self.smoothing
 
     def _get_analyser_options(self):
         return {"size": 256, "type": "waveform", "channels": self._channels}
@@ -84,3 +89,65 @@ class DCMeter(BaseMeter):
     """A node to get the raw value of an input audio signal."""
 
     _model_name = Unicode("DCMeterModel").tag(sync=True)
+
+
+class Waveform(BaseMeter):
+    """A node to get waveform data from an input audio signal."""
+
+    _model_name = Unicode("WaveformModel").tag(sync=True)
+
+    size = Int(1024, help="array size (must be a power of two)").tag(sync=True)
+
+    _observable_traits = List(["array"])
+    _default_observed_trait = "array"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._analyser.size = self.size
+
+    def _get_analyser_options(self):
+        return {"type": "waveform"}
+
+    @validate("size")
+    def _is_power_of_two(self, proposal):
+        size = proposal["value"]
+        if not is_pow2(size):
+            raise ValueError(f"size must be a power of two, found {size}")
+        return size
+
+
+class FFT(BaseMeter):
+    """A node to get frequency data from an input audio signal."""
+
+    _model_name = Unicode("FFTModel").tag(sync=True)
+
+    size = Int(1024, help="array size (must be a power of two)").tag(sync=True)
+    normal_range = Bool(False, help="value in range [0-1] (True) or decibels (False)").tag(
+        sync=True
+    )
+    smoothing = Float(0.8, help="controls the time averaging window").tag(sync=True)
+
+    _observable_traits = List(["array"])
+    _default_observed_trait = "array"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._analyser.size = self.size
+        self._analyser.smoothing = self.smoothing
+
+    def _get_analyser_options(self):
+        return {"type": "fft"}
+
+    @validate("size")
+    def _is_power_of_two(self, proposal):
+        size = proposal["value"]
+        if not is_pow2(size):
+            raise ValueError(f"size must be a power of two, found {size}")
+        return size
+
+    @property
+    def frequency_labels(self):
+        """Frequency label values (in Hertz)."""
+        # assume sample rate 44,1 MHz (TODO: get it from Tone context)
+        sample_rate = 44100
+        return np.arange(self.size) * sample_rate / (self.size * 2)

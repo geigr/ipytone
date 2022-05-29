@@ -145,3 +145,69 @@ export class DCMeterModel extends BaseMeterModel {
 
   static model_name = 'DCMeterModel';
 }
+
+export class WaveformModel extends BaseMeterModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: WaveformModel.model_name,
+      size: 1024,
+    };
+  }
+
+  createNode(): tone.Waveform {
+    return new tone.Waveform({
+      size: this.get('size'),
+    });
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:size', () => {
+      this.node.size = this.get('size');
+    });
+  }
+
+  node: tone.Waveform;
+
+  static model_name = 'WaveformModel';
+}
+
+export class FFTModel extends BaseMeterModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: FFTModel.model_name,
+      size: 1024,
+      normal_range: false,
+      smoothing: 0.8,
+    };
+  }
+
+  createNode(): tone.FFT {
+    return new tone.FFT({
+      size: this.get('size'),
+      normalRange: this.get('normal_range'),
+      smoothing: this.get('smoothing'),
+    });
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:size', () => {
+      this.node.size = this.get('size');
+    });
+    this.on('change:normal_range', () => {
+      this.node.normalRange = this.get('normal_range');
+    });
+    this.on('change:smoothing', () => {
+      this.node.smoothing = this.get('smoothing');
+    });
+  }
+
+  node: tone.FFT;
+
+  static model_name = 'FFTModel';
+}

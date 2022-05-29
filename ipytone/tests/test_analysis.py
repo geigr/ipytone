@@ -1,7 +1,7 @@
 import pytest
 from traitlets.traitlets import TraitError
 
-from ipytone.analysis import Analyser, DCMeter, Meter
+from ipytone.analysis import FFT, Analyser, DCMeter, Meter, Waveform
 from ipytone.core import Gain
 
 
@@ -49,3 +49,27 @@ def test_dcmeter():
 
     assert meter.output.size == 256
     assert meter.output.type == "waveform"
+
+
+def test_waveform():
+    waveform = Waveform()
+
+    assert waveform.size == waveform.output.size == 1024
+    assert waveform.output.type == "waveform"
+
+    with pytest.raises(ValueError, match="size must be a power of two"):
+        waveform.size = 10
+
+
+def test_fft():
+    fft = FFT()
+
+    assert fft.size == fft.output.size == 1024
+    assert fft.smoothing == fft.output.smoothing == 0.8
+    assert fft.normal_range is False
+    assert fft.output.type == "fft"
+
+    with pytest.raises(ValueError, match="size must be a power of two"):
+        fft.size = 10
+
+    assert fft.frequency_labels.size == fft.size
