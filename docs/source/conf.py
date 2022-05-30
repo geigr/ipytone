@@ -2,10 +2,8 @@
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
-    "sphinx.ext.todo",
     "jupyterlite_sphinx",
 ]
 
@@ -24,21 +22,6 @@ master_doc = "index"
 project = "ipytone"
 copyright = "2022, Benoit Bovy"
 author = "Benoit Bovy"
-
-# get version from python package:
-import os
-
-here = os.path.dirname(__file__)
-repo = os.path.join(here, "..", "..")
-_version_py = os.path.join(repo, "ipytone", "_version.py")
-version_ns = {}
-with open(_version_py) as f:
-    exec(f.read(), version_ns)
-
-# The short X.Y version.
-version = "%i.%i" % version_ns["version_info"][:2]
-# The full version, including alpha/beta/rc tags.
-release = version_ns["__version__"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
