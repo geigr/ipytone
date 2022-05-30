@@ -1,6 +1,10 @@
 import numpy as np
 from traitlets import Bool, Enum, Float, Int, List, Unicode, validate
 
+from ipytone.base import PyAudioNode
+from ipytone.filter import OnePoleFilter
+from ipytone.signal import Abs
+
 from .core import AudioNode, Gain
 from .observe import ScheduleObserveMixin
 
@@ -151,3 +155,29 @@ class FFT(BaseMeter):
         # assume sample rate 44,1 MHz (TODO: get it from Tone context)
         sample_rate = 44100
         return np.arange(self.size) * sample_rate / (self.size * 2)
+
+
+class Follower(PyAudioNode):
+    """Simple envelope follower that consists of a lowpass filter applied to the
+    absolute value of an incoming audio signal.
+
+    """
+
+    def __init__(self, smoothing=0.05, **kwargs):
+        self._smoothing = smoothing
+        self._abs = Abs()
+        self._lowpass = OnePoleFilter(type="lowpass", frequency=1 / self._smoothing)
+
+        super().__init__(self._abs, self._lowpass, **kwargs)
+
+        self._abs.connect(self._lowpass)
+
+    @property
+    def smoothing(self):
+        """Envelope follower smoothing, in seconds."""
+        return self._smoothing
+
+    @smoothing.setter
+    def smoothing(self, value):
+        self._smoothing = value
+        self._lowpass.frequency = 1 / self._smoothing

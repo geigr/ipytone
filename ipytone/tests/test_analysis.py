@@ -1,8 +1,10 @@
 import pytest
 from traitlets.traitlets import TraitError
 
-from ipytone.analysis import FFT, Analyser, DCMeter, Meter, Waveform
+from ipytone.analysis import FFT, Analyser, DCMeter, Follower, Meter, Waveform
 from ipytone.core import Gain
+from ipytone.filter import OnePoleFilter
+from ipytone.signal import Abs
 
 
 def test_analyser():
@@ -73,3 +75,20 @@ def test_fft():
         fft.size = 10
 
     assert fft.frequency_labels.size == fft.size
+
+
+def test_follower(audio_graph):
+    follower = Follower()
+
+    assert isinstance(follower.input, Abs)
+    assert isinstance(follower.output, OnePoleFilter)
+
+    assert follower.output.type == "lowpass"
+    assert follower.output.frequency == 1 / follower.smoothing
+    assert follower.smoothing == 0.05
+
+    follower.smoothing = 5
+    assert follower.smoothing == 5
+    assert follower.output.frequency == 1 / 5
+
+    assert (follower.input, follower.output, 0, 0) in audio_graph.connections
