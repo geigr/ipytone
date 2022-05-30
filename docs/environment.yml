@@ -8,6 +8,7 @@ dependencies:
   - sphinx
   - pydata-sphinx-theme
   - emsdk
+  - yarn
   - pip:
     - jupyterlite
     - jupyterlite-sphinx
