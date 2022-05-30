@@ -88,7 +88,7 @@ export class AudioGraphModel extends ToneWidgetModel {
     // disconnect nodes for removed connections
     const connRemoved = this.connections_prev.filter((other: Connection) => {
       const other_id: string = getConnectionId(other);
-      const current_ids = getConnectionIds(this.connections_prev);
+      const current_ids = getConnectionIds(this.connections);
       return !current_ids.includes(other_id);
     });
 
