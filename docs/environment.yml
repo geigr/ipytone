@@ -1,11 +1,15 @@
 
-name: ipytone_docs
+name: ipytone-docs
 channels:
   - conda-forge
 dependencies:
-- python=3.5
-- nodejs
-- numpy
-- sphinx
-- nbsphinx
-- jupyter_sphinx
+  - ipywidgets
+  - numpy
+  - sphinx
+  - pydata-sphinx-theme
+  - emsdk
+  - pip:
+    - jupyterlite
+    - jupyterlite-sphinx
+    - jupyterlite-xeus-python==0.3.0
+    - empack
