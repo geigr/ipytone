@@ -1,7 +1,7 @@
 channels:
   - conda-forge
 dependencies:
-  - ipytone=0.3.0
+  - ipytone=0.4.0
   - ipywidgets>=7.6
   - jupyterlab=3
   - numpy
