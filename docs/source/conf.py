@@ -45,7 +45,7 @@ release = version_ns["__version__"]
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = ["**.ipynb_checkpoints", ".ipynb"]
 
-highlight_language = 'python'
+highlight_language = "python"
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -59,9 +59,7 @@ html_theme = "pydata_sphinx_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = dict(
-    github_url='https://github.com/benbovy/ipytone'
-)
+html_theme_options = dict(github_url="https://github.com/benbovy/ipytone")
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
