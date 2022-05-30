@@ -2,6 +2,7 @@ import ipywidgets
 import pytest
 from traitlets import Float, Int, Unicode, Union
 
+from ipytone.analysis import FFT, Analyser, DCMeter, Meter, Waveform
 from ipytone.core import Param
 from ipytone.envelope import Envelope
 from ipytone.event import Event
@@ -10,8 +11,23 @@ from ipytone.signal import Signal
 from ipytone.source import Source
 from ipytone.transport import Transport
 
+OBSERVABLE_CLASSES = [
+    Param,
+    Signal,
+    Envelope,
+    Event,
+    Signal,
+    Source,
+    Transport,
+    Analyser,
+    Meter,
+    DCMeter,
+    FFT,
+    Waveform,
+]
 
-@pytest.fixture(params=[Param, Signal, Envelope, Event, Signal, Source, Transport])
+
+@pytest.fixture(params=OBSERVABLE_CLASSES)
 def widget(request):
     widget_cls = request.param
     yield widget_cls()
@@ -72,6 +88,9 @@ def test_schedule_dlink(widget, trait_name, target_widget, mocker):
     if trait_name not in widget._observable_traits and trait_name != "time":
         with pytest.raises(ValueError, match="invalid observable trait name"):
             widget.schedule_dlink((target_widget, "value"), name=trait_name)
+    elif trait_name == "array":
+        # TODO: not sure it make 100% to link array values
+        pass
     else:
         for method in (widget.schedule_dlink, widget.schedule_jsdlink):
             link = method((target_widget, "value"), name=trait_name)

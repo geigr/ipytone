@@ -2,6 +2,13 @@
 // Distributed under the terms of the Modified BSD License.
 
 export {
+  AnalyserModel,
+  DCMeterModel,
+  FFTModel,
+  MeterModel,
+  WaveformModel,
+} from './widget_analysis';
+export {
   NativeAudioNodeModel,
   NativeAudioParamModel,
   PyInternalAudioNodeModel,

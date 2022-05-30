@@ -88,7 +88,7 @@ function deserializeDataArray(
 
 function serializeDataArray(
   obj: DeserializedDataArray,
-  widget?: WidgetModel
+  _widget?: WidgetModel
 ): any {
   if (obj === null) {
     return null;

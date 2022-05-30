@@ -1,8 +1,10 @@
 import ipywidgets
 from ipywidgets import widget_serialization
 from traitlets import Bool, Dict, Enum, Float, HasTraits, Instance, Int, List, Tuple, Unicode, Union
+from traittypes import Array
 
 from .base import ToneObject, ToneWidgetBase
+from .serialization import data_array_serialization
 
 
 class ToneDirectionalLink:
@@ -15,7 +17,16 @@ class ToneDirectionalLink:
         self.observer.schedule_cancel()
 
 
-VALID_OBSERVED_TRAITS = ["time", "value", "state", "progress", "position", "ticks", "seconds"]
+VALID_OBSERVED_TRAITS = [
+    "time",
+    "value",
+    "state",
+    "progress",
+    "position",
+    "ticks",
+    "seconds",
+    "array",
+]
 
 
 class ScheduleObserver(ToneWidgetBase):
@@ -44,7 +55,7 @@ class ScheduleObserver(ToneWidgetBase):
     time = Float(0.0, help="current observed time", read_only=True).tag(sync=True)
 
     value = Union(
-        (Float(), Int(), Unicode()),
+        (Float(), Int(), Unicode(), List(Float())),
         help="Param / Signal / Meter current observed value",
         default_value=0,
         read_only=True,
@@ -68,6 +79,14 @@ class ScheduleObserver(ToneWidgetBase):
     seconds = Float(0.0, help="current transport position in seconds", read_only=True).tag(
         sync=True
     )
+
+    array = Union(
+        (Array(), List(Array())),
+        allow_none=True,
+        default_value=None,
+        help="current value as array or list of arrays",
+        read_only=True,
+    ).tag(sync=True, **data_array_serialization)
 
     time_value = Tuple(
         Float(),

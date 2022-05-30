@@ -5,6 +5,7 @@
 # Distributed under the terms of the Modified BSD License.
 
 from ._version import __version__, version_info
+from .analysis import FFT, Analyser, DCMeter, Follower, Meter, Waveform
 from .base import PyAudioNode
 from .channel import Channel, CrossFade, Merge, Mono, MultibandSplit, Panner, PanVol, Solo, Split
 from .core import AudioBuffer, AudioBuffers, Gain, Param, Volume, destination
