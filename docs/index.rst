@@ -7,7 +7,7 @@ It may be used to turn Jupyter into a versatile DAW (Digital Audio Workstation)
 for music creation, sound design, data sonification, and more...
 
 
-.. retrolite::
+.. retrolite:: quick_demo.ipynb
    :width: 100%
    :height: 600px
 
