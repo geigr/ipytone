@@ -4,6 +4,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
+    "myst_nb",
     "jupyterlite_sphinx",
 ]
 
@@ -26,7 +27,7 @@ author = "Benoit Bovy"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ["**.ipynb_checkpoints", ".ipynb"]
+exclude_patterns = ["**.ipynb_checkpoints", "build/**.ipynb"]
 
 highlight_language = "python"
 

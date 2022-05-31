@@ -156,6 +156,12 @@ ipytone/labextension/*.tgz
 # Packed lab extensions
 ipytone/labextension
 
+# Docs
+# ----
+
+# generated API
+docs/_api_generated
+
 # jupyterlite build
 python_data.js
 python_data.data

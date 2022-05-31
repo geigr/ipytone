@@ -6,6 +6,12 @@ Ipytone exposes many features of the `Tone.js`_ library as `Jupyter widgets`_.
 It may be used to turn Jupyter into a versatile DAW (Digital Audio Workstation)
 for music creation, sound design, data sonification, and more...
 
+
+.. retrolite::
+   :width: 100%
+   :height: 600px
+
+
 Contents
 --------
 
@@ -13,7 +19,7 @@ Contents
    :maxdepth: 2
 
    installing
-   examples/index
+   user_guide
    api
 
 .. links
