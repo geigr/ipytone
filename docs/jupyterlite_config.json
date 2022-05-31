@@ -1,5 +1,13 @@
 {
-  "XeusPythonEnv": {
-    "packages": ["numpy", "ipytone"]
+  "LiteBuildConfig": {
+    "federated_extensions": [
+      "https://github.com/conda-forge/releases/releases/download/noarch/ipytone-0.4.0-pyhd8ed1ab_0.tar.bz2/ipytone-0.4.0-pyhd8ed1ab_0.tar.bz2",
+      "https://github.com/conda-forge/releases/releases/download/noarch/jupyterlab_widgets-1.0.2-pyhd8ed1ab_0.tar.bz2/jupyterlab_widgets-1.0.2-pyhd8ed1ab_0.tar.bz2"
+    ],
+    "ignore_sys_prefix": true,
+    "piplite_urls": [
+      "https://files.pythonhosted.org/packages/py2.py3/i/ipytone/ipytone-0.4.0-py2.py3-none-any.whl",
+      "https://files.pythonhosted.org/packages/py2.py3/i/ipywidgets/ipywidgets-7.6.5-py2.py3-none-any.whl"
+    ]
   }
 }

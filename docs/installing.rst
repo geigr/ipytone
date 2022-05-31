@@ -23,8 +23,8 @@ Or using mamba:
 
    mamba install ipytone -c conda-forge
 
-Jupyterlab extension (JupyterLab v2.x only)
--------------------------------------------
+JupyterLab extension (v2 only)
+------------------------------
 
 For JupyterLab v2.x, the ipytone extension must also be installed::
 

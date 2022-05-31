@@ -154,7 +154,7 @@ osc.start().stop("+1")
 
 When an audio node property is a {class}`~ipytone.Param` or
 {class}`~ipytone.Signal` instance, the actual value can be read / written via
-the `value` property that instance.
+the `value` property of that instance.
 
 An example with the oscillator `frequency`:
 
@@ -199,14 +199,14 @@ linear_ramp_to(800, 3)
 osc.stop()
 ```
 
-Although it is working, this solution may is not optimal.
+Although it is working, this solution may is not optimal:
 
 - the Python interpreter is blocked while the frequency of the oscillator is
   updated (although there might be ways to make it non-blocking)
 
-- the actual frequency update steps in the front-end may not happen at an audio
-  sample rate accuracy (slow data transfer between the Python kernel and the
-  front-end can make things even worse)
+- the actual frequency update steps in the front-end may not happen at an
+  "audio-friendly" accuracy (slow data transfer between the Python kernel and
+  the front-end can make things even worse)
 
 +++
 
@@ -281,7 +281,7 @@ ipywidgets.VBox([freq_slider, type_dropdown, toggle_play_button])
 
 ### Dispose audio nodes
 
-If audio nodes are not used anymore, it is preferable to dispose it. Disposing a
+If audio nodes are not used anymore, it is recommended to dispose it. Disposing a
 node instance means that all of its underlying Web Audio nodes are disconnected
 and freed for garbage collection in the front-end.
 
