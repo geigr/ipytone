@@ -9,7 +9,7 @@ information. Ipytone works very much like Tone.js and copies its API in Python.
 .. toctree::
 
     getting_started
-
+    scheduling
 
 .. _`Tone.js' documentation`: https://tonejs.github.io/
 .. _`Tone.js' Wiki`: https://github.com/Tonejs/Tone.js/wiki
