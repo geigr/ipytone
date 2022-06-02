@@ -7,6 +7,7 @@ dependencies:
   - numpy
   - sphinx
   - pydata-sphinx-theme
+  - matplotlib-inline
   - myst-nb
   - yarn
   - pip:
