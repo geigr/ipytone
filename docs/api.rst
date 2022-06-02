@@ -4,8 +4,11 @@
 API reference
 =============
 
-Apart from a few subtle differences, Ipytone closely follows `Tone.js' API`_.
-Some Tone.js features are not yet available in Ipytone.
+.. note::
+
+   Apart from a few subtle differences, ipytone closely follows the
+   `Tone.js API`_. Some of the Tone.js features are not yet available in
+   ipytone.
 
 .. note::
 
@@ -13,7 +16,7 @@ Some Tone.js features are not yet available in Ipytone.
    To keep the documentation clear and succinct, the Widget-specific API is
    not shown here. Please refer to the `ipywidgets`_ documentation.
 
-.. _`Tone.js' API`: https://tonejs.github.io/docs/14.7.77/index.html
+.. _`Tone.js API`: https://tonejs.github.io/docs/14.7.77/index.html
 .. _`ipywidgets`: https://ipywidgets.readthedocs.io_
 
 Core

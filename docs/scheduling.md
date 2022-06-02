@@ -31,15 +31,17 @@ import ipytone
 
 ## Transport
 
-The Tone.js global timeline is exposed in Python with the `ipytone.Transport`
-singleton class, which may be accessed via `ipytone.transport`:
+The Tone.js global timeline is exposed in Python with the
+{class}`~ipytone.transport.Transport` singleton class, which may be accessed via
+`ipytone.transport`:
 
 ```{code-cell} ipython3
 t = ipytone.transport
 ```
 
 ```{important}
-Like the audio context used by ipytone and Tone.js, the `Transport` timeline
+Like the audio context used by ipytone and Tone.js, the
+{class}`~ipytone.transport.Transport` timeline
 is exposed globally in the front-end. Consequently, if two or more notebooks
 with independent kernels are open in the same JupyterLab tab, they
 will all act on the same timeline. 
@@ -49,8 +51,10 @@ will all act on the same timeline.
 
 +++
 
-The playback state of the timeline is controlled by the `start`, `pause` and
-`stop` methods.
+The playback state of the timeline is controlled by the
+{func}`~ipytone.transport.Transport.start`,
+{func}`~ipytone.transport.Transport.pause` and
+{func}`~ipytone.transport.Transport.stop` methods.
 
 ```{code-cell} ipython3
 t.start().stop("+1")
@@ -77,7 +81,8 @@ t.loop_start = "4:0:0"
 t.loop_end = "8:0:0"
 ```
 
-Transport has also properties for setting the BPM or the time signature:
+{class}`~ipytone.transport.Transport` has also properties for setting the BPM or
+the time signature:
 
 ```{code-cell} ipython3
 t.bpm
@@ -89,8 +94,9 @@ t.time_signature
 
 ## Basic scheduling
 
-Basic event scheduling can be done either using `Transport` with callbacks or
-using context managers provided by ipytone.
+Basic event scheduling can be done either using
+{class}`~ipytone.transport.Transport` with callbacks or using context managers
+provided by ipytone.
 
 Let's first create an instrument
 
@@ -109,8 +115,10 @@ def callback(time):
     synth.trigger_attack_release("C4", "16n", time=time)
 ```
 
-Then we can pass it to one of the `schedule`, `schedule_repeat` and
-`schedule_once` methods of `Transport`, e.g.,
+Then we can pass it to one of the {func}`~ipytone.transport.Transport.schedule`,
+{func}`~ipytone.transport.Transport.schedule_repeat` and
+{func}`~ipytone.transport.Transport.schedule_once` methods of
+{class}`~ipytone.transport.Transport`, e.g.,
 
 ```{code-cell} ipython3
 # schedule the call repeatedly at every 4th bar note
@@ -122,7 +130,8 @@ t.start().stop("+2m")
 ```
 
 Those schedule methods return an event id that can be used later to remove it
-from the transport timeline, e.g.,
+from the transport timeline with the {func}`~ipytone.transport.Transport.clear`,
+method, e.g.,
 
 ```{code-cell} ipython3
 t.clear(event_id)
@@ -173,8 +182,9 @@ with ipytone.schedule_once("4n") as (time, event_id):
 t.start().stop("+2m")
 ```
 
-Unlike the example above, the two note triggers here are scheduled only once so
-they won't be re-triggered after stopping and restarting the transport
+Note that unlike the example above, the two note triggers here are scheduled
+only once so they won't be re-triggered after stopping and restarting the
+transport
 
 ```{code-cell} ipython3
 # no scheduled event
@@ -190,8 +200,8 @@ scheduling.
 
 ### Event
 
-`Event` is the base class of all events and accepts a callback that has two
-arguments: `time` and a `value` (i.e., a pitch or a note).
+{class}`~ipytone.Event` is the base class of all events and accepts a callback
+that has two arguments: `time` and a `value` (i.e., a pitch or a note).
 
 ```{code-cell} ipython3
 def event_clb(time, value):
@@ -215,16 +225,16 @@ event.loop_end = "8:0:0"
 event.start()
 ```
 
-```note
-Events won't fire unless the `Transport` is started
+```{important}
+Events won't fire unless the {class}`~ipytone.transport.Transport` is started.
 ```
 
 ```{code-cell} ipython3
 t.start()
 ```
 
-`Event` also provides some other properties to control its playback rate and to
-randomize it.
+{class}`~ipytone.Event` also provides some other properties to control its
+playback rate and to randomize it.
 
 ```{code-cell} ipython3
 # play it 4x faster
@@ -241,7 +251,7 @@ event.probability = 0.8
 event.humanize = 0.2
 ```
 
-Call `cancel` to remove it from the transport timeline
+Call `cancel` to remove it from the transport timeline:
 
 ```{code-cell} ipython3
 event.stop()
@@ -250,9 +260,9 @@ event.cancel()
 
 ### Loop
 
-`Loop` is a simplified event that is looped by default at a user-defined
-interval. Like in basic scheduling, it accepts a callback with one `time`
-argument.
+{class}`~ipytone.Loop` is a simplified event that is looped by default at a
+user-defined interval. Like in basic scheduling, it accepts a callback with one
+`time` argument.
 
 ```{code-cell} ipython3
 loop = ipytone.Loop(callback=callback, interval="8n")
@@ -272,14 +282,14 @@ loop.cancel()
 
 ### Part
 
-`Part` is a sequence of events that can be handled just like an `Event` (i.e.,
-it is a music partition). It accepts a callback with two `time` and `note`
-arguments.
+{class}`~ipytone.Part` is a sequence of events that can be handled just like an
+{class}`~ipytone.Event` (i.e., it is a music partition). It accepts a callback
+with two `time` and `note` arguments.
 
 ```{important}
 While Tone.js accepts any arbitrary value type for the second argument, ipytone
-only accepts an instance of `Note`. The way ipytone handles Python callbacks
-(i.e., not "real" callbacks) imposes this restriction.
+only accepts an instance of {class}`~ipytone.Note`. The way ipytone handles
+Python callbacks (i.e., not "real" callbacks) imposes this restriction.
 ```
 
 ```{code-cell} ipython3
@@ -289,9 +299,9 @@ def part_clb(time, note):
      )
 ```
 
-In the `Part` constructor, events may be specified either with instances of
-`Note` (which contain information about the actual note, time, duration and
-velocity) or an equivalent dictionary.
+In the {class}`~ipytone.Part` constructor, events may be specified either with
+instances of {class}`~ipytone.Note` (which contain information about the actual
+note, time, duration and velocity) or an equivalent dictionary.
 
 ```{code-cell} ipython3
 part = ipytone.Part(
@@ -308,8 +318,9 @@ part = ipytone.Part(
 part.start()
 ```
 
-Although the single events of a `Part` cannot be accessed directly, they can be
-further updated using the `add`, `at`, `remove` and `clear` methods.
+Although the single events of a {class}`~ipytone.Part` cannot be accessed
+directly, they can be further updated using the `add`, `at`, `remove` and
+`clear` methods.
 
 ```{code-cell} ipython3
 part.add(ipytone.Note("16n", "A3", velocity=0.2))
@@ -329,8 +340,8 @@ part.stop()
 
 ### Sequence
 
-`Sequence` is an alternative to `Part` where the note events are evenly spaced
-at a given subdivision.
+{class}`~ipytone.Sequence` is an alternative to {class}`~ipytone.Part` where the
+note events are evenly spaced at a given subdivision.
 
 ```{code-cell} ipython3
 seq = ipytone.Sequence(
@@ -365,8 +376,8 @@ seq.stop()
 
 ### Pattern
 
-`Pattern` is like an arpeggiator, it cycles trough an sequence of notes with a
-given pattern.
+{class}`~ipytone.Pattern` is like an arpeggiator, it cycles trough an sequence
+of notes with a given pattern.
 
 ```{code-cell} ipython3
 pat = ipytone.Pattern(
