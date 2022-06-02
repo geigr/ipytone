@@ -21,6 +21,9 @@ In this tutorial, we'll see how to:
 - generate and shape sounds by creating audio nodes and connecting them together
 - control audio node attributes or parameters with Python code
 - link audio node attributes or parameters with other widgets
+
+Note: you can download this tutorial as a
+{nb-download}`Jupyter notebook <getting_started.ipynb>`.
 ```
 
 ```{code-cell} ipython3
@@ -279,14 +282,11 @@ toggle_play_button.observe(start_stop_osc, names='value')
 ipywidgets.VBox([freq_slider, type_dropdown, toggle_play_button])
 ```
 
-### Dispose audio nodes
+## Dispose audio nodes
 
 If audio nodes are not used anymore, it is recommended to dispose it. Disposing a
 node instance means that all of its underlying Web Audio nodes are disconnected
 and freed for garbage collection in the front-end.
-
-When the `close` method of an ipytone node widget is called, the node is
-automatically disposed.
 
 ```{code-cell} ipython3
 osc.dispose()
@@ -298,4 +298,9 @@ osc.disposed
 
 ```{code-cell} ipython3
 filtr.dispose()
+```
+
+```{note}
+When the `close()` method of an ipytone node widget is called, the node is
+automatically disposed.
 ```

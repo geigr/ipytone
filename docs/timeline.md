@@ -11,13 +11,16 @@ kernelspec:
   name: python3
 ---
 
-# Scheduling
+# Timeline
 
 ```{admonition} Summary
 :class: note
 
 In this tutorial, we'll see how to schedule musical events along a global
 transport timeline.
+
+Note: you can download this tutorial as a
+{nb-download}`Jupyter notebook <timeline.ipynb>`.
 ```
 
 Tone.js offers the possibility to schedule with precision sound or musical
