@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+from ipywidgets import Widget
+from traitlets import HasTraits
+
+
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
@@ -32,6 +36,8 @@ exclude_patterns = [
     "build/**.ipynb",
 ]
 
+templates_path = ["_templates"]
+
 highlight_language = "python"
 
 # The name of the Pygments (syntax highlighting) style to use.
@@ -61,3 +67,15 @@ htmlhelp_basename = "ipytonedoc"
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {"https://docs.python.org/": None}
+
+
+def skip_widget_members(app, what, name, obj, skip, options):
+    """Be succinct and skip showing all ipywidgets.Widget members."""
+    if name in Widget.__dict__ or name in HasTraits.__dict__:
+        return True
+
+    return None
+
+
+def setup(app):
+    app.connect('autodoc-skip-member', skip_widget_members)

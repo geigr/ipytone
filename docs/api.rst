@@ -7,7 +7,14 @@ API reference
 Apart from a few subtle differences, Ipytone closely follows `Tone.js' API`_.
 Some Tone.js features are not yet available in Ipytone.
 
+.. note::
+
+   The majority of iyptone classes listed here derive from ``ipywidgets.Widget``.
+   To keep the documentation clear and succinct, the Widget-specific API is
+   not shown here. Please refer to the `ipywidgets`_ documentation.
+
 .. _`Tone.js' API`: https://tonejs.github.io/docs/14.7.77/index.html
+.. _`ipywidgets`: https://ipywidgets.readthedocs.io_
 
 Core
 ----
@@ -15,6 +22,7 @@ Core
 .. currentmodule:: ipytone
 .. autosummary::
    :toctree: _api_generated/
+   :template: ipytone-class-template.rst
 
    AudioBuffer
    AudioBuffers
@@ -22,6 +30,10 @@ Core
    Param
    PyAudioNode
    Volume
+
+.. autosummary::
+   :toctree: _api_generated/
+
    destination
    get_audio_graph
 
@@ -30,6 +42,7 @@ Source
 
 .. autosummary::
    :toctree: _api_generated/
+   :template: ipytone-class-template.rst
 
    LFO
    AMOscillator
@@ -48,6 +61,7 @@ Instrument
 
 .. autosummary::
    :toctree: _api_generated/
+   :template: ipytone-class-template.rst
 
    AMSynth
    DuoSynth
@@ -67,6 +81,7 @@ Effect
 
 .. autosummary::
    :toctree: _api_generated/
+   :template: ipytone-class-template.rst
 
    Distortion
    FeedbackDelay
@@ -83,6 +98,7 @@ Analysis
 
 .. autosummary::
    :toctree: _api_generated/
+   :template: ipytone-class-template.rst
 
    Analyser
    FFT
@@ -96,6 +112,7 @@ Channel
 
 .. autosummary::
    :toctree: _api_generated/
+   :template: ipytone-class-template.rst
 
    Channel
    CrossFade
@@ -112,6 +129,7 @@ Dynamics
 
 .. autosummary::
    :toctree: _api_generated/
+   :template: ipytone-class-template.rst
 
    Compressor
    Limiter
@@ -122,6 +140,7 @@ Envelope
 
 .. autosummary::
    :toctree: _api_generated/
+   :template: ipytone-class-template.rst
 
    AmplitudeEnvelope
    Envelope
@@ -132,6 +151,7 @@ Filter
 
 .. autosummary::
    :toctree: _api_generated/
+   :template: ipytone-class-template.rst
 
    EQ3
    BiquadFilter
@@ -145,6 +165,7 @@ Signal
 
 .. autosummary::
    :toctree: _api_generated/
+   :template: ipytone-class-template.rst
 
    Abs
    Add
@@ -162,6 +183,12 @@ Transport
 
 .. autosummary::
    :toctree: _api_generated/
+   :template: ipytone-class-template.rst
+
+   transport.Transport
+
+.. autosummary::
+   :toctree: _api_generated/
 
    schedule
    schedule_once
@@ -173,6 +200,7 @@ Event
 
 .. autosummary::
    :toctree: _api_generated/
+   :template: ipytone-class-template.rst
 
    Event
    Loop
