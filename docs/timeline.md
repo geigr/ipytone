@@ -141,7 +141,7 @@ t.clear(event_id)
 ```
 
 ```{code-cell} ipython3
-# no scheduled event
+# no scheduled event, no sound
 t.start().stop("+2m")
 ```
 
@@ -190,7 +190,7 @@ only once so they won't be re-triggered after stopping and restarting the
 transport
 
 ```{code-cell} ipython3
-# no scheduled event
+# no scheduled event, no sound
 t.start().stop("+2m")
 ```
 
@@ -322,8 +322,9 @@ part.start()
 ```
 
 Although the single events of a {class}`~ipytone.Part` cannot be accessed
-directly, they can be further updated using the `add`, `at`, `remove` and
-`clear` methods.
+directly, they can be further updated using the {class}`~ipytone.Part.add`,
+{class}`~ipytone.Part.at`, {class}`~ipytone.Part.at`,
+{class}`~ipytone.Part.remove` and {class}`~ipytone.Part.clear` methods.
 
 ```{code-cell} ipython3
 part.add(ipytone.Note("16n", "A3", velocity=0.2))

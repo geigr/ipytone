@@ -40,6 +40,8 @@ Core
    destination
    get_audio_graph
 
+.. _api_source:
+
 Source
 ------
 
@@ -58,6 +60,8 @@ Source
    Players
    PulseOscillator
    PWMOscillator
+
+.. _api_instrument:
 
 Instrument
 ----------
