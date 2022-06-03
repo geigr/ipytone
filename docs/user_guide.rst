@@ -14,6 +14,7 @@ its `API`_ in Python.
     audio_samples
     timeline
     observe_link
+    advanced
 
 .. _`Documentation`: https://tonejs.github.io/
 .. _`Wiki`: https://github.com/Tonejs/Tone.js/wiki

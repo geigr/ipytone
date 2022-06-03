@@ -11,7 +11,7 @@ kernelspec:
   name: python3
 ---
 
-# Getting started
+# Getting Started
 
 ```{admonition} Summary
 :class: note

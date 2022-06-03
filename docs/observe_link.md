@@ -191,7 +191,8 @@ for widget linking:
 - `jsdlink()` -> `schedule_jsdlink()`
 
 ```{note}
-There's no such `schedule_link()` or `schedule_jslink()` method, as bi-directional linking doesn't make much sense for audio signals.
+There's no such `schedule_link()` or `schedule_jslink()` method,
+as bi-directional linking doesn't make much sense for audio signals.
 ```
 
 For example, let's connect the envelope of the synth created above to a
