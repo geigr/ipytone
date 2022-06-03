@@ -198,6 +198,7 @@ osc.dispose()
 env.dispose()
 ```
 
+(built-in-instruments)=
 ## Built-in instruments
 
 Ipytone provides a few built-in instruments (see Section
