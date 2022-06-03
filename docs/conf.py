@@ -2,7 +2,6 @@
 from ipywidgets import Widget
 from traitlets import HasTraits
 
-
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
@@ -78,4 +77,4 @@ def skip_widget_members(app, what, name, obj, skip, options):
 
 
 def setup(app):
-    app.connect('autodoc-skip-member', skip_widget_members)
+    app.connect("autodoc-skip-member", skip_widget_members)

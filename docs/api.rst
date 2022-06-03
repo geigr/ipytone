@@ -100,6 +100,8 @@ Effect
 Component
 ---------
 
+.. _api_analysis:
+
 Analysis
 ~~~~~~~~
 

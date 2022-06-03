@@ -203,7 +203,7 @@ env.dispose()
 Ipytone provides a few built-in instruments (see Section
 [Instrument](api_instrument) of API reference) that perform basic or more
 advanced sound synthesis from a combination of connected nodes (oscillators,
-envelopes, etc.).
+envelopes, etc.). Ipytone also provides a [Sampler](sampler).
 
 Let's use the {class}`~ipytone.Synth` here:
 
@@ -246,18 +246,115 @@ synth.dispose()
 
 ### Monophonic synths
 
-portamento, etc.
+{class}`~ipytone.Monophonic` synthesizers can only play one note at a time. They
+all have a `portamento` attribute, which allows smoothly sliding the frequency
+between two triggered notes.
+
+Let's create a {class}`~ipytone.MonoSynth`:
 
 ```{code-cell} ipython3
+msynth = ipytone.MonoSynth().to_destination()
+```
 
+```{code-cell} ipython3
+# without portamento
+msynth.trigger_attack_release("C3", 0.5)
+msynth.trigger_attack_release("C5", 0.5, time="+0.25")
+```
+
+```{code-cell} ipython3
+msynth.portamento = 0.3
+```
+
+```{code-cell} ipython3
+# with portamento
+msynth.trigger_attack_release("C3", 0.5)
+msynth.trigger_attack_release("C5", 0.5, time="+0.25")
+```
+
+```{code-cell} ipython3
+msynth.dispose()
 ```
 
 ### Polyphonic synths
 
-```{code-cell} ipython3
++++
 
+{class}`~ipytone.PolySynth` allows turning any monophonic synthesizer into a
+polyphonic synthesizer, i.e., an instrument that can play multiple notes at the
+same time.
+
+Let's create a polyphonic synth from a {class}`~ipytone.Synth`:
+
+```{code-cell} ipython3
+psynth = ipytone.PolySynth(voice=ipytone.Synth, volume=-8).to_destination()
+```
+
+A list of notes can be passed to the trigger methods to play a chord:
+
+```{code-cell} ipython3
+psynth.trigger_attack_release(["C3", "C4", "E4", "G4"], 0.5)
+psynth.trigger_attack_release(["G2", "G4", "B4", "D4"], 0.5, time="+0.5")
+psynth.trigger_attack_release(["C3", "C5", "E5", "G5"], 0.5, time="+1")
+```
+
+We can also pass a list of duration times to play the chord with some "expression":
+
+```{code-cell} ipython3
+psynth.trigger_attack_release(["C3", "C4", "E4", "G4"], [0.5, 0.7, 0.9, 1])
+```
+
+It is possible to change the parameters of the polyphonic synth via its `voice`
+property, which returns a single instance of the mono synth. This instance is
+deactivated (it doesn't make any sound), but changing the value of an attribute
+of one of its components will apply to all voices of the polyphonic synth.
+
+```{code-cell} ipython3
+psynth.voice.envelope.attack = 0.4
 ```
 
 ```{code-cell} ipython3
+# play each chord with a slow attack 
+psynth.trigger_attack_release(["C3", "C4", "E4", "G4"], 0.5)
+psynth.trigger_attack_release(["G2", "G4", "B4", "D4"], 0.5, time="+0.5")
+psynth.trigger_attack_release(["C3", "C5", "E5", "G5"], 0.5, time="+1")
+```
 
+```{note}
+Changing the settings of some components of the `PolySynth.voice` may have
+no effect. This generally works with common components like the oscillator
+and the amplitude envelope. 
+```
+
+In addition to `trigger_attack()`, `trigger_release()` and
+`trigger_attack_release()`, {class}`~ipytone.PolySynth` provides a
+`release_all()` method that will trigger release for all the active voices
+
+```{code-cell} ipython3
+psynth.trigger_attack(["C3", "C4", "E4", "G4"])
+psynth.trigger_attack(["G2", "G4", "B4", "D4"], time="+0.5")
+psynth.trigger_attack(["C3", "C5", "E5", "G5"], time="+1")
+```
+
+```{code-cell} ipython3
+# release all chords triggered above
+psynth.release_all()
+```
+
+The maximum number of active voices is controlled by `max_polyphony`. When
+this number is reached, additional notes won't be played.
+
+```{code-cell} ipython3
+psynth.max_polyphony = 3
+```
+
+```{code-cell} ipython3
+# this will play only 3 notes!
+psynth.trigger_attack_release(["C3", "C4", "E4", "G4"], 0.5)
+```
+
+End of this tutorial!
+
+```{code-cell} ipython3
+psynth.dispose()
 ```

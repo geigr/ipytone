@@ -13,7 +13,7 @@ its `API`_ in Python.
     instrument
     audio_samples
     timeline
-    observe_link_audio
+    observe_link
 
 .. _`Documentation`: https://tonejs.github.io/
 .. _`Wiki`: https://github.com/Tonejs/Tone.js/wiki
