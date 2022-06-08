@@ -8,6 +8,9 @@ to Python as [Jupyter widgets](https://ipywidgets.readthedocs.io). It allows
 turning Jupyter into a versatile DAW (Digital Audio Workstation) for music
 creation, sound design, data sonification, and more...
 
+...like this little piece of music entirely composed and played in a Jupyter notebook,
+with a custom Earth Globe VU-meter!
+
 https://user-images.githubusercontent.com/4160723/172623510-3423505f-cd27-4770-8553-b2f0dc75384f.mov
 
 ## Documentation + Live Demo
