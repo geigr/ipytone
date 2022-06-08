@@ -63,6 +63,7 @@ instance/
 docs/_build/
 docs/source/_static/embed-bundle.js
 docs/source/_static/embed-bundle.js.map
+docs/source/_api_generated
 
 # PyBuilder
 target/
@@ -154,3 +155,14 @@ ipytone/labextension/*.tgz
 
 # Packed lab extensions
 ipytone/labextension
+
+# Docs
+# ----
+
+# generated API
+docs/_api_generated
+
+# jupyterlite build
+python_data.js
+python_data.data
+.jupyterlite.doit.db

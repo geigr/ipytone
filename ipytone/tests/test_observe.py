@@ -16,7 +16,6 @@ OBSERVABLE_CLASSES = [
     Signal,
     Envelope,
     Event,
-    Signal,
     Source,
     Transport,
     Analyser,
