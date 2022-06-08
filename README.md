@@ -4,9 +4,9 @@
 # Ipytone: Interactive Audio in Jupyter
 
 Ipytone exposes many features of the [Tone.js](https://tonejs.github.io) library
-as [Jupyter widgets](https://ipywidgets.readthedocs.io). It allows turning
-Jupyter into a versatile DAW (Digital Audio Workstation) for music creation,
-sound design, data sonification, and more...
+to Python as [Jupyter widgets](https://ipywidgets.readthedocs.io). It allows
+turning Jupyter into a versatile DAW (Digital Audio Workstation) for music
+creation, sound design, data sonification, and more...
 
 ## Documentation + Live Demo
 

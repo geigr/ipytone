@@ -202,7 +202,7 @@ linear_ramp_to(800, 3)
 osc.stop()
 ```
 
-Although it is working, this solution may is not optimal:
+Although it is working, this solution is not optimal:
 
 - the Python interpreter is blocked while the frequency of the oscillator is
   updated (although there might be ways to make it non-blocking)
@@ -236,7 +236,8 @@ synchronize the `value` property of a {class}`~ipytone.Param` or
 {class}`~ipytone.Signal` in Python. This property thus won't always
 return the current, actual value.
 
-Ipytone provides other ways to track value updates from Python. 
+Ipytone provides other ways to track value updates from Python. See the
+[Synchronizing Audio State](synchronizing) tutorial.
 ```
 
 ### Controling audio nodes with (ipy)widgets

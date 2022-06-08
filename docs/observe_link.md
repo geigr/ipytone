@@ -11,6 +11,7 @@ kernelspec:
   name: python3
 ---
 
+(synchronizing)=
 # Synchronizing Audio State
 
 ```{admonition} Summary
@@ -187,7 +188,7 @@ synth.oscillator.frequency.schedule_unobserve(print_new_value)
 Similarly to `observe()` -> `schedule_observe()`, ipytone provides extra methods
 for widget linking:
 
-- `dlink()` -> `schedule_dlink`
+- `dlink()` -> `schedule_dlink()`
 - `jsdlink()` -> `schedule_jsdlink()`
 
 ```{note}
