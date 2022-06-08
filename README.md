@@ -1,6 +1,6 @@
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/benbovy/ipytone/master?urlpath=lab%2Ftree%2Fexamples)
-[![Tests](https://github.com/benbovy/ipytone/workflows/Test/badge.svg)](https://github.com/benbovy/ipytone/actions)
 [![JupyterLite](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://ipytone.readthedocs.io/en/latest/lite/retro/notebooks/?path=quick_demo.ipynb)
+[![Tests](https://github.com/benbovy/ipytone/workflows/Test/badge.svg)](https://github.com/benbovy/ipytone/actions)
 
 # Ipytone: Interactive Audio in Jupyter
 
