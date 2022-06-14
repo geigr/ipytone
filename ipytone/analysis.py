@@ -152,7 +152,7 @@ class FFT(BaseMeter):
     @property
     def frequency_labels(self):
         """Frequency label values (in Hertz)."""
-        # assume sample rate 44,1 MHz (TODO: get it from Tone context)
+        # assume sample rate 44.1 kHz (TODO: get it from Tone context)
         sample_rate = 44100
         return np.arange(self.size) * sample_rate / (self.size * 2)
 
