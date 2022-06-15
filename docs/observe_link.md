@@ -34,7 +34,7 @@ import matplotlib.pyplot as plt
 
 One thing specific to audio signals (and parameters) is that their value may be
 updated continuously in the front-end (to be correct: still at discrete steps
-but at a very high rate, i.e., the audio sample rate is often set to 44.1 MHz).
+but at a very high rate, i.e., the audio sample rate is often set to 44.1 kHz).
 
 This makes challenging the synchronization of those widgets with the back-end
 (e.g., for handling specific events in Python) or with other elements in the
