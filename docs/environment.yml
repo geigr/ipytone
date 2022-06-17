@@ -12,6 +12,7 @@ dependencies:
   - yarn
   - pip
   - pip:
-    - nbclient <0.6
+    - jupyter-cache
+    - nbclient
     - jupyterlite
     - jupyterlite-sphinx
