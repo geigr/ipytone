@@ -10,7 +10,7 @@ dependencies:
   - matplotlib-base
   - myst-nb
   - yarn
-  - nbclient <0.6
+  - pip
   - pip:
     - jupyterlite
     - jupyterlite-sphinx
