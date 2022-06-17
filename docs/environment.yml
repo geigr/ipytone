@@ -12,5 +12,6 @@ dependencies:
   - yarn
   - pip
   - pip:
+    - nbclient <0.6
     - jupyterlite
     - jupyterlite-sphinx
