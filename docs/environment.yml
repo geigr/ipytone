@@ -10,9 +10,7 @@ dependencies:
   - matplotlib-base
   - myst-nb
   - yarn
-  - pip<21
+  - pip
   - pip:
-    - nbclient<0.6
-    - git+https://github.com/benbovy/ipytone.git
     - jupyterlite
     - jupyterlite-sphinx
