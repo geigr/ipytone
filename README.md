@@ -14,7 +14,14 @@ with a custom Earth Globe VU-meter!
 
 https://user-images.githubusercontent.com/4160723/172623510-3423505f-cd27-4770-8553-b2f0dc75384f.mov
 
-## Documentation + Live Demo
+## Try Ipytone!
+
+Click [here](https://ipytone.readthedocs.io/en/latest/lite/retro/notebooks/?path=quick_demo.ipynb) or
+on the JupyterLite badge above to try ipytone in your browser without installing anything.
+
+For more advanced examples, check this repository: https://github.com/benbovy/ipytone-examples
+
+## Documentation
 
 https://ipytone.readthedocs.io
 

@@ -10,6 +10,9 @@ dependencies:
   - matplotlib-base
   - myst-nb
   - yarn
+  - pip
   - pip:
     - jupyterlite
     - jupyterlite-sphinx
+    # installs ipytone in editable mode (relative path)
+    - -e ..
