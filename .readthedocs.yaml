@@ -4,11 +4,6 @@ build:
   os: "ubuntu-20.04"
   tools:
     python: "mambaforge-4.10"
-  jobs:
-    post_install:
-      # https://github.com/executablebooks/jupyter-cache/issues/84
-      # https://github.com/readthedocs/readthedocs.org/issues/8890
-      - python -m pip install --force-reinstall --no-cache-dir nbclient<0.6
 
 conda:
   environment: docs/environment.yml
