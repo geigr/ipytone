@@ -12,6 +12,7 @@ extensions = [
 ]
 
 jupyterlite_config = "jupyterlite_config.json"
+jupyterlite_dir = "."
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
