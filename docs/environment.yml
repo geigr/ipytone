@@ -14,5 +14,6 @@ dependencies:
   - pip:
     - jupyterlite
     - jupyterlite-sphinx
+    - jupyterlite-xeus-python
     # installs ipytone in editable mode (relative path)
     - -e ..
