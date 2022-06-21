@@ -1,4 +1,7 @@
 {
+  "LiteBuildConfig": {
+    "ignore_sys_prefix": true
+  },
   "XeusPythonEnv": {
     "packages": ["numpy", "ipytone"]
   }
