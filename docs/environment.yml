@@ -4,7 +4,6 @@ channels:
   - conda-forge
 dependencies:
   - ipywidgets
-  - ipytone
   - numpy
   - sphinx
   - pydata-sphinx-theme
@@ -18,4 +17,4 @@ dependencies:
     - jupyterlite-sphinx
     - jupyterlite-xeus-python
     # installs ipytone in editable mode (relative path)
-    # - -e ..
+    - -e ..
