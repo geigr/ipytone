@@ -10,7 +10,6 @@ dependencies:
   - matplotlib-base
   - myst-nb
   - yarn
-  - empack
   - pip
   - pip:
     - jupyterlite
