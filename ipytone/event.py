@@ -187,7 +187,13 @@ class Part(Event):
         """
         if events is None:
             events = []
-        events = [_normalize_note(e).to_dict() for e in events]
+        else:
+            try:
+                events = [_normalize_note(e).to_dict() for e in events]
+            except ValueError as err:
+                # prevent side-effect (close widget not fully initialized on error)
+                super().__init__()
+                raise err
 
         kwargs.update({"callback": callback, "_events": events})
         super().__init__(**kwargs)

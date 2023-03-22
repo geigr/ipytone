@@ -216,6 +216,8 @@ class Oscillator(Source):
     ):
         if type == "custom":
             if partials is None:
+                # prevent side-effect (close widget not fully initialized on error)
+                super().__init__()
                 raise ValueError("Partials values must be given for 'custom' oscillator type")
 
         else:
@@ -227,6 +229,8 @@ class Oscillator(Source):
                 partials = partials[0:partial_count]
             else:
                 if partial_count_:
+                    # prevent side-effect (close widget not fully initialized on error)
+                    super().__init__()
                     raise ValueError(f"Partial count already set in oscillator type {type!r}")
                 if partial_count == 0:
                     partial_count = ""
