@@ -99,7 +99,7 @@ export class MeterModel extends BaseMeterModel {
     return {
       ...super.defaults(),
       _model_name: MeterModel.model_name,
-      _channels: 1,
+      channel_count: 1,
       normal_range: false,
       smoothing: 0.8,
     };
@@ -107,7 +107,7 @@ export class MeterModel extends BaseMeterModel {
 
   createNode(): tone.Meter {
     return new tone.Meter({
-      channels: this.get('_channels'),
+      channelCount: this.get('channel_count'),
       normalRange: this.get('normal_range'),
       smoothing: this.get('smoothing'),
     });

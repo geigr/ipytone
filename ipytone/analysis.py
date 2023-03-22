@@ -68,20 +68,18 @@ class Meter(BaseMeter):
 
     _model_name = Unicode("MeterModel").tag(sync=True)
 
-    _channels = Int(1).tag(sync=True)
-
     normal_range = Bool(False, help="value in range [0-1] (True) or decibels (False)").tag(
         sync=True
     )
     smoothing = Float(0.8, help="controls the time averaging window").tag(sync=True)
 
     def __init__(self, channel_count=1, **kwargs):
-        self._channels = channel_count
+        kwargs.update({"channel_count": channel_count})
         super().__init__(**kwargs)
         self._analyser.smoothing = self.smoothing
 
     def _get_analyser_options(self):
-        return {"size": 256, "type": "waveform", "channels": self._channels}
+        return {"size": 256, "type": "waveform"}
 
     @property
     def channels(self):
