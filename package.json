@@ -93,10 +93,5 @@
         "singleton": true
       }
     }
-  },
-  "engines": {
-    "node": ">=10.15.3",
-    "npm": "please-use-yarn",
-    "yarn": ">=1.15.0"
   }
 }
