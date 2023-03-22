@@ -2,5 +2,78 @@
 requires = ["jupyter_packaging~=0.7.9", "jupyterlab>=3.0.0,==3.*", "setuptools>=40.8.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "ipytone"
+description = "Interactive audio in Jupyter"
+readme = "README.md"
+license = { file = "LICENSE.txt" }
+requires-python = ">=3.7"
+authors = [
+    { name = "Benoît Bovy" },
+]
+keywords = [
+    "IPython",
+    "Jupyter",
+    "Widgets",
+    "Sonification",
+    "Sound",
+    "Audio",
+]
+classifiers = [
+    "Framework :: Jupyter",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "ipywidgets>=7.6.0",
+    "numpy",
+    "traittypes",
+]
+version = "0.4.1"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=4.6",
+    "pytest-cov",
+    "pytest-mock",
+]
+doc = [
+    "matplotlib",
+    "sphinx",
+    "pydata-sphinx-theme",
+    "myst-nb",
+    "jupyterlite",
+    "jupyterlite-sphinx",
+    "jupyterlite-xeus-python",
+]
+lint = [
+     "black",
+]
+
+[project.urls]
+Homepage = "https://github.com/benbovy/ipytone"
+
 [tool.black]
 line-length = 100
+
+[tool.isort]
+known_first_party="ipytone"
+known_third_party=[
+    "ipywidgets",
+    "traitlets",
+]
+multi_line_output=3
+profile="black"
+skip=[
+    "setup.py",
+]
+
+[tool.pytest]
+testpaths = [
+    "ipytone/tests",
+]
+norecursedirs = [
+    "node_modules",
+    ".ipynb_checkpoints",
+]
