@@ -16,4 +16,4 @@ dependencies:
     - jupyterlite-sphinx
     - jupyterlite-xeus-python
     # installs ipytone in editable mode (relative path)
-    - -e ..
+    - -e .. --no-build-isolation
