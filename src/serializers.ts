@@ -1,4 +1,8 @@
-import { IWidgetManager, unpack_models, WidgetModel } from '@jupyter-widgets/base';
+import {
+  IWidgetManager,
+  unpack_models,
+  WidgetModel,
+} from '@jupyter-widgets/base';
 
 interface ReceivedSerializedArray {
   shape: number[];
