@@ -40,6 +40,7 @@ test = [
     "pytest>=4.6",
     "pytest-cov",
     "pytest-mock",
+    "ipykernel",
 ]
 doc = [
     "matplotlib",
