@@ -32,6 +32,7 @@
   },
   "scripts": {
     "build": "yarn run build:lib && yarn run build:nbextension",
+    "build:prod": "yarn run build:lib && yarn run build:nbextension && yarn run build:labextension",
     "build:lib": "tsc",
     "build:nbextension": "webpack",
     "build:labextension": "jupyter labextension build .",
