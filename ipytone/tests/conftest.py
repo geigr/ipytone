@@ -5,13 +5,13 @@
 # Distributed under the terms of the Modified BSD License.
 
 import pytest
-from ipykernel.comm import Comm
+import comm
 from ipywidgets import Widget
 
 from ipytone import get_audio_graph
 
 
-class MockComm(Comm):
+class MockComm(comm.DummyComm):
     """A mock Comm object.
 
     Can be used to inspect calls to Comm's open/send/close methods.
