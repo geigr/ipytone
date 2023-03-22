@@ -56,11 +56,11 @@
     "watch:labextension": "jupyter labextension watch ."
   },
   "dependencies": {
-    "@jupyter-widgets/base": "^2 || ^3 || ^4 || ^5 || ^6",
+    "@jupyter-widgets/base": "^6",
+    "@jupyter-widgets/base-manager": "^1.0.4",
     "tone": "~14.7.77"
   },
   "devDependencies": {
-    "@jupyter-widgets/base-manager": "^1.0.2",
     "@jupyterlab/builder": "^3.0.0",
     "@types/node": "^10.11.6",
     "@types/webpack-env": "^1.13.6",
