@@ -344,7 +344,6 @@ class Volume(AudioNode):
     mute = Bool(False).tag(sync=True)
 
     def __init__(self, volume=0, mute=False, **kwargs):
-
         node = Gain(gain=volume, units="decibels", _create_node=False)
         _volume = node._gain
 

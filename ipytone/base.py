@@ -69,7 +69,6 @@ def is_native(widget):
 
 
 class ToneObject(ToneWidgetBase):
-
     _model_name = Unicode("ToneObjectModel").tag(sync=True)
     _disposed = Bool(False).tag(sync=True)
 
@@ -110,7 +109,6 @@ def is_disposed(node):
 
 
 class NodeWithContext(ToneObject):
-
     name = Unicode("").tag(sync=True)
 
     _model_name = Unicode("NodeWithContextModel").tag(sync=True)

@@ -7,7 +7,6 @@ from .observe import ScheduleObserveMixin
 
 
 class SignalOperator(AudioNode):
-
     _model_name = "SignalOperatorModel"
 
     def _create_op_signal(self, other, signal_cls, signal_attr_name):

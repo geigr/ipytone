@@ -5,7 +5,6 @@ from ipytone.utils import parse_osc_type
 
 
 def test_parse_osc_type():
-
     # just test that the following types are valid
     for wave in ["sine", "square", "sawtooth", "triangle"]:
         for pcount in ["", "2", "22"]:
