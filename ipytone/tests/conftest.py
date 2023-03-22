@@ -4,8 +4,8 @@
 # Copyright (c) Benoit Bovy.
 # Distributed under the terms of the Modified BSD License.
 
-import pytest
 import comm
+import pytest
 from ipywidgets import Widget
 
 from ipytone import get_audio_graph
