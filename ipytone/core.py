@@ -5,7 +5,13 @@ from ipywidgets import Widget, widget_serialization
 from traitlets import Bool, Dict, Enum, Float, Instance, Int, List, Unicode, Union
 from traittypes import Array
 
-from .base import AudioNode, NativeAudioNode, NativeAudioParam, NodeWithContext, ToneObject
+from .base import (
+    AudioNode,
+    NativeAudioNode,
+    NativeAudioParam,
+    NodeWithContext,
+    ToneObject,
+)
 from .callback import add_or_send_event
 from .observe import ScheduleObserveMixin
 from .serialization import data_array_serialization
@@ -233,7 +239,7 @@ class Param(NodeWithContext, ParamScheduleMixin, ScheduleObserveMixin):
         min_value=None,
         max_value=None,
         swappable=False,
-        **kwargs
+        **kwargs,
     ):
         if "_input" not in kwargs:
             if swappable:

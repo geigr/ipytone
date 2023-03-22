@@ -1,7 +1,17 @@
 import re
 
 from ipywidgets import widget_serialization
-from traitlets import Bool, Enum, Float, Instance, Int, List, TraitError, Unicode, validate
+from traitlets import (
+    Bool,
+    Enum,
+    Float,
+    Instance,
+    Int,
+    List,
+    TraitError,
+    Unicode,
+    validate,
+)
 from traittypes import Array
 
 from .base import AudioNode

@@ -7,7 +7,17 @@
 from ._version import __version__, version_info
 from .analysis import FFT, Analyser, DCMeter, Follower, Meter, Waveform
 from .base import PyAudioNode
-from .channel import Channel, CrossFade, Merge, Mono, MultibandSplit, Panner, PanVol, Solo, Split
+from .channel import (
+    Channel,
+    CrossFade,
+    Merge,
+    Mono,
+    MultibandSplit,
+    Panner,
+    PanVol,
+    Solo,
+    Split,
+)
 from .core import AudioBuffer, AudioBuffers, Gain, Param, Volume, destination
 from .dynamics import Compressor, Limiter, MultibandCompressor
 from .effect import Distortion, FeedbackDelay, PingPongDelay, Reverb, Tremolo, Vibrato

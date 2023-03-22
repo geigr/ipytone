@@ -1,6 +1,18 @@
 import ipywidgets
 from ipywidgets import widget_serialization
-from traitlets import Bool, Dict, Enum, Float, HasTraits, Instance, Int, List, Tuple, Unicode, Union
+from traitlets import (
+    Bool,
+    Dict,
+    Enum,
+    Float,
+    HasTraits,
+    Instance,
+    Int,
+    List,
+    Tuple,
+    Unicode,
+    Union,
+)
 from traittypes import Array
 
 from .base import ToneObject, ToneWidgetBase

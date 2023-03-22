@@ -3,7 +3,18 @@ import operator
 
 import pytest
 
-from ipytone import Abs, Add, GreaterThan, Multiply, Negate, Param, Pow, Scale, Signal, Subtract
+from ipytone import (
+    Abs,
+    Add,
+    GreaterThan,
+    Multiply,
+    Negate,
+    Param,
+    Pow,
+    Scale,
+    Signal,
+    Subtract,
+)
 from ipytone.core import InternalAudioNode
 
 
