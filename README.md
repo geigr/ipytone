@@ -1,4 +1,4 @@
-# ![Ipytone](docs/_static/ipytone_logo_light.svg)
+# ![Ipytone](docs/_static/ipytone_logo_dark.svg)
 
 *Interactive audio in Jupyter*
 
