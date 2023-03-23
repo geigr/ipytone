@@ -296,8 +296,7 @@ class Param(NodeWithContext, ParamScheduleMixin, ScheduleObserveMixin):
         return self._input
 
     def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
+        yield from super()._repr_keys()
         if self.overridden:
             yield "overridden"
         else:
@@ -329,8 +328,7 @@ class Gain(AudioNode):
         return self._gain
 
     def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
+        yield from super()._repr_keys()
         yield "gain"
 
     def dispose(self):
@@ -361,8 +359,7 @@ class Volume(AudioNode):
         return self._volume
 
     def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
+        yield from super()._repr_keys()
         yield "volume"
         yield "mute"
 
@@ -381,7 +378,7 @@ class Destination(AudioNode):
 
     def __new__(cls):
         if Destination._singleton is None:
-            Destination._singleton = super(Destination, cls).__new__(cls)
+            Destination._singleton = super().__new__(cls)
         return Destination._singleton
 
     def __init__(self, **kwargs):
@@ -397,8 +394,7 @@ class Destination(AudioNode):
         return self._volume
 
     def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
+        yield from super()._repr_keys()
         yield "volume"
         yield "mute"
 
@@ -458,8 +454,7 @@ class AudioBuffer(ToneObject):
         super().__init__(**kwargs)
 
     def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
+        yield from super()._repr_keys()
         if not self.disposed:
             yield "loaded"
             if self.loaded:
@@ -553,7 +548,6 @@ class AudioBuffers(ToneObject):
         return self
 
     def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
+        yield from super()._repr_keys()
         if not self.disposed:
             yield "loaded"

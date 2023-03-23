@@ -52,7 +52,7 @@ class Transport(ToneObject, ScheduleObserveMixin):
 
     def __new__(cls):
         if Transport._singleton is None:
-            Transport._singleton = super(Transport, cls).__new__(cls)
+            Transport._singleton = super().__new__(cls)
         return Transport._singleton
 
     def __init__(self, **kwargs):
@@ -63,7 +63,7 @@ class Transport(ToneObject, ScheduleObserveMixin):
         self._all_event_id = set()
         self._synced_signals = {}
 
-        super(Transport, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     @property
     def bpm(self) -> Param:
@@ -304,8 +304,7 @@ class Transport(ToneObject, ScheduleObserveMixin):
         super().dispose()
 
     def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
+        yield from super()._repr_keys()
         if self.loop:
             yield "loop"
             yield "loop_start"

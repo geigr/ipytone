@@ -122,8 +122,7 @@ class Signal(SignalOperator, ParamScheduleMixin, ScheduleObserveMixin):
             return False
 
     def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
+        yield from super()._repr_keys()
         if self.overridden:
             yield "overridden"
         elif self._side_signal_prop_name is not None:

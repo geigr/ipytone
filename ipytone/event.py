@@ -113,8 +113,7 @@ class Event(NodeWithContext, ScheduleObserveMixin):
         return self
 
     def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
+        yield from super()._repr_keys()
         if self.mute:
             yield "mute"
         if self.loop:
@@ -412,6 +411,5 @@ class Pattern(Loop):
         self.send(data)
 
     def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
+        yield from super()._repr_keys()
         yield "pattern"
