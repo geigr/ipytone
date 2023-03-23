@@ -1,7 +1,9 @@
+# ![Ipytone](docs/_static/ipytone_logo_dark.svg)
+
+*Interactive audio in Jupyter*
+
 [![JupyterLite](https://jupyterlite.rtfd.io/en/latest/_static/badge-launch.svg)](https://ipytone.readthedocs.io/en/latest/lite/retro/notebooks/?path=quick_demo.ipynb)
 [![Tests](https://github.com/benbovy/ipytone/workflows/Test/badge.svg)](https://github.com/benbovy/ipytone/actions)
-
-# Ipytone: Interactive Audio in Jupyter
 
 Ipytone exposes many features of the [Tone.js](https://tonejs.github.io) library
 to Python as [Jupyter widgets](https://ipywidgets.readthedocs.io). It allows
