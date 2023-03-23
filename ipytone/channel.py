@@ -80,8 +80,7 @@ class Panner(AudioNode):
         return self._pan
 
     def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
+        yield from super()._repr_keys()
         yield "pan"
 
     def dispose(self):
@@ -265,8 +264,7 @@ class Merge(AudioNode):
         return self._channels
 
     def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
+        yield from super()._repr_keys()
         yield "channels"
 
 
@@ -292,8 +290,7 @@ class Split(AudioNode):
         return self._channels
 
     def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
+        yield from super()._repr_keys()
         yield "channels"
 
 

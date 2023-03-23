@@ -1,6 +1,148 @@
 [build-system]
-requires = ["jupyter_packaging~=0.7.9", "jupyterlab>=3.0.0,==3.*", "setuptools>=40.8.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = [
+    "hatchling>=1.3.1",
+    "jupyterlab==3.*",
+]
+build-backend = "hatchling.build"
+
+[project]
+name = "ipytone"
+description = "Interactive audio in Jupyter"
+readme = "README.md"
+license = { file = "LICENSE.txt" }
+requires-python = ">=3.7"
+authors = [
+    { name = "Benoît Bovy" },
+]
+keywords = [
+    "IPython",
+    "Jupyter",
+    "Widgets",
+    "Sonification",
+    "Sound",
+    "Audio",
+]
+classifiers = [
+    "Framework :: Jupyter",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "ipywidgets>=7.6.0",
+    "numpy",
+    "traittypes",
+]
+version = "0.4.1"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=4.6",
+    "pytest-cov",
+    "pytest-mock",
+    "ipykernel",
+]
+doc = [
+    "matplotlib",
+    "sphinx",
+    "pydata-sphinx-theme",
+    "myst-nb",
+    "jupyterlite",
+    "jupyterlite-sphinx",
+    "jupyterlite-xeus-python",
+]
+lint = [
+     "black",
+]
+
+[project.urls]
+Homepage = "https://github.com/benbovy/ipytone"
+
+[tool.hatch.build]
+artifacts = [
+    "ipytone/nbextension/static/index.*",
+    "ipytone/labextension/*.tgz",
+    "ipytone/labextension",
+]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"ipytone/nbextension" = "share/jupyter/nbextensions/ipytone"
+"ipytone/labextension" = "share/jupyter/labextensions/ipytone"
+"./install.json" = "share/jupyter/labextensions/ipytone/install.json"
+"./ipytone.json" = "etc/jupyter/nbconfig/notebook.d/ipytone.json"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    ".github",
+]
+
+[tool.hatch.build.hooks.jupyter-builder]
+build-function = "hatch_jupyter_builder.npm_builder"
+ensured-targets = [
+    "ipytone/nbextension/static/index.js",
+    "ipytone/labextension/package.json",
+]
+skip-if-exists = [
+    "ipytone/nbextension/static/index.js",
+    "ipytone/labextension/package.json",
+]
+dependencies = [
+    "hatch-jupyter-builder>=0.8.2",
+]
+
+[tool.hatch.build.hooks.jupyter-builder.build-kwargs]
+path = "."
+build_cmd = "build:prod"
 
 [tool.black]
 line-length = 100
+
+[tool.pytest]
+testpaths = [
+    "ipytone/tests",
+]
+norecursedirs = [
+    "node_modules",
+    ".ipynb_checkpoints",
+]
+
+[tool.ruff]
+target-version = "py39"
+builtins = ["ellipsis"]
+exclude = [
+    ".git",
+    ".eggs",
+    "docs",
+    "build",
+    "dist",
+    "__pycache__",
+]
+# E402: module level import not at top of file
+# E501: line too long - let black worry about that
+# E731: do not assign a lambda expression, use a def
+ignore = [
+    "E402",
+    "E501",
+    "E731",
+]
+select = [
+    # Pyflakes
+    "F",
+    # Pycodestyle
+    "E",
+    "W",
+    # isort
+    "I",
+    # Pyupgrade
+    "UP",
+]
+
+[tool.ruff.per-file-ignores]
+"ipytone/__init__.py" = ["F401"]
+
+[tool.ruff.isort]
+known-first-party = ["ipytone"]
+known-third-party=[
+    "ipywidgets",
+    "traitlets",
+]

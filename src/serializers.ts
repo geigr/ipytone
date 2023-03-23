@@ -1,4 +1,8 @@
-import { ManagerBase, unpack_models, WidgetModel } from '@jupyter-widgets/base';
+import {
+  IWidgetManager,
+  unpack_models,
+  WidgetModel,
+} from '@jupyter-widgets/base';
 
 interface ReceivedSerializedArray {
   shape: number[];
@@ -62,7 +66,7 @@ function split(array: Float32Array, shape: number[]): Float32Array[] {
 
 function deserializeArray(
   value: any,
-  manager?: ManagerBase<any>
+  manager?: IWidgetManager
 ): Float32Array | Float32Array[] {
   const arr = new Float32Array(value.buffer.buffer);
 
@@ -75,12 +79,12 @@ function deserializeArray(
 
 function deserializeDataArray(
   value: SerializedDataArray,
-  manager?: ManagerBase<any>
+  manager?: IWidgetManager
 ): DeserializedDataArray {
   if (value === null) {
     return null;
   } else if (typeof value === 'string') {
-    return unpack_models(value, manager as ManagerBase<any>);
+    return unpack_models(value, manager as IWidgetManager);
   } else {
     return deserializeArray(value, manager);
   }

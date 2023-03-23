@@ -62,7 +62,7 @@ like
 - the current progress and playback state of an {class}`~ipytone.Event`, a
   [source](api_source) node or the {class}`~ipytone.transport.Transport`
   timeline.
-  
+
 - and more...
 
 +++
@@ -248,7 +248,7 @@ def plot_change(change):
     with plot_output:
         plt.plot(change["new"])
         plt.show()
-        
+
 plot_output
 ```
 

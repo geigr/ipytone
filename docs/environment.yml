@@ -9,10 +9,10 @@ dependencies:
   - pydata-sphinx-theme
   - matplotlib-base
   - myst-nb
-  - yarn
+  - yarn<=1
   - pip
   - pip:
-    - jupyterlite
+    - jupyterlite-core
     - jupyterlite-sphinx
     - jupyterlite-xeus-python
     # installs ipytone in editable mode (relative path)

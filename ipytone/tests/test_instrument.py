@@ -42,7 +42,6 @@ class DummyInstrument(Instrument):
 
 
 def test_instrument():
-
     inst = DummyInstrument()
 
     assert isinstance(inst.output, Volume)

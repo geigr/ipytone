@@ -28,7 +28,6 @@ def minify_js_func(func_str):
 
 
 class Instrument(AudioNode):
-
     _model_name = Unicode("InstrumentModel").tag(sync=True)
 
     _internal_nodes = Dict(key_trait=Unicode(), value_trait=Instance(NodeWithContext)).tag(
@@ -105,7 +104,6 @@ class Instrument(AudioNode):
 
 
 class Monophonic(Instrument):
-
     _model_name = Unicode("MonophonicModel").tag(sync=True)
 
     _set_note = Unicode(help="set note JS callback").tag(sync=True)

@@ -215,7 +215,7 @@ Although it is working, this solution is not optimal:
 
 #### Using ipytone (Tone.js) scheduling
 
-The same effect than in the example above can be achieved with ipytone method calls. 
+The same effect than in the example above can be achieved with ipytone method calls.
 
 Those calls send a few messages in the front-end, which are then processed
 right-away to schedule a few events at specific times (via Tone.js and

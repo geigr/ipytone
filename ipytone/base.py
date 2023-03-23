@@ -69,7 +69,6 @@ def is_native(widget):
 
 
 class ToneObject(ToneWidgetBase):
-
     _model_name = Unicode("ToneObjectModel").tag(sync=True)
     _disposed = Bool(False).tag(sync=True)
 
@@ -110,7 +109,6 @@ def is_disposed(node):
 
 
 class NodeWithContext(ToneObject):
-
     name = Unicode("").tag(sync=True)
 
     _model_name = Unicode("NodeWithContextModel").tag(sync=True)
@@ -379,7 +377,7 @@ class PyAudioNode(HasTraits):
 
     def _gen_repr_from_keys(self, keys):
         class_name = self.__class__.__name__
-        signature = ", ".join("{}={!r}".format(key, getattr(self, key)) for key in keys)
+        signature = ", ".join(f"{key}={getattr(self, key)!r}" for key in keys)
         return f"{class_name}({signature})"
 
     def __repr__(self):

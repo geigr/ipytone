@@ -148,6 +148,7 @@ $RECYCLE.BIN/
 **/node_modules/
 ipytone/nbextension/static/index.*
 ipytone/labextension/*.tgz
+.yarn/
 
 # Coverage data
 # -------------

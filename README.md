@@ -37,8 +37,6 @@ You can install ipytone either with [pip](#with-pip) or [conda](#with-conda).
 
 ```sh
 pip install ipytone
-# Skip the next step if using JupyterLab or Classic notebook version 5.3 and above
-jupyter nbextension enable --py --sys-prefix ipytone
 ```
 
 ### With conda
@@ -53,3 +51,7 @@ or mamba
 ```sh
 mamba install -c conda-forge ipytone
 ```
+
+### From source
+
+For a development installation of ipytone, check the installation section in the documentation.

@@ -1,17 +1,16 @@
 #!/usr/bin/env python
-# coding: utf-8
 
 # Copyright (c) Benoit Bovy.
 # Distributed under the terms of the Modified BSD License.
 
+import comm
 import pytest
-from ipykernel.comm import Comm
 from ipywidgets import Widget
 
 from ipytone import get_audio_graph
 
 
-class MockComm(Comm):
+class MockComm(comm.DummyComm):
     """A mock Comm object.
 
     Can be used to inspect calls to Comm's open/send/close methods.
@@ -24,7 +23,7 @@ class MockComm(Comm):
         self.log_open = []
         self.log_send = []
         self.log_close = []
-        super(MockComm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def open(self, *args, **kwargs):
         self.log_open.append((args, kwargs))

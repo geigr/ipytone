@@ -3,7 +3,18 @@ import operator
 
 import pytest
 
-from ipytone import Abs, Add, GreaterThan, Multiply, Negate, Param, Pow, Scale, Signal, Subtract
+from ipytone import (
+    Abs,
+    Add,
+    GreaterThan,
+    Multiply,
+    Negate,
+    Param,
+    Pow,
+    Scale,
+    Signal,
+    Subtract,
+)
 from ipytone.core import InternalAudioNode
 
 
@@ -113,7 +124,7 @@ def test_complex_signal_expression(audio_graph):
     assert (sig, res, 0, 0) in audio_graph.connections
 
     mult = None
-    for (src, dest, *_) in audio_graph.connections:
+    for src, dest, *_ in audio_graph.connections:
         if dest is res.addend:
             mult = src
             break
@@ -121,7 +132,7 @@ def test_complex_signal_expression(audio_graph):
     assert mult.factor.value == 100
 
     abs_ = None
-    for (src, dest, *_) in audio_graph.connections:
+    for src, dest, *_ in audio_graph.connections:
         if dest is mult:
             abs_ = src
             break

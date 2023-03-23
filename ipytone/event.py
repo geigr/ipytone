@@ -113,8 +113,7 @@ class Event(NodeWithContext, ScheduleObserveMixin):
         return self
 
     def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
+        yield from super()._repr_keys()
         if self.mute:
             yield "mute"
         if self.loop:
@@ -187,7 +186,13 @@ class Part(Event):
         """
         if events is None:
             events = []
-        events = [_normalize_note(e).to_dict() for e in events]
+        else:
+            try:
+                events = [_normalize_note(e).to_dict() for e in events]
+            except ValueError as err:
+                # prevent side-effect (close widget not fully initialized on error)
+                super().__init__()
+                raise err
 
         kwargs.update({"callback": callback, "_events": events})
         super().__init__(**kwargs)
@@ -406,6 +411,5 @@ class Pattern(Loop):
         self.send(data)
 
     def _repr_keys(self):
-        for key in super()._repr_keys():
-            yield key
+        yield from super()._repr_keys()
         yield "pattern"
