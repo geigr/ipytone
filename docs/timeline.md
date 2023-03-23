@@ -47,7 +47,7 @@ Like the audio context used by ipytone and Tone.js, the
 {class}`~ipytone.transport.Transport` timeline
 is exposed globally in the front-end. Consequently, if two or more notebooks
 with independent kernels are open in the same JupyterLab tab, they
-will all act on the same timeline. 
+will all act on the same timeline.
 ```
 
 ### Playback state, position, bpm, time signature...
@@ -159,8 +159,8 @@ executed only once. Here is a bad example that won't behave as we'd like:
 import random
 
 def callback(time):
-    # This will randomly choose one note once for all repeated events!! 
-    note = random.choice(["C4", "G4", "A4"]) 
+    # This will randomly choose one note once for all repeated events!!
+    note = random.choice(["C4", "G4", "A4"])
     synth.trigger_attack_release(note, "16n", time=time)
 ```
 

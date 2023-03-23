@@ -315,7 +315,7 @@ psynth.voice.envelope.attack = 0.4
 ```
 
 ```{code-cell} ipython3
-# play each chord with a slow attack 
+# play each chord with a slow attack
 psynth.trigger_attack_release(["C3", "C4", "E4", "G4"], 0.5)
 psynth.trigger_attack_release(["G2", "G4", "B4", "D4"], 0.5, time="+0.5")
 psynth.trigger_attack_release(["C3", "C5", "E5", "G5"], 0.5, time="+1")
@@ -324,7 +324,7 @@ psynth.trigger_attack_release(["C3", "C5", "E5", "G5"], 0.5, time="+1")
 ```{note}
 Changing the settings of some components of the `PolySynth.voice` may have
 no effect. This generally works with common components like the oscillator
-and the amplitude envelope. 
+and the amplitude envelope.
 ```
 
 In addition to `trigger_attack()`, `trigger_release()` and

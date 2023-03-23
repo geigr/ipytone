@@ -56,7 +56,7 @@ waveform = np.sin(np.arange(size) * factor)
 waveform += np.random.uniform(-0.1, 0.1, size=size)
 ```
 
-Let's have a look at the waveform: 
+Let's have a look at the waveform:
 
 ```{code-cell} ipython3
 plt.plot(waveform[0:1000]);
@@ -150,7 +150,7 @@ which will automatically create an audio buffer.
 
 +++
 
-Like any other source, it has `start()` ant `stop()` methods: 
+Like any other source, it has `start()` ant `stop()` methods:
 
 ```{code-cell} ipython3
 player.start().stop("+3")
