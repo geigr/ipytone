@@ -19,6 +19,8 @@ repos:
     rev: v2.7.1
     hooks:
       - id: prettier
+        args: [--ignore-path .gitignore]
+        types_or: [css, javascript, ts, tsx, json]
 
 ci:
   autofix_prs: false
