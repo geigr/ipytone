@@ -52,7 +52,15 @@ html_theme = "pydata_sphinx_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = dict(github_url="https://github.com/benbovy/ipytone")
+html_theme_options = {
+    "github_url": "https://github.com/benbovy/ipytone",
+    "logo": {
+        "image_light": "_static/ipytone_logo_light.svg",
+        "image_dark": "_static/ipytone_logo_dark.svg",
+    },
+}
+
+html_favicon = "_static/favicon.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
