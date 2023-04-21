@@ -66,7 +66,7 @@ function split(array: Float32Array, shape: number[]): Float32Array[] {
 
 function deserializeArray(
   value: any,
-  manager?: IWidgetManager
+  manager?: IWidgetManager,
 ): Float32Array | Float32Array[] {
   const arr = new Float32Array(value.buffer.buffer);
 
@@ -79,7 +79,7 @@ function deserializeArray(
 
 function deserializeDataArray(
   value: SerializedDataArray,
-  manager?: IWidgetManager
+  manager?: IWidgetManager,
 ): DeserializedDataArray {
   if (value === null) {
     return null;
@@ -92,7 +92,7 @@ function deserializeDataArray(
 
 function serializeDataArray(
   obj: DeserializedDataArray,
-  _widget?: WidgetModel
+  _widget?: WidgetModel,
 ): any {
   if (obj === null) {
     return null;

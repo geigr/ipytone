@@ -34,7 +34,7 @@ export class BiquadFilterModel extends AudioNodeModel {
 
   initialize(
     attributes: Backbone.ObjectHash,
-    options: { model_id: string; comm: any; widget_manager: any }
+    options: { model_id: string; comm: any; widget_manager: any },
   ): void {
     super.initialize(attributes, options);
 
@@ -139,7 +139,7 @@ export class FilterModel extends AudioNodeModel {
 
   initialize(
     attributes: Backbone.ObjectHash,
-    options: { model_id: string; comm: any; widget_manager: any }
+    options: { model_id: string; comm: any; widget_manager: any },
   ): void {
     super.initialize(attributes, options);
 
@@ -245,7 +245,7 @@ export class OnePoleFilterModel extends AudioNodeModel {
 
   initialize(
     attributes: Backbone.ObjectHash,
-    options: { model_id: string; comm: any; widget_manager: any }
+    options: { model_id: string; comm: any; widget_manager: any },
   ): void {
     super.initialize(attributes, options);
 

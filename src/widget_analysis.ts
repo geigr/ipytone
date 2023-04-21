@@ -29,7 +29,7 @@ export class AnalyserModel extends AudioNodeModel implements ObservableModel {
 
   getValueAtTime(
     traitName: string,
-    _time: tone.Unit.Seconds
+    _time: tone.Unit.Seconds,
   ): Float32Array | Float32Array[] {
     return this.getValue(traitName);
   }
@@ -64,17 +64,17 @@ abstract class BaseMeterModel
 {
   getValueAtTime(
     traitName: string,
-    _time: tone.Unit.Seconds
+    _time: tone.Unit.Seconds,
   ): Float32Array | Float32Array[] | number | number[] {
     return this.getValue(traitName);
   }
 
   getValue(
-    traitName: string
+    traitName: string,
   ): Float32Array | Float32Array[] | number | number[] {
     assert(
       traitName === 'value' || traitName === 'array',
-      'Meters only supports "value" or "array" trait'
+      'Meters only supports "value" or "array" trait',
     );
     let value = this.node.getValue();
 
