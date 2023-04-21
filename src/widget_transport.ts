@@ -37,7 +37,7 @@ export class TransportModel extends ToneObjectModel implements ObservableModel {
 
   initialize(
     attributes: Backbone.ObjectHash,
-    options: { model_id: string; comm: any; widget_manager: any }
+    options: { model_id: string; comm: any; widget_manager: any },
   ): void {
     super.initialize(attributes, options);
     this.py2jsEventID = {};
@@ -131,7 +131,7 @@ export class TransportModel extends ToneObjectModel implements ObservableModel {
         callback,
         command.interval,
         command.start_time,
-        duration
+        duration,
       );
     } else if (command.op === 'once') {
       event_id = tone.Transport.scheduleOnce(callback, command.time);
@@ -161,7 +161,7 @@ export class TransportModel extends ToneObjectModel implements ObservableModel {
 
   private async syncSignal(command: any): Promise<void> {
     const signalModel = (await this.widget_manager.get_model(
-      command.signal
+      command.signal,
     )) as SignalModel<any>;
 
     if (command.op === 'sync') {
