@@ -34,7 +34,7 @@ export class EnvelopeModel extends AudioNodeModel implements ObservableModel {
 
   initialize(
     attributes: Backbone.ObjectHash,
-    options: { model_id: string; comm: any; widget_manager: any }
+    options: { model_id: string; comm: any; widget_manager: any },
   ): void {
     super.initialize(attributes, options);
 
@@ -85,7 +85,7 @@ export class EnvelopeModel extends AudioNodeModel implements ObservableModel {
 
   getValueAtTime(
     traitName: string,
-    time: tone.Unit.Seconds
+    time: tone.Unit.Seconds,
   ): tone.Unit.NormalRange {
     assert(traitName === 'value', 'envelope only supports "value" trait');
     return this.node.getValueAtTime(time);
@@ -111,13 +111,13 @@ export class EnvelopeModel extends AudioNodeModel implements ObservableModel {
     this.on('change:sustain', () => this.updateEnvelope('sustain', 'sustain'));
     this.on('change:release', () => this.updateEnvelope('release', 'release'));
     this.on('change:attack_curve', () =>
-      this.updateEnvelope('attack_curve', 'attackCurve')
+      this.updateEnvelope('attack_curve', 'attackCurve'),
     );
     this.on('change:decay_curve', () =>
-      this.updateEnvelope('decay_curve', 'decayCurve')
+      this.updateEnvelope('decay_curve', 'decayCurve'),
     );
     this.on('change:release_curve', () =>
-      this.updateEnvelope('release_curve', 'releaseCurve')
+      this.updateEnvelope('release_curve', 'releaseCurve'),
     );
 
     this.on('msg:custom', this.handleMsg, this);

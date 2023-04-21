@@ -46,7 +46,7 @@ abstract class SourceModel extends AudioNodeModel implements ObservableModel {
 
   getValueAtTime(
     traitName: string,
-    _time: tone.Unit.Seconds
+    _time: tone.Unit.Seconds,
   ): tone.BasicPlaybackState {
     return this.getValue(traitName);
   }
@@ -193,7 +193,7 @@ abstract class BaseOscillatorModel extends SourceModel {
 
   initialize(
     attributes: Backbone.ObjectHash,
-    options: { model_id: string; comm: any; widget_manager: any }
+    options: { model_id: string; comm: any; widget_manager: any },
   ): void {
     super.initialize(attributes, options);
 

@@ -28,14 +28,14 @@ type Connection = [
     | NativeAudioParamModel
   ),
   number,
-  number
+  number,
 ];
 
 type ConnectionNode = [
   tone.ToneAudioNode | AudioNode,
   tone.ToneAudioNode | AudioNode | tone.Param<any> | AudioParam,
   number,
-  number
+  number,
 ];
 
 function getConnectionNodes(connections: Connection[]): ConnectionNode[] {
