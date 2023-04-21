@@ -30,7 +30,7 @@ interface InternalNodes {
  */
 function getInternalNodes(
   models: InternalNodeModels,
-  createNodes?: boolean
+  createNodes?: boolean,
 ): InternalNodes {
   const nodes: InternalNodes = {};
 
@@ -69,7 +69,7 @@ class IpytoneInstrument extends tone.PluckSynth {
   private _triggerAttackFunc: (
     note: tone.Unit.Frequency,
     time?: tone.Unit.Seconds,
-    velocity?: tone.Unit.NormalRange
+    velocity?: tone.Unit.NormalRange,
   ) => void;
 
   private _triggerReleaseFunc: (...args: any[]) => void;
@@ -81,18 +81,18 @@ class IpytoneInstrument extends tone.PluckSynth {
 
     this._internalNodes = getInternalNodes(
       options.internalNodeModels,
-      options.createInternalNodes
+      options.createInternalNodes,
     );
 
     this._triggerAttackFunc = new Function(
       'note',
       'time',
       'velocity',
-      options.triggerAttack
+      options.triggerAttack,
     ).bind(this);
     this._triggerReleaseFunc = new Function(
       'time',
-      options.triggerRelease
+      options.triggerRelease,
     ).bind(this);
 
     const afterInit = new Function(options.afterInit).bind(this);
@@ -117,7 +117,7 @@ class IpytoneInstrument extends tone.PluckSynth {
   triggerAttack(
     note: tone.Unit.Frequency,
     time?: tone.Unit.Seconds,
-    velocity?: tone.Unit.NormalRange
+    velocity?: tone.Unit.NormalRange,
   ): this {
     this._triggerAttackFunc(note, time, velocity);
     return this;
@@ -159,14 +159,14 @@ class IpytoneMonophonic extends tone.Synth {
 
   private _triggerAttackFunc: (
     time: tone.Unit.Seconds,
-    velocity: tone.Unit.NormalRange
+    velocity: tone.Unit.NormalRange,
   ) => void;
 
   private _triggerReleaseFunc: (time: tone.Unit.Seconds) => void;
 
   private _setNoteFunc: (
     note: tone.Unit.Frequency,
-    time?: tone.Unit.Time
+    time?: tone.Unit.Time,
   ) => void;
 
   private _getLevelAtTimeFunc: (time: tone.Unit.Time) => tone.Unit.NormalRange;
@@ -186,28 +186,28 @@ class IpytoneMonophonic extends tone.Synth {
 
     this._internalNodes = getInternalNodes(
       options.internalNodeModels,
-      options.createInternalNodes
+      options.createInternalNodes,
     );
 
     this._triggerAttackFunc = new Function(
       'time',
       'velocity',
-      options.triggerAttack
+      options.triggerAttack,
     ).bind(this);
 
     this._triggerReleaseFunc = new Function(
       'time',
-      options.triggerRelease
+      options.triggerRelease,
     ).bind(this);
 
     if (options.setNote !== '') {
       this._setNoteFunc = new Function('note', 'time', options.setNote).bind(
-        this
+        this,
       );
     } else {
       this._setNoteFunc = (
         note: tone.Unit.Frequency,
-        time?: tone.Unit.Time
+        time?: tone.Unit.Time,
       ) => {
         super.setNote(note, time);
       };
@@ -215,7 +215,7 @@ class IpytoneMonophonic extends tone.Synth {
 
     this._getLevelAtTimeFunc = new Function(
       'time',
-      options.getLevelAtTime
+      options.getLevelAtTime,
     ).bind(this);
 
     // Hack for re-setting readonly frequency and detune attributes
@@ -266,7 +266,7 @@ class IpytoneMonophonic extends tone.Synth {
 
   _triggerEnvelopeAttack(
     time: tone.Unit.Seconds,
-    velocity: tone.Unit.NormalRange
+    velocity: tone.Unit.NormalRange,
   ): this {
     this._triggerAttackFunc(time, velocity);
     return this;
@@ -323,7 +323,7 @@ class IpytoneMonophonic extends tone.Synth {
 }
 
 abstract class BaseInstrumentModel<
-  T extends IpytoneInstrument | IpytoneMonophonic
+  T extends IpytoneInstrument | IpytoneMonophonic,
 > extends AudioNodeModel {
   defaults(): any {
     return {

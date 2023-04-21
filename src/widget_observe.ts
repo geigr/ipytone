@@ -55,7 +55,7 @@ export class ScheduleObserverModel extends ToneWidgetModel {
 
   initialize(
     attributes: Backbone.ObjectHash,
-    options: { model_id: string; comm: any; widget_manager: any }
+    options: { model_id: string; comm: any; widget_manager: any },
   ): void {
     super.initialize(attributes, options);
 
@@ -108,7 +108,7 @@ export class ScheduleObserverModel extends ToneWidgetModel {
   private scheduleRepeat(
     transport: boolean,
     updateInterval: number | string,
-    draw: boolean
+    draw: boolean,
   ): void {
     let eid: number | ReturnType<typeof setInterval>;
 
@@ -123,9 +123,12 @@ export class ScheduleObserverModel extends ToneWidgetModel {
         }
       }, updateInterval);
     } else {
-      eid = setInterval(() => {
-        this.setObservedTrait(tone.now(), transport);
-      }, (updateInterval as number) * 1000);
+      eid = setInterval(
+        () => {
+          this.setObservedTrait(tone.now(), transport);
+        },
+        (updateInterval as number) * 1000,
+      );
     }
 
     this.event = { id: eid, transport: transport };
@@ -144,7 +147,7 @@ export class ScheduleObserverModel extends ToneWidgetModel {
       this.scheduleRepeat(
         command.transport,
         command.update_interval,
-        command.draw
+        command.draw,
       );
     } else if (command.event === 'scheduleCancel') {
       this.scheduleCancel();
