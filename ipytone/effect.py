@@ -95,6 +95,37 @@ class FeedbackDelay(Effect):
         return self
 
 
+class FrequencyShifter(Effect):
+    """Effect shifting all frequencies of an input signal by a fixed amount.
+
+    Unlike :py:class:`PitchShift`, the shift amount can be changed at the audio
+    rate.
+
+    """
+
+    _model_name = Unicode("FrequencyShifterModel").tag(sync=True)
+
+    _frequency = Instance(Signal).tag(sync=True, **widget_serialization)
+
+    def __init__(self, frequency=0, **kwargs):
+        frequency_node = Signal(value=frequency, units="frequency", _create_node=False)
+
+        kwargs.update({"_frequency": frequency_node})
+        super().__init__(**kwargs)
+
+    @property
+    def frequency(self) -> Signal:
+        """The shifting frequency parameter (zero means no shifting)."""
+        return self._frequency
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._frequency.dispose()
+
+        return self
+
+
 class PingPongDelay(StereoEffect):
     """Ping-pong delay effect."""
 

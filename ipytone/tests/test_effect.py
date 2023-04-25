@@ -5,6 +5,7 @@ from ipytone import (
     CrossFade,
     Distortion,
     FeedbackDelay,
+    FrequencyShifter,
     Gain,
     PingPongDelay,
     PitchShift,
@@ -43,6 +44,17 @@ def test_distortion():
     # just test enum values
     dist.oversample = "2x"
     dist.oversample = "4x"
+
+
+def test_frequency_shifter():
+    fs = FrequencyShifter()
+
+    assert fs.frequency.value == 0.0
+    assert fs.frequency.units == "frequency"
+
+    e = fs.dispose()
+    assert e is fs
+    assert fs.frequency.disposed is True
 
 
 def test_feedback_delay():

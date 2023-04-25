@@ -92,6 +92,7 @@ Effect
 
    Distortion
    FeedbackDelay
+   FrequencyShifter
    PingPongDelay
    PitchShift
    Reverb
