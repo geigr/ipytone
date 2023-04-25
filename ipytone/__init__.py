@@ -22,6 +22,7 @@ from .dynamics import Compressor, Limiter, MultibandCompressor
 from .effect import (
     Distortion,
     FeedbackDelay,
+    FrequencyShifter,
     PingPongDelay,
     PitchShift,
     Reverb,

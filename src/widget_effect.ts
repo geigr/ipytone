@@ -87,6 +87,40 @@ export class FeedbackDelayModel extends AudioNodeModel {
   static model_name = 'FeedbackDelayModel';
 }
 
+export class FrequencyShifterModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: FrequencyShifterModel.model_name,
+      _frequency: undefined,
+    };
+  }
+
+  createNode(): tone.FrequencyShifter {
+    return new tone.FrequencyShifter({
+      frequency: this.frequency.value,
+    });
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.frequency.setNode(this.node.frequency);
+  }
+
+  get frequency(): SignalModel<'frequency'> {
+    return this.get('_frequency');
+  }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _frequency: { deserialize: unpack_models as any },
+  };
+
+  node: tone.FrequencyShifter;
+
+  static model_name = 'FrequencyShifterModel';
+}
+
 export class PingPongDelayModel extends AudioNodeModel {
   defaults(): any {
     return {
