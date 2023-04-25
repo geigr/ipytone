@@ -4,6 +4,8 @@ import * as tone from 'tone';
 
 import { UnitName, UnitMap } from 'tone/Tone/core/type/Units';
 
+import { dataarray_serialization, getArrayProp } from './serializers';
+
 import { assert, normalizeArguments } from './utils';
 
 import { AudioNodeModel } from './widget_base';
@@ -332,4 +334,53 @@ export class ScaleModel extends SignalOperatorModel {
   node: tone.Scale;
 
   static model_name = 'ScaleModel';
+}
+
+export class WaveShaperModel extends SignalOperatorModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: WaveShaperModel.model_name,
+      curve: null,
+      oversample: 'none',
+    };
+  }
+
+  get curve(): Float32Array | null {
+    // array should be 1-dimensional
+    return getArrayProp(this.get('curve')) as Float32Array | null;
+  }
+
+  createNode(): tone.WaveShaper {
+    let data: Float32Array | null | number[];
+    data = this.curve;
+    if (data === null) {
+      data = [-1, 0, 1];
+    }
+
+    const node = new tone.WaveShaper(data);
+    node.oversample = this.get('oversample');
+
+    return node;
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:curve', () => {
+      this.node.curve = this.curve;
+    });
+    this.on('change:oversample', () => {
+      this.node.oversample = this.get('oversample');
+    });
+  }
+
+  node: tone.WaveShaper;
+
+  static serializers: ISerializers = {
+    ...SignalOperatorModel.serializers,
+    curve: dataarray_serialization,
+  };
+
+  static model_name = 'WaveShaperModel';
 }
