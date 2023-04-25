@@ -1,9 +1,12 @@
+import numpy as np
 from ipywidgets import widget_serialization
-from traitlets import Bool, Float, Instance, Int, List, Unicode, Union
+from traitlets import Bool, Enum, Float, Instance, Int, List, Unicode, Union, validate
+from traittypes import Array
 
 from .base import AudioNode, ToneObject
 from .core import Gain, InternalAudioNode, Param, ParamScheduleMixin
 from .observe import ScheduleObserveMixin
+from .serialization import data_array_serialization
 
 
 class SignalOperator(AudioNode):
@@ -379,3 +382,79 @@ class Scale(SignalOperator):
         kwargs.update({"_input": in_node, "_output": out_node})
 
         super().__init__(**kwargs)
+
+
+class WaveShaper(SignalOperator):
+    """A node that applies a custom, non-linear distorsion curve.
+
+    The curve array values define a mapping from the input signal (audio
+    range [-1, 1]) to the output signal (same range) such that:
+
+    - the mid-element is applied to any signal value of 0
+    - the first element is applied to signal values of -1
+    - the last element is applied to signal values of 1
+    - intermediate values are linearly interpolated
+
+    Values lower than -1 or greater than 1 are treated like -1 or 1 respectively.
+
+    The curve points can be given directly as an array via the ``curve``
+    attribute or indirectly using a mapping function.
+
+    Parameters
+    ----------
+    mapping_func : callable, optional
+        A function used to compute the curve values. It must take two arguments:
+        the 1st argument is the normalized position (between -1 and 1) and the 2nd
+        argument is the curve array index. It must return the value of the curve
+        a the given index.
+    length : int, optional
+        The size of the curve array (ignored if no mapping function is provided).
+    **kwargs
+        Optional arguments such as ``curve`` to directly provide curve
+        array values.
+
+    """
+
+    _model_name = Unicode("WaveShaperModel").tag(sync=True)
+
+    curve = Array(allow_none=True, default_value=None, help="Waveshaper curve", dtype=float).tag(
+        sync=True, **data_array_serialization
+    )
+
+    oversample = Enum(["none", "2x", "4x"], default_value="none", help="oversampling value")
+
+    def __init__(self, mapping_func=None, length=1024, **kwargs):
+        node = InternalAudioNode(type="WaveShaper")
+        kwargs.update({"_input": node, "_output": node})
+        super().__init__(**kwargs)
+
+        if mapping_func is not None:
+            self.set_map(mapping_func=mapping_func, length=length)
+
+    @validate("curve")
+    def _check_curve_array_1d(self, proposal):
+        if proposal["value"].ndim != 1:
+            raise ValueError("curve array must be 1-dimensional")
+        return proposal["value"]
+
+    def set_map(self, mapping_func, length=1024):
+        """Set a new distorsion curve from a mapping function.
+
+        Parameters
+        ----------
+        mapping_func : callable, optional
+            A function used to compute the curve values. It must take two arguments:
+            the 1st argument is the normalized position (between -1 and 1) and the 2nd
+            argument is the curve array index. It must return the value of the curve
+            a the given index.
+        length : int, optional
+            The size of the curve array (ignored if no mapping function is provided).
+
+        """
+        index = np.arange(length)
+        x_norm = (index / (length - 1)) * 2 - 1
+
+        vfunc = np.vectorize(mapping_func)
+        self.curve = vfunc(x_norm, index)
+
+        return self

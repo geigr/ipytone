@@ -186,6 +186,7 @@ Signal
    Scale
    Signal
    Subtract
+   WaveShaper
 
 Transport
 ---------

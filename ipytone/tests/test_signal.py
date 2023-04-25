@@ -1,6 +1,7 @@
 import math
 import operator
 
+import numpy as np
 import pytest
 
 from ipytone import (
@@ -14,6 +15,7 @@ from ipytone import (
     Scale,
     Signal,
     Subtract,
+    WaveShaper,
 )
 from ipytone.core import InternalAudioNode
 
@@ -112,6 +114,28 @@ def test_scale():
     assert sc.max_out == 1.2
     assert sc.input.value == 1.0
     assert sc.output.value == 0.2
+
+
+def test_waveshaper():
+    ws = WaveShaper(curve=[-0.5, 0.0, 0.5])
+    assert isinstance(ws.input, InternalAudioNode)
+    assert isinstance(ws.output, InternalAudioNode)
+
+    np.testing.assert_array_equal(ws.curve, [-0.5, 0.0, 0.5])
+    assert ws.oversample == "none"
+
+    # validate
+    with pytest.raises(ValueError, match="curve array must be 1-dimensional"):
+        ws.curve = [[-0.5, 0.0, 0.5], [-0.5, 0.0, 0.5]]
+
+    # mapping function
+    res = ws.set_map(mapping_func=lambda x_norm, _: x_norm + 1, length=3)
+    assert res is ws
+    np.testing.assert_array_equal(ws.curve, [0.0, 1.0, 2.0])
+
+    # mapping function (constructor)
+    ws2 = WaveShaper(mapping_func=lambda x_norm, _: x_norm + 1, length=3)
+    np.testing.assert_array_equal(ws2.curve, [0.0, 1.0, 2.0])
 
 
 def test_complex_signal_expression(audio_graph):

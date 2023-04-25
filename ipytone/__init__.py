@@ -56,6 +56,7 @@ from .signal import (
     Scale,
     Signal,
     Subtract,
+    WaveShaper,
 )
 from .source import (
     LFO,
