@@ -7,6 +7,7 @@ from ipytone import (
     FeedbackDelay,
     Gain,
     PingPongDelay,
+    PitchShift,
     Reverb,
     Tremolo,
     Vibrato,
@@ -70,6 +71,23 @@ def test_pingpong_delay():
     assert e is dly
     assert dly.delay_time.disposed is True
     assert dly.feedback.disposed is True
+
+
+def test_pitch_shift():
+    ps = PitchShift()
+
+    assert ps.delay_time.value == 0.0
+    assert ps.delay_time.units == "time"
+    assert ps.feedback.value == 0.0
+    assert ps.feedback.units == "normalRange"
+
+    assert ps.pitch == 0.0
+    assert ps.window_size == 0.1
+
+    e = ps.dispose()
+    assert e is ps
+    assert ps.delay_time.disposed is True
+    assert ps.feedback.disposed is True
 
 
 def test_reverb():

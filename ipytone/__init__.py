@@ -19,7 +19,15 @@ from .channel import (
 )
 from .core import AudioBuffer, AudioBuffers, Gain, Param, Volume, destination
 from .dynamics import Compressor, Limiter, MultibandCompressor
-from .effect import Distortion, FeedbackDelay, PingPongDelay, Reverb, Tremolo, Vibrato
+from .effect import (
+    Distortion,
+    FeedbackDelay,
+    PingPongDelay,
+    PitchShift,
+    Reverb,
+    Tremolo,
+    Vibrato,
+)
 from .envelope import AmplitudeEnvelope, Envelope, FrequencyEnvelope
 from .event import Event, Loop, Note, Part, Pattern, Sequence
 from .filter import (  # PhaseShiftAllpass,

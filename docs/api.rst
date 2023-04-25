@@ -93,6 +93,7 @@ Effect
    Distortion
    FeedbackDelay
    PingPongDelay
+   PitchShift
    Reverb
    Tremolo
    Vibrato
