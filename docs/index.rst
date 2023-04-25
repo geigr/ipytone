@@ -22,6 +22,7 @@ Contents
    installing
    user_guide
    api
+   release_notes
 
 .. links
 

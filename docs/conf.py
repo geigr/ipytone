@@ -5,11 +5,17 @@ from traitlets import HasTraits
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "myst_nb",
     "jupyterlite_sphinx",
 ]
+
+extlinks = {
+    "issue": ("https://github.com/benbovy/ipytone/issues/%s", "#"),
+    "pull": ("https://github.com/benbovy/ipytone/pull/%s", "#"),
+}
 
 jupyterlite_config = "jupyterlite_config.json"
 jupyterlite_dir = "."
