@@ -131,6 +131,63 @@ export class PingPongDelayModel extends AudioNodeModel {
   static model_name = 'PingPongDelayModel';
 }
 
+export class PitchShiftModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: PitchShiftModel.model_name,
+      pitch: 0,
+      window_size: 0.1,
+      _delay_time: undefined,
+      _feedback: undefined,
+    };
+  }
+
+  createNode(): tone.PitchShift {
+    return new tone.PitchShift({
+      pitch: this.get('pitch'),
+      windowSize: this.get('window_size'),
+      delayTime: this.delayTime.value,
+      feedback: this.feedback.value,
+    });
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.delayTime.setNode(this.node.delayTime);
+    this.feedback.setNode(this.node.feedback);
+  }
+
+  get delayTime(): ParamModel<'time'> {
+    return this.get('_delay_time');
+  }
+
+  get feedback(): ParamModel<'normalRange'> {
+    return this.get('_feedback');
+  }
+
+  initEventListeners(): void {
+    super.initEventListeners();
+
+    this.on('change:pitch', () => {
+      this.node.pitch = this.get('pitch');
+    });
+    this.on('change:window_size', () => {
+      this.node.windowSize = this.get('window_size');
+    });
+  }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _delay_time: { deserialize: unpack_models as any },
+    _feedback: { deserialize: unpack_models as any },
+  };
+
+  node: tone.PitchShift;
+
+  static model_name = 'PitchShiftModel';
+}
+
 export class ReverbModel extends AudioNodeModel {
   defaults(): any {
     return {

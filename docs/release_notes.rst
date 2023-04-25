@@ -10,3 +10,4 @@ Enhancements
 ~~~~~~~~~~~~
 
 - Added ``WaveShaper`` signal node operator (:pull:`100`).
+- Added ``PitchShift`` effect node (:pull:`101`).
