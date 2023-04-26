@@ -89,6 +89,11 @@ def test_event_cancel(mocker, method):
     event.send.assert_called_once_with({"event": "cancel", "time": None})
 
 
+def test_note_error():
+    with pytest.raises(ValueError, match="invalid trigger type"):
+        Note(0, "C3", trigger_type="invalid")
+
+
 def test_part():
     part = Part()
     assert part.length == 0
