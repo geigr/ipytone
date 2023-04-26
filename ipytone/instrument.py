@@ -78,18 +78,54 @@ class Instrument(AudioNode):
 
     @property
     def volume(self) -> Param:
+        """The instrument volume parameter."""
         return self._output.volume
 
     def trigger_attack(self, note, time=None, velocity=1):
+        """Trigger the attack portion of the note.
+
+        Parameters
+        ----------
+        note : float or str
+            The frequency or note to play.
+        time : float or str, optional
+            The time at which the note attack is triggered (default: now).
+        velocity : float, optional
+            The velocity of the note (any value between 0 and 1).
+
+        """
         args = {"note": note, "time": time, "velocity": velocity}
         add_or_send_event("triggerAttack", self, args)
         return self
 
     def trigger_release(self, time=None):
+        """Trigger the release of the active note.
+
+        Parameters
+        ----------
+        time : float or str, optional
+            The time at which the note is released (default: now).
+
+        """
         add_or_send_event("triggerRelease", self, {"time": time})
         return self
 
     def trigger_attack_release(self, note, duration, time=None, velocity=1):
+        """Play a note of a given duration.
+
+        Parameters
+        ----------
+        note : float or str or list
+            The frequency or note to play. Also accepts a list of notes to play
+            one after another.
+        duration : float or str or list
+            The duration(s) of (each of) the note to play.
+        time : float or str, optional
+            The time at which the note attack is triggered (default: now).
+        velocity : float, optional
+            The velocity of the note (any value between 0 and 1).
+
+        """
         args = {"note": note, "duration": duration, "time": time, "velocity": velocity}
         add_or_send_event("triggerAttackRelease", self, args)
         return self
@@ -800,6 +836,7 @@ class PolySynth(AudioNode):
 
     @property
     def volume(self) -> Param:
+        """The instrument volume parameter."""
         return self._output.volume
 
     @property
@@ -809,33 +846,82 @@ class PolySynth(AudioNode):
 
         Although the individual voices used by the ``PolySynth`` to generate the
         single notes are not accessible, you can use this (deactivated) voice to change
-        some parameters of this PolySynth. Changing the value of a trait accessed
+        some parameters of this PolySynth. Changing the value of an attribute accessed
         through this property will automatically update all active voices.
 
         """
         return self._dummy_voice
 
     def trigger_attack(self, notes, time=None, velocity=1):
+        """Trigger the attack portion of one or more notes.
+
+        Parameters
+        ----------
+        notes : float or str or list
+            The frequency(ies) or note(s) to play.
+        time : float or str, optional
+            The time at which the note attack is triggered (default: now).
+        velocity : float, optional
+            The velocity of the note(s) (any value between 0 and 1).
+
+        """
         args = {"notes": notes, "time": time, "velocity": velocity}
         add_or_send_event("triggerAttack", self, args)
         return self
 
-    def trigger_release(self, time=None):
-        add_or_send_event("triggerRelease", self, {"time": time})
+    def trigger_release(self, notes, time=None):
+        """Trigger the release of one or more notes.
+
+        Parameters
+        ----------
+        notes : float or str or list
+            The frequency(ies) or note(s) to release.
+        time : float or str, optional
+            The time at which the note(s) are released (default: now).
+
+        """
+        add_or_send_event("triggerRelease", self, {"notes": notes, "time": time})
         return self
 
     def trigger_attack_release(self, notes, duration, time=None, velocity=1):
+        """Play one or more notes with given duration(s).
+
+        Parameters
+        ----------
+        notes : float or str or list
+            The frequency(ies) or note(s) to play. Unlike monophonic
+            instruments, all notes are triggered at the same time.
+        duration : float or str or list
+            The duration(s) of (each of) the note to play.
+        time : float or str, optional
+            The time at which the note attack is triggered (default: now).
+        velocity : float, optional
+            The velocity of all of the notes (any value between 0 and 1).
+
+        """
         args = {"notes": notes, "duration": duration, "time": time, "velocity": velocity}
         add_or_send_event("triggerAttackRelease", self, args)
         return self
 
     def release_all(self, time=None):
+        """Trigger the release of all currently active voices.
+
+        Parameters
+        ----------
+        time : float or str, optional
+            The time at which all active voices are silenced (default: now).
+
+        """
         add_or_send_event("releaseAll", self, {"time": time})
         return self
 
 
 class Sampler(AudioNode):
-    """Plays loaded samples mapped to midi notes."""
+    """A polyphonic instrument based on samples.
+
+    The playback rate (or pitch) of the loaded samples is mapped to notes.
+
+    """
 
     _model_name = Unicode("SamplerModel").tag(sync=True)
 
@@ -883,20 +969,65 @@ class Sampler(AudioNode):
         return self
 
     def trigger_attack(self, notes, time=None, velocity=1):
+        """Trigger the attack portion of one or more notes.
+
+        Parameters
+        ----------
+        notes : float or str or list
+            The frequency(ies) or note(s) to play.
+        time : float or str, optional
+            The time at which the note attack is triggered (default: now).
+        velocity : float, optional
+            The velocity of the note(s) (any value between 0 and 1).
+
+        """
         args = {"notes": notes, "time": time, "velocity": velocity}
         add_or_send_event("triggerAttack", self, args)
         return self
 
-    def trigger_release(self, time=None):
-        add_or_send_event("triggerRelease", self, {"time": time})
+    def trigger_release(self, notes, time=None):
+        """Trigger the release of one or more notes.
+
+        Parameters
+        ----------
+        notes : float or str or list
+            The frequency(ies) or note(s) to release.
+        time : float or str, optional
+            The time at which the note(s) are released (default: now).
+
+        """
+        add_or_send_event("triggerRelease", self, {"notes": notes, "time": time})
         return self
 
     def trigger_attack_release(self, notes, duration, time=None, velocity=1):
+        """Play one or more notes with given duration(s).
+
+        Parameters
+        ----------
+        notes : float or str or list
+            The frequency(ies) or note(s) to play. Unlike monophonic
+            instruments, all notes are triggered at the same time.
+        duration : float or str or list
+            The duration(s) of (each of) the note to play.
+        time : float or str, optional
+            The time at which the note attack is triggered (default: now).
+        velocity : float, optional
+            The velocity of all of the notes (any value between 0 and 1).
+
+        """
         args = {"notes": notes, "duration": duration, "time": time, "velocity": velocity}
         add_or_send_event("triggerAttackRelease", self, args)
         return self
 
     def release_all(self, time=None):
+        """Trigger the release of all currently playing samples.
+
+        Parameters
+        ----------
+        time : float or str, optional
+            The time at which all active samples are silenced (default: now).
+
+        """
         add_or_send_event("releaseAll", self, {"time": time})
         return self
 

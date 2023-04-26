@@ -319,7 +319,7 @@ def test_polysynth():
     "method,js_method,kwargs",
     [
         ("trigger_attack", "triggerAttack", {"notes": ["C3", "C4"], "time": None, "velocity": 1}),
-        ("trigger_release", "triggerRelease", {"time": None}),
+        ("trigger_release", "triggerRelease", {"notes": ["C3"], "time": None}),
         (
             "trigger_attack_release",
             "triggerAttackRelease",
@@ -369,7 +369,7 @@ def test_sampler():
     "method,js_method,kwargs",
     [
         ("trigger_attack", "triggerAttack", {"notes": ["C3", "C4"], "time": None, "velocity": 1}),
-        ("trigger_release", "triggerRelease", {"time": None}),
+        ("trigger_release", "triggerRelease", {"notes": ["C3"], "time": None}),
         (
             "trigger_attack_release",
             "triggerAttackRelease",

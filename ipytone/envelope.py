@@ -46,14 +46,47 @@ class Envelope(AudioNode, ScheduleObserveMixin):
         super().__init__(**kwargs)
 
     def trigger_attack(self, time=None, velocity=1):
+        """Trigger the attack and decay portions of the ADSR envelope.
+
+        Parameters
+        ----------
+        time : float or str, optional
+            The time at which the envelope attack is triggered (default: now).
+        velocity : float, optional
+            The velocity of the envelope, i.e., a scaling factor for the envelope
+            curve (any value between 0 and 1).
+
+        """
         add_or_send_event("triggerAttack", self, {"time": time, "velocity": velocity})
         return self
 
     def trigger_release(self, time=None):
+        """Trigger the release portion of the ADSR envelope.
+
+        Parameters
+        ----------
+        time : float or str, optional
+            The time at which the release portion is triggered (default: now).
+
+        """
         add_or_send_event("triggerRelease", self, {"time": time})
         return self
 
     def trigger_attack_release(self, duration, time=None, velocity=1):
+        """Trigger the attack/decay portions of the ASDR envelope and then trigger
+        the release portion after a given duration.
+
+        Parameters
+        ----------
+        duration : float or str
+            The duration of the sustain portion of the envelope.
+        time : float or str, optional
+            The time at which the envelope attack is triggered (default: now).
+        velocity : float, optional
+            The velocity of the envelope, i.e., a scaling factor for the envelope
+            curve (any value between 0 and 1).
+
+        """
         args = {"duration": duration, "time": time, "velocity": velocity}
         add_or_send_event("triggerAttackRelease", self, args)
         return self
