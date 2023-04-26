@@ -90,7 +90,7 @@ class Instrument(AudioNode):
             The frequency or note to play.
         time : float or str, optional
             The time at which the note attack is triggered (default: now).
-        velocity : float
+        velocity : float, optional
             The velocity of the note (any value between 0 and 1).
 
         """
@@ -122,7 +122,7 @@ class Instrument(AudioNode):
             The duration(s) of (each of) the note to play.
         time : float or str, optional
             The time at which the note attack is triggered (default: now).
-        velocity : float
+        velocity : float, optional
             The velocity of the note (any value between 0 and 1).
 
         """
@@ -861,7 +861,7 @@ class PolySynth(AudioNode):
             The frequency(ies) or note(s) to play.
         time : float or str, optional
             The time at which the note attack is triggered (default: now).
-        velocity : float
+        velocity : float, optional
             The velocity of the note(s) (any value between 0 and 1).
 
         """
@@ -895,7 +895,7 @@ class PolySynth(AudioNode):
             The duration(s) of (each of) the note to play.
         time : float or str, optional
             The time at which the note attack is triggered (default: now).
-        velocity : float
+        velocity : float, optional
             The velocity of all of the notes (any value between 0 and 1).
 
         """
@@ -977,7 +977,7 @@ class Sampler(AudioNode):
             The frequency(ies) or note(s) to play.
         time : float or str, optional
             The time at which the note attack is triggered (default: now).
-        velocity : float
+        velocity : float, optional
             The velocity of the note(s) (any value between 0 and 1).
 
         """
@@ -1011,7 +1011,7 @@ class Sampler(AudioNode):
             The duration(s) of (each of) the note to play.
         time : float or str, optional
             The time at which the note attack is triggered (default: now).
-        velocity : float
+        velocity : float, optional
             The velocity of all of the notes (any value between 0 and 1).
 
         """
