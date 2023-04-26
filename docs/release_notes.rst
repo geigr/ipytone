@@ -17,3 +17,5 @@ Bug fixes
 ~~~~~~~~~
 
 - Effects: fix ignored initial value for ``wet`` (:issue:`86`, :pull:`103`).
+- Add missing ``notes`` argument to ``PolySynth.trigger_release()`` and
+  ``Sampler.trigger_release`` (:issue:`84`, :pull:`104`).
