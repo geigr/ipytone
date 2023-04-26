@@ -2,6 +2,7 @@ import pytest
 
 from ipytone.core import Gain, Volume
 from ipytone.envelope import AmplitudeEnvelope, FrequencyEnvelope
+from ipytone.event import Note, Part
 from ipytone.filter import Filter, LowpassCombFilter
 from ipytone.instrument import (
     AMSynth,
@@ -388,3 +389,101 @@ def test_sampler_trigger(mocker, method, js_method, kwargs):
     i = getattr(sampler, method)(**kwargs)
     assert i is sampler
     sampler.send.assert_called_once_with(expected)
+
+
+@pytest.mark.parametrize(
+    "obj,note,js_method,kwargs",
+    [
+        (
+            Synth(),
+            Note(0, "C3", trigger_type="attack"),
+            "triggerAttack",
+            {"note": "C3", "time": None, "velocity": 1},
+        ),
+        (
+            Synth(),
+            Note(0, "C3", trigger_type="release"),
+            "triggerRelease",
+            {"time": None},
+        ),
+        (
+            Synth(),
+            Note(0, "C3", trigger_type="attack_release"),
+            "triggerAttackRelease",
+            {"note": "C3", "duration": 0.1, "time": None, "velocity": 1},
+        ),
+        (
+            PolySynth(),
+            Note(0, "C3", trigger_type="attack"),
+            "triggerAttack",
+            {"notes": "C3", "time": None, "velocity": 1},
+        ),
+        (
+            PolySynth(),
+            Note(0, "C3", trigger_type="release"),
+            "triggerRelease",
+            {"notes": "C3", "time": None},
+        ),
+        (
+            Sampler({}),
+            {"time": 0, "note": "C3", "trigger_type": "attack"},
+            "triggerAttack",
+            {"notes": "C3", "time": None, "velocity": 1},
+        ),
+    ],
+)
+def test_trigger_note(mocker, obj, note, js_method, kwargs):
+    mocker.patch.object(obj, "send")
+
+    args = {k: {"value": v, "eval": False} for k, v in kwargs.items()}
+    expected = {"event": "trigger", "method": js_method, "args": args, "arg_keys": list(kwargs)}
+
+    o = obj.trigger_note(note)
+    assert o is obj
+    obj.send.assert_called_once_with(expected)
+
+
+@pytest.mark.parametrize(
+    "obj,monophonic",
+    [
+        (Synth(), True),
+        (PolySynth(), False),
+        (Sampler({}), False),
+    ],
+)
+def test_trigger_note_clb(mocker, obj, monophonic):
+    def clb(time, value):
+        obj.trigger_note(value, time=time)
+
+    part = Part(events=[Note(0, "C3")])
+
+    mocker.patch.object(part, "send")
+    part.callback = clb
+
+    expected = {
+        "event": "set_callback",
+        "op": "",
+        "items": [
+            {
+                "method": "triggerNote",
+                "callee": obj.model_id,
+                "args": {
+                    "note": {"value": "value.note", "eval": True},
+                    "duration": {"value": "value.duration", "eval": True},
+                    "time": {"value": "time", "eval": True},
+                    "velocity": {"value": "value.velocity", "eval": True},
+                    "trigger_type": {"value": "value.trigger_type", "eval": True},
+                    "monophonic": {"value": monophonic, "eval": False},
+                },
+                "arg_keys": ["note", "duration", "time", "velocity", "trigger_type", "monophonic"],
+            }
+        ],
+    }
+    part.send.assert_called_with(expected)
+
+
+def test_trigger_note_error():
+    inst = Synth()
+
+    with pytest.raises(TypeError, match="not an ipytone.Note object"):
+        inst.trigger_note("not a note")

@@ -14,6 +14,9 @@ Enhancements
 - Added :py:class:`WaveShaper` signal node operator (:pull:`100`).
 - Added :py:class:`PitchShift` effect node (:pull:`101`).
 - Added :py:class:`FrequencyShifter` effect node (:pull:`102`).
+- Added :py:meth:`Instrument.trigger_note` method that helps conditional
+  scheduling of attack or release events within :py:class:`Part` callbacks.
+  :py:class:`Note` has also a new ``trigger_type`` attribute (:pull:`105`).
 
 Bug fixes
 ~~~~~~~~~

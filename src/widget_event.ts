@@ -77,6 +77,9 @@ abstract class BaseEventModel<T extends Event>
     const callback = (time: number, value?: any) => {
       items.forEach((item) => {
         const args: callbackArgs = {};
+        const skipArgs: string[] = [];
+
+        let method = item.method;
 
         for (const [k, v] of Object.entries(item.args)) {
           if (v.eval) {
@@ -86,8 +89,34 @@ abstract class BaseEventModel<T extends Event>
           }
         }
 
-        const argsArray = normalizeArguments(args, item.arg_keys);
-        item.model.node[item.method](...argsArray);
+        // special case for the triggerNote method that doesn't exist in Tone.js:
+        // method dispatch depending on the trigger_type value
+        if (item.method === 'triggerNote') {
+          const trigger_type = args.trigger_type.value;
+
+          if (trigger_type === 'attack_release') {
+            method = 'triggerAttackRelease';
+          } else {
+            if (trigger_type === 'attack') {
+              method = 'triggerAttack';
+            } else {
+              method = 'triggerRelease';
+
+              skipArgs.push('velocity');
+              if (args.monophonic.value) {
+                skipArgs.push('note');
+              }
+            }
+
+            skipArgs.push('duration');
+          }
+
+          skipArgs.push('trigger_type');
+          skipArgs.push('monophonic');
+        }
+
+        const argsArray = normalizeArguments(args, item.arg_keys, skipArgs);
+        item.model.node[method](...argsArray);
       });
     };
 

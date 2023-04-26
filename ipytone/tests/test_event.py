@@ -89,6 +89,11 @@ def test_event_cancel(mocker, method):
     event.send.assert_called_once_with({"event": "cancel", "time": None})
 
 
+def test_note_error():
+    with pytest.raises(ValueError, match="invalid trigger type"):
+        Note(0, "C3", trigger_type="invalid")
+
+
 def test_part():
     part = Part()
     assert part.length == 0
@@ -130,8 +135,20 @@ def test_part_callback(mocker):
     part.send.assert_called_with(expected)
 
     assert part._events == [
-        {"time": "0:0", "note": "C3", "velocity": 1, "duration": 0.1},
-        {"time": "0:2", "note": "D3", "velocity": 0.5, "duration": 0.1},
+        {
+            "time": "0:0",
+            "note": "C3",
+            "velocity": 1,
+            "duration": 0.1,
+            "trigger_type": "attack_release",
+        },
+        {
+            "time": "0:2",
+            "note": "D3",
+            "velocity": 0.5,
+            "duration": 0.1,
+            "trigger_type": "attack_release",
+        },
     ]
 
     with pytest.raises(ValueError, match="cannot interpret this value as a Note"):
@@ -148,7 +165,13 @@ def test_part_add(mocker, note):
 
     expected = {
         "event": "add",
-        "arg": {"time": "0:0", "note": "C3", "velocity": 1, "duration": 0.1},
+        "arg": {
+            "time": "0:0",
+            "note": "C3",
+            "velocity": 1,
+            "duration": 0.1,
+            "trigger_type": "attack_release",
+        },
     }
     part.send.assert_called_once_with(expected)
 
@@ -163,7 +186,13 @@ def test_part_at(mocker, note):
     expected = {
         "event": "at",
         "time": "0:0",
-        "value": {"time": "0:0", "note": "C3", "velocity": 1, "duration": 0.1},
+        "value": {
+            "time": "0:0",
+            "note": "C3",
+            "velocity": 1,
+            "duration": 0.1,
+            "trigger_type": "attack_release",
+        },
     }
     part.send.assert_called_once_with(expected)
 
@@ -178,7 +207,13 @@ def test_part_remove(mocker, note):
     expected = {
         "event": "remove",
         "time": "0:0",
-        "value": {"time": "0:0", "note": "C3", "velocity": 1, "duration": 0.1},
+        "value": {
+            "time": "0:0",
+            "note": "C3",
+            "velocity": 1,
+            "duration": 0.1,
+            "trigger_type": "attack_release",
+        },
     }
     part.send.assert_called_once_with(expected)
 
