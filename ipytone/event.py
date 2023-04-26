@@ -122,22 +122,48 @@ class Event(NodeWithContext, ScheduleObserveMixin):
             yield "loop_end"
 
 
+TRIGGER_TYPES = ("attack", "release", "attack_release")
+
+
 class Note:
     """A single note with time, note (frequency) and velocity values.
 
-    This is useful for directly calling a :class:`ipytone.Part` callback
-    with multiple notes (unlike Tone.js, every note passed as value to the
-    callback must have a defined structure, i.e., no arbitrary attributes).
+    This is just a placeholder for some attributes that allows a little more
+    flexibility in :class:`ipytone.Part`. Unlike in Tone.js, it is not possible
+    to pass arbitrary objects as the 2nd argument of a ``Part`` callback.
+    Instead, every ``Part`` event is coerced to a ``Note`` object that can be
+    passed directly to :py:meth:`Instrument.trigger_note` or to other trigger
+    methods (using its attributes) inside the callback body.
 
-    Note: duration units is seconds.
+    Attributes
+    ----------
+    time : float or str
+        The relative partition time when the note should be triggered.
+    note : float or str
+        The actual note or frequency.
+    velocity : float, optional
+        The note velocity (in general any value between 0 and 1).
+    duration : float, optional
+        The note duration in seconds (generaly used with the
+        "attack_release" trigger type).
+    trigger_type : {'attack', 'release', 'attack_release'}, optional
+        The type of event. Used in :py:meth:`Instrument.trigger_note`
+        to determine the action to perform.
 
     """
 
-    def __init__(self, time, note, velocity=1, duration=0.1):
+    def __init__(self, time, note, velocity=1, duration=0.1, trigger_type="attack_release"):
+        if trigger_type not in TRIGGER_TYPES:
+            raise ValueError(
+                "invalid trigger type, must be one of "
+                + ",".join([f"{t!r}" for t in TRIGGER_TYPES])
+            )
+
         self.time = time
         self.note = note
         self.velocity = velocity
         self.duration = duration
+        self.trigger_type = trigger_type
 
     def to_dict(self):
         return {
@@ -145,6 +171,7 @@ class Note:
             "note": self.note,
             "velocity": self.velocity,
             "duration": self.duration,
+            "trigger_type": self.trigger_type,
         }
 
 

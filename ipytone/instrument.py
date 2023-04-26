@@ -1,13 +1,15 @@
 import re
+from collections.abc import Mapping
 from textwrap import dedent
 
 from ipywidgets import widget_serialization
 from traitlets import Dict, Enum, Float, Instance, Int, List, Unicode, validate
 
 from .base import NodeWithContext
-from .callback import add_or_send_event
+from .callback import EventValueCallbackArg, add_or_send_event
 from .core import AudioBuffers, AudioNode, Gain, Param, Volume
 from .envelope import AmplitudeEnvelope, FrequencyEnvelope
+from .event import Note
 from .filter import Filter, LowpassCombFilter
 from .signal import AudioToGain, Multiply, Signal
 from .source import LFO, Noise, OmniOscillator
@@ -25,6 +27,34 @@ def minify_js_func(func_str):
     func_str = func_str.strip()
 
     return func_str
+
+
+def _trigger_note(obj, note, time=None, monophonic=True):
+    if isinstance(note, EventValueCallbackArg):
+        args = {
+            "note": note.note,
+            "duration": note.duration,
+            "time": time,
+            "velocity": note.velocity,
+            "trigger_type": note.trigger_type,
+            "monophonic": monophonic,
+        }
+        add_or_send_event("triggerNote", obj, args)
+    else:
+        if isinstance(note, Mapping):
+            note = Note(**note)
+        elif not isinstance(note, Note):
+            raise TypeError("not an ipytone.Note object")
+
+        if note.trigger_type == "attack":
+            obj.trigger_attack(note.note, time, note.velocity)
+        elif note.trigger_type == "release":
+            if monophonic:
+                obj.trigger_release(time)
+            else:
+                obj.trigger_release(note.note, time)
+        else:
+            obj.trigger_attack_release(note.note, note.duration, time, note.velocity)
 
 
 class Instrument(AudioNode):
@@ -128,6 +158,25 @@ class Instrument(AudioNode):
         """
         args = {"note": note, "duration": duration, "time": time, "velocity": velocity}
         add_or_send_event("triggerAttackRelease", self, args)
+        return self
+
+    def trigger_note(self, note, time=None):
+        """Trigger a note.
+
+        Parameters
+        ----------
+        note : :py:class:`Note`
+            The note object to play. Depending on its ``trigger_type``
+            attribute, this method dispatches either to ``trigger_attack``,
+            ``trigger_release`` or ``trigger_attack_relase`` using the
+            the other attribute values.
+        time : float or str, optional
+            The time at which the note attack or release is triggered
+            (default: now). This overrides the ``time`` attribute of
+            the ``note`` object.
+
+        """
+        _trigger_note(self, note, time=time)
         return self
 
     def dispose(self):
@@ -903,6 +952,25 @@ class PolySynth(AudioNode):
         add_or_send_event("triggerAttackRelease", self, args)
         return self
 
+    def trigger_note(self, note, time=None):
+        """Trigger a note.
+
+        Parameters
+        ----------
+        note : :py:class:`Note`
+            The note object to play. Depending on its ``trigger_type``
+            attribute, this method dispatches either to ``trigger_attack``,
+            ``trigger_release`` or ``trigger_attack_relase`` using the
+            the other attribute values.
+        time : float or str, optional
+            The time at which the note attack or release is triggered
+            (default: now). This overrides the ``time`` attribute of
+            the ``note`` object.
+
+        """
+        _trigger_note(self, note, time=time, monophonic=False)
+        return self
+
     def release_all(self, time=None):
         """Trigger the release of all currently active voices.
 
@@ -1017,6 +1085,25 @@ class Sampler(AudioNode):
         """
         args = {"notes": notes, "duration": duration, "time": time, "velocity": velocity}
         add_or_send_event("triggerAttackRelease", self, args)
+        return self
+
+    def trigger_note(self, note, time=None):
+        """Trigger a note.
+
+        Parameters
+        ----------
+        note : :py:class:`Note`
+            The note object to play. Depending on its ``trigger_type``
+            attribute, this method dispatches either to ``trigger_attack``,
+            ``trigger_release`` or ``trigger_attack_relase`` using the
+            the other attribute values.
+        time : float or str, optional
+            The time at which the note attack or release is triggered
+            (default: now). This overrides the ``time`` attribute of
+            the ``note`` object.
+
+        """
+        _trigger_note(self, note, time=time, monophonic=False)
         return self
 
     def release_all(self, time=None):

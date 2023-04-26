@@ -83,6 +83,7 @@ class EventValueCallbackArg(BaseCallbackArg):
     - note
     - velocicty
     - duration (value must be in seconds)
+    - trigger_type
 
     """
 
@@ -100,6 +101,10 @@ class EventValueCallbackArg(BaseCallbackArg):
     @property
     def duration(self):
         return self.derive(str(self.value) + ".duration")
+
+    @property
+    def trigger_type(self):
+        return self.derive(str(self.value) + ".trigger_type")
 
 
 def add_or_send_event(method, callee, args, event="trigger"):
