@@ -6,11 +6,24 @@ import { normalizeArguments } from './utils';
 
 import { AudioNodeModel } from './widget_base';
 
+import { CrossFadeModel } from './widget_channel';
+
 import { ParamModel } from './widget_core';
 
 import { SignalModel } from './widget_signal';
 
-export class DistortionModel extends AudioNodeModel {
+abstract class EffectModel extends AudioNodeModel {
+  // Returns the wet value from the output node model.
+  // This allows to pass it to the constructor of the
+  // Tone.Effect subclasses.
+  get wetFromModel(): number {
+    return (this.output as CrossFadeModel).fade.value;
+  }
+
+  static model_name = 'EffectModel';
+}
+
+export class DistortionModel extends EffectModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -24,6 +37,7 @@ export class DistortionModel extends AudioNodeModel {
     return new tone.Distortion({
       distortion: this.get('distortion'),
       oversample: this.get('oversample'),
+      wet: this.wetFromModel,
     });
   }
 
@@ -43,7 +57,7 @@ export class DistortionModel extends AudioNodeModel {
   static model_name = 'DistortionModel';
 }
 
-export class FeedbackDelayModel extends AudioNodeModel {
+export class FeedbackDelayModel extends EffectModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -59,6 +73,7 @@ export class FeedbackDelayModel extends AudioNodeModel {
       delayTime: this.delayTime.value,
       feedback: this.feedback.value,
       maxDelay: this.get('_max_delay'),
+      wet: this.wetFromModel,
     });
   }
 
@@ -87,7 +102,7 @@ export class FeedbackDelayModel extends AudioNodeModel {
   static model_name = 'FeedbackDelayModel';
 }
 
-export class FrequencyShifterModel extends AudioNodeModel {
+export class FrequencyShifterModel extends EffectModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -99,6 +114,7 @@ export class FrequencyShifterModel extends AudioNodeModel {
   createNode(): tone.FrequencyShifter {
     return new tone.FrequencyShifter({
       frequency: this.frequency.value,
+      wet: this.wetFromModel,
     });
   }
 
@@ -121,7 +137,7 @@ export class FrequencyShifterModel extends AudioNodeModel {
   static model_name = 'FrequencyShifterModel';
 }
 
-export class PingPongDelayModel extends AudioNodeModel {
+export class PingPongDelayModel extends EffectModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -137,6 +153,7 @@ export class PingPongDelayModel extends AudioNodeModel {
       delayTime: this.delayTime.value,
       feedback: this.feedback.value,
       maxDelay: this.get('_max_delay'),
+      wet: this.wetFromModel,
     });
   }
 
@@ -165,7 +182,7 @@ export class PingPongDelayModel extends AudioNodeModel {
   static model_name = 'PingPongDelayModel';
 }
 
-export class PitchShiftModel extends AudioNodeModel {
+export class PitchShiftModel extends EffectModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -183,6 +200,7 @@ export class PitchShiftModel extends AudioNodeModel {
       windowSize: this.get('window_size'),
       delayTime: this.delayTime.value,
       feedback: this.feedback.value,
+      wet: this.wetFromModel,
     });
   }
 
@@ -222,7 +240,7 @@ export class PitchShiftModel extends AudioNodeModel {
   static model_name = 'PitchShiftModel';
 }
 
-export class ReverbModel extends AudioNodeModel {
+export class ReverbModel extends EffectModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -254,6 +272,7 @@ export class ReverbModel extends AudioNodeModel {
     return new tone.Reverb({
       decay: this.get('decay'),
       preDelay: this.get('pre_delay'),
+      wet: this.wetFromModel,
     });
   }
 
@@ -273,7 +292,7 @@ export class ReverbModel extends AudioNodeModel {
   static model_name = 'ReverbModel';
 }
 
-export class TremoloModel extends AudioNodeModel {
+export class TremoloModel extends EffectModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -291,6 +310,7 @@ export class TremoloModel extends AudioNodeModel {
       depth: this.depth.value,
       type: this.get('type'),
       spread: this.get('spread'),
+      wet: this.wetFromModel,
     });
   }
 
@@ -342,7 +362,7 @@ export class TremoloModel extends AudioNodeModel {
   static model_name = 'TremoloModel';
 }
 
-export class VibratoModel extends AudioNodeModel {
+export class VibratoModel extends EffectModel {
   defaults(): any {
     return {
       ...super.defaults(),
@@ -360,6 +380,7 @@ export class VibratoModel extends AudioNodeModel {
       depth: this.depth.value,
       type: this.get('type'),
       maxDelay: this.get('_max_delay'),
+      wet: this.wetFromModel,
     });
   }
 
