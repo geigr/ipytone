@@ -869,16 +869,18 @@ class PolySynth(AudioNode):
         add_or_send_event("triggerAttack", self, args)
         return self
 
-    def trigger_release(self, time=None):
+    def trigger_release(self, notes, time=None):
         """Trigger the release of one or more notes.
 
         Parameters
         ----------
+        notes : float or str or list
+            The frequency(ies) or note(s) to release.
         time : float or str, optional
             The time at which the note(s) are released (default: now).
 
         """
-        add_or_send_event("triggerRelease", self, {"time": time})
+        add_or_send_event("triggerRelease", self, {"notes": notes, "time": time})
         return self
 
     def trigger_attack_release(self, notes, duration, time=None, velocity=1):
@@ -983,16 +985,18 @@ class Sampler(AudioNode):
         add_or_send_event("triggerAttack", self, args)
         return self
 
-    def trigger_release(self, time=None):
+    def trigger_release(self, notes, time=None):
         """Trigger the release of one or more notes.
 
         Parameters
         ----------
+        notes : float or str or list
+            The frequency(ies) or note(s) to release.
         time : float or str, optional
             The time at which the note(s) are released (default: now).
 
         """
-        add_or_send_event("triggerRelease", self, {"time": time})
+        add_or_send_event("triggerRelease", self, {"notes": notes, "time": time})
         return self
 
     def trigger_attack_release(self, notes, duration, time=None, velocity=1):
