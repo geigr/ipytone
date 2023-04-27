@@ -132,6 +132,7 @@ Channel
    Mono
    MultibandSplit
    Panner
+   Panner3D
    PanVol
    Solo
    Split
