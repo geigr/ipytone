@@ -13,11 +13,12 @@ from .channel import (
     Mono,
     MultibandSplit,
     Panner,
+    Panner3D,
     PanVol,
     Solo,
     Split,
 )
-from .core import AudioBuffer, AudioBuffers, Gain, Param, Volume, destination
+from .core import AudioBuffer, AudioBuffers, Gain, Param, Volume, destination, listener
 from .dynamics import Compressor, Limiter, MultibandCompressor
 from .effect import (
     Distortion,

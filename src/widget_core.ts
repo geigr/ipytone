@@ -533,3 +533,55 @@ export class AudioBuffersModel extends ToneObjectModel {
 
   static model_name = 'AudioBuffersModel';
 }
+
+export class ListenerModel extends AudioNodeModel {
+  defaults(): any {
+    return {
+      ...super.defaults(),
+      _model_name: ListenerModel.model_name,
+      _position_x: undefined,
+      _position_y: undefined,
+      _position_z: undefined,
+      _forward_x: undefined,
+      _forward_y: undefined,
+      _forward_z: undefined,
+      _up_x: undefined,
+      _up_y: undefined,
+      _up_z: undefined,
+    };
+  }
+
+  createNode(): tone.ToneAudioNode {
+    return tone.getListener();
+  }
+
+  setSubNodes(): void {
+    super.setSubNodes();
+    this.get('_position_x').setNode(this.node.positionX);
+    this.get('_position_y').setNode(this.node.positionY);
+    this.get('_position_z').setNode(this.node.positionZ);
+    this.get('_forward_x').setNode(this.node.forwardX);
+    this.get('_forward_y').setNode(this.node.forwardY);
+    this.get('_forward_z').setNode(this.node.forwardZ);
+    this.get('_up_x').setNode(this.node.upX);
+    this.get('_up_y').setNode(this.node.upY);
+    this.get('_up_z').setNode(this.node.upZ);
+  }
+
+  static serializers: ISerializers = {
+    ...AudioNodeModel.serializers,
+    _position_x: { deserialize: unpack_models as any },
+    _position_y: { deserialize: unpack_models as any },
+    _position_z: { deserialize: unpack_models as any },
+    _forward_x: { deserialize: unpack_models as any },
+    _forward_y: { deserialize: unpack_models as any },
+    _forward_z: { deserialize: unpack_models as any },
+    _up_x: { deserialize: unpack_models as any },
+    _up_y: { deserialize: unpack_models as any },
+    _up_z: { deserialize: unpack_models as any },
+  };
+
+  node: typeof tone.Listener;
+
+  static model_name = 'ListenerModel';
+}

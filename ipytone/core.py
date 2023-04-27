@@ -551,3 +551,136 @@ class AudioBuffers(ToneObject):
         yield from super()._repr_keys()
         if not self.disposed:
             yield "loaded"
+
+
+class Listener(AudioNode):
+    """Represents a listener navigating in a 3D audio envrionment.
+
+    A listener is characterized by its position and its direction in a
+    right-hand x,y,z cartesian coordinate system where:
+
+    - the x-axis is the horizontal axis (left / right)
+    - the y-axis is the vertical axis (up / down)
+    - the z-axis is the longitudinal axis (in / out)
+
+    The listener direction is defined by:
+
+    - the "forward" direction (where its nose is located)
+    - the "up" direction (where the top of its head is located)
+
+    The initial default position is ``(0, 0, 0)`` and the initial default
+    direction is ``forward(0, 0, -1)`` and ``up(0, 1, 0)``. This allows the
+    listener facing a sound source located at the origin of the coordinate
+    system.
+
+    A listener is generally used together with :py:class:`Panner3D` instances
+    that place sound sources in the 3D audio environment.
+
+    There is only one listener per audio context and ipytone uses only the main
+    audio context. Do not instanciate this class directly, use instead the
+    :py:data:`listener` global instance.
+
+    """
+
+    _singleton = None
+
+    _model_name = Unicode("ListenerModel").tag(sync=True)
+
+    _position_x = Instance(Param).tag(sync=True, **widget_serialization)
+    _position_y = Instance(Param).tag(sync=True, **widget_serialization)
+    _position_z = Instance(Param).tag(sync=True, **widget_serialization)
+
+    _forward_x = Instance(Param).tag(sync=True, **widget_serialization)
+    _forward_y = Instance(Param).tag(sync=True, **widget_serialization)
+    _forward_z = Instance(Param).tag(sync=True, **widget_serialization)
+
+    _up_x = Instance(Param).tag(sync=True, **widget_serialization)
+    _up_y = Instance(Param).tag(sync=True, **widget_serialization)
+    _up_z = Instance(Param).tag(sync=True, **widget_serialization)
+
+    def __new__(cls):
+        if Listener._singleton is None:
+            Listener._singleton = super().__new__(cls)
+        return Listener._singleton
+
+    def __init__(self):
+        params = {
+            "_position_x": Param(value=0, _create_node=False),
+            "_position_y": Param(value=0, _create_node=False),
+            "_position_z": Param(value=0, _create_node=False),
+            "_forward_x": Param(value=0, _create_node=False),
+            "_forward_y": Param(value=0, _create_node=False),
+            "_forward_z": Param(value=-1, _create_node=False),
+            "_up_x": Param(value=0, _create_node=False),
+            "_up_y": Param(value=1, _create_node=False),
+            "_up_z": Param(value=0, _create_node=False),
+        }
+
+        super().__init__(_set_node_channels=False, **params)
+
+    @property
+    def position_x(self) -> Param:
+        """listener position x-coordinate."""
+        return self._position_x
+
+    @property
+    def position_y(self) -> Param:
+        """listener position y-coordinate."""
+        return self._position_y
+
+    @property
+    def position_z(self) -> Param:
+        """listener position z-coordinate."""
+        return self._position_z
+
+    @property
+    def forward_x(self) -> Param:
+        """listener forward direction (nose location) x-coordinate."""
+        return self._forward_x
+
+    @property
+    def forward_y(self) -> Param:
+        """listener forward direction (nose location) y-coordinate."""
+        return self._forward_y
+
+    @property
+    def forward_z(self) -> Param:
+        """listener forward direction (nose location) z-coordinate."""
+        return self._forward_z
+
+    @property
+    def up_x(self) -> Param:
+        """listener forward direction (top-head location) x-coordinate."""
+        return self._up_x
+
+    @property
+    def up_y(self) -> Param:
+        """listener forward direction (top-head location) y-coordinate."""
+        return self._up_y
+
+    @property
+    def up_z(self) -> Param:
+        """listener forward direction (top-head location) z-coordinate."""
+        return self._up_z
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._position_x.dispose()
+            self._position_y.dispose()
+            self._position_z.dispose()
+            self._forward_x.dispose()
+            self._forward_y.dispose()
+            self._forward_z.dispose()
+            self._up_x.dispose()
+            self._up_y.dispose()
+            self._up_z.dispose()
+
+        return self
+
+
+listener = Listener()
+"""Ipytone's instance (singleton) of :py:class:`~core.Listener` in the main audio
+context (3D environment).
+
+"""

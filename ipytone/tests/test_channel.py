@@ -6,6 +6,7 @@ from ipytone.channel import (
     Mono,
     MultibandSplit,
     Panner,
+    Panner3D,
     PanVol,
     Solo,
     Split,
@@ -47,6 +48,50 @@ def test_panner():
     assert p is panner
     assert panner.disposed is True
     assert panner.pan.disposed is True
+
+
+def test_panner3d():
+    panner = Panner3D()
+
+    params = [
+        "position_x",
+        "position_y",
+        "position_z",
+        "orientation_x",
+        "orientation_y",
+        "orientation_z",
+    ]
+
+    for pname in params:
+        pm = getattr(panner, pname)
+        assert isinstance(pm, Param)
+        assert pm.value == 0
+
+    assert panner.panning_model == "equal_power"
+    assert panner.distance_model == "inverse"
+    assert panner.ref_distance == 1.0
+    assert panner.rolloff_factor == 1.0
+    assert panner.max_distance == 10000.0
+    assert panner.cone_inner_angle == 360.0
+    assert panner.cone_outer_angle == 360.0
+    assert panner.cone_outer_gain == 0.0
+
+    panner.set_position(1, 2, 3)
+    assert panner.position_x.value == 1
+    assert panner.position_y.value == 2
+    assert panner.position_z.value == 3
+
+    panner.set_orientation(1, 2, 3)
+    assert panner.orientation_x.value == 1
+    assert panner.orientation_y.value == 2
+    assert panner.orientation_z.value == 3
+
+    p = panner.dispose()
+    assert p is panner
+    assert panner.disposed is True
+    for pname in params:
+        pm = getattr(panner, pname)
+        assert pm.disposed is True
 
 
 def test_panvol():

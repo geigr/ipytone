@@ -19,6 +19,8 @@ Enhancements
   :py:class:`Note` has also a new ``trigger_type`` attribute (:pull:`105`).
 - Added ``Transport.state`` read-only attribute and use Tonejs' Transport
   Emitter signals for syncing the state and position (:pull:`106`).
+- Added :py:class:`~core.Listener` and :py:class:`Panner3D` audio spatialization
+  components (:pull:`107`).
 
 Bug fixes
 ~~~~~~~~~

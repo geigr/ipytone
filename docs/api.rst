@@ -39,6 +39,7 @@ Core
 
    destination
    get_audio_graph
+   listener
 
 .. _api_source:
 
@@ -131,6 +132,7 @@ Channel
    Mono
    MultibandSplit
    Panner
+   Panner3D
    PanVol
    Solo
    Split
