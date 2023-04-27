@@ -13,6 +13,7 @@ from .channel import (
     Mono,
     MultibandSplit,
     Panner,
+    Panner3D,
     PanVol,
     Solo,
     Split,

@@ -1,5 +1,5 @@
 from ipywidgets import widget_serialization
-from traitlets import Bool, Instance, Int, Unicode
+from traitlets import Bool, Enum, Float, Instance, Int, Unicode
 
 from .base import AudioNode, PyAudioNode
 from .core import Gain, NativeAudioNode, Param, Volume
@@ -87,6 +87,139 @@ class Panner(AudioNode):
         with self._graph.hold_state():
             super().dispose()
             self._pan.dispose()
+
+        return self
+
+
+class Panner3D(AudioNode):
+    """A spatialized panner audio node that provides equal power or HRTF panning.
+
+    For more details about the 3D spatial reference system, see
+    :py:class:`Listener`.
+
+    """
+
+    _model_name = Unicode("Panner3DModel").tag(sync=True)
+
+    _position_x = Instance(Param).tag(sync=True, **widget_serialization)
+    _position_y = Instance(Param).tag(sync=True, **widget_serialization)
+    _position_z = Instance(Param).tag(sync=True, **widget_serialization)
+
+    _orientation_x = Instance(Param).tag(sync=True, **widget_serialization)
+    _orientation_y = Instance(Param).tag(sync=True, **widget_serialization)
+    _orientation_z = Instance(Param).tag(sync=True, **widget_serialization)
+
+    panning_model = Enum(
+        ["equal_power", "HRTF"], default_value="equal_power", help="panning model"
+    ).tag(sync=True)
+
+    distance_model = Enum(
+        ["linear", "inverse", "exponential"],
+        default_value="inverse",
+        help="distance model for source volume reduction",
+    ).tag(sync=True)
+
+    ref_distance = Float(1.0, help="reference distance for source volume reduction").tag(sync=True)
+
+    rolloff_factor = Float(
+        1.0, help="controls the amount of source volume reduction with distance"
+    ).tag(sync=True)
+
+    max_distance = Float(
+        10000.0, help="max distance between the source and listener (beyond, no volume reduction)"
+    ).tag(sync=True)
+
+    cone_inner_angle = Float(
+        360.0, help="angle inside of which there is no volume reduction (degrees)"
+    ).tag(sync=True)
+
+    cone_outer_angle = Float(
+        360.0, help="angle outside of which volume is reduced to a constant (degrees)"
+    ).tag(sync=True)
+
+    cone_outer_gain = Float(0.0, help="gain value outside of the cone outer angle").tag(sync=True)
+
+    def __init__(
+        self,
+        position=(0, 0, 0),
+        orientation=(0, 0, 0),
+        **kwargs,
+    ):
+        panner_node = NativeAudioNode(type="PannerNode")
+
+        nodes = {
+            "_input": panner_node,
+            "_output": panner_node,
+            "_position_x": Param(value=position[0], _create_node=False),
+            "_position_y": Param(value=position[1], _create_node=False),
+            "_position_z": Param(value=position[2], _create_node=False),
+            "_orientation_x": Param(value=orientation[0], _create_node=False),
+            "_orientation_y": Param(value=orientation[1], _create_node=False),
+            "_orientation_z": Param(value=orientation[2], _create_node=False),
+        }
+
+        kwargs.update(nodes)
+        super().__init__(_set_node_channels=False, **kwargs)
+
+    @property
+    def position_x(self) -> Param:
+        """source position x-coordinate."""
+        return self._position_x
+
+    @property
+    def position_y(self) -> Param:
+        """source position y-coordinate."""
+        return self._position_y
+
+    @property
+    def position_z(self) -> Param:
+        """source position z-coordinate."""
+        return self._position_z
+
+    def set_position(self, x, y, z):
+        """Convenient method to set the x-y-z coordinate position of the
+        source.
+
+        """
+        self._position_x.value = x
+        self._position_y.value = y
+        self._position_z.value = z
+        return self
+
+    @property
+    def orientation_x(self) -> Param:
+        """source orientation x-coordinate."""
+        return self._orientation_x
+
+    @property
+    def orientation_y(self) -> Param:
+        """source orientation y-coordinate."""
+        return self._orientation_y
+
+    @property
+    def orientation_z(self) -> Param:
+        """source orientation z-coordinate."""
+        return self._orientation_z
+
+    def set_orientation(self, x, y, z):
+        """Convenient method to set the x-y-z coordinate orientation of the
+        source.
+
+        """
+        self._orientation_x.value = x
+        self._orientation_y.value = y
+        self._orientation_z.value = z
+        return self
+
+    def dispose(self):
+        with self._graph.hold_state():
+            super().dispose()
+            self._position_x.dispose()
+            self._position_y.dispose()
+            self._position_z.dispose()
+            self._orientation_x.dispose()
+            self._orientation_y.dispose()
+            self._orientation_z.dispose()
 
         return self
 
