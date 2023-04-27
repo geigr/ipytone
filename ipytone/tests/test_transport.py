@@ -1,10 +1,12 @@
 import pytest
 
-from ipytone import transport
+from ipytone import get_transport
 from ipytone.core import Param
 from ipytone.signal import Signal
 from ipytone.source import Oscillator
 from ipytone.transport import Transport, schedule, schedule_once, schedule_repeat
+
+transport = get_transport()
 
 
 def test_transport():

@@ -90,7 +90,13 @@ from .source import (
     PulseOscillator,
     PWMOscillator,
 )
-from .transport import schedule, schedule_once, schedule_repeat, transport
+from .transport import (
+    get_transport,
+    schedule,
+    schedule_once,
+    schedule_repeat,
+    transport,
+)
 
 
 def _jupyter_labextension_paths():

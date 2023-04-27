@@ -368,8 +368,8 @@ class Destination(AudioNode):
     """Main output node (speakers) of an audio context.
 
     Ipytone does not support multiple audio contexts. Do not instantiate this
-    class directly, instead use :py:func:`get_destination` to get the main
-    output node of the main context.
+    class directly, instead use :py:func:`get_destination` to get the instance
+    created for the main context.
 
     """
 
@@ -406,15 +406,15 @@ class Destination(AudioNode):
 
 
 def get_destination():
-    """Returns ipytone's audio main output node as an instance of
-    :py:class:`Destination`.
+    """Returns the :py:class:`~core.Destination` instance created for the main
+    audio context.
 
     """
     return Destination()
 
 
 # TODO: remove (deprecated)
-destination = Destination()
+destination = get_destination()
 
 
 class AudioBuffer(ToneObject):
@@ -592,7 +592,7 @@ class Listener(AudioNode):
 
     There is only one listener per audio context and ipytone uses only the main
     audio context. Do not instanciate this class directly, use instead
-    :py:func:`get_listener` to get the global listener instance.
+    :py:func:`get_listener` to get the instance created for the main context.
 
     """
 
@@ -694,8 +694,8 @@ class Listener(AudioNode):
 
 
 def get_listener():
-    """Returns the :py:class:`~core.Listener` instance of ipytone's main audio
-    context.
+    """Returns the :py:class:`~core.Listener` instance created for the main
+    audio context.
 
     """
     return Listener()

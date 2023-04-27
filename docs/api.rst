@@ -197,17 +197,11 @@ Transport
 
 .. autosummary::
    :toctree: _api_generated/
-   :template: ipytone-class-template.rst
 
-   transport.Transport
-
-.. autosummary::
-   :toctree: _api_generated/
-
+   get_transport
    schedule
    schedule_once
    schedule_repeat
-   transport
 
 Event
 -----
