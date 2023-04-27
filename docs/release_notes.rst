@@ -8,6 +8,13 @@ Release Notes
 v0.5.0 (Unreleased)
 -------------------
 
+Deprecated features
+~~~~~~~~~~~~~~~~~~~
+
+- ``ipytone.destination`` is deprecated, use :py:func:`get_destination`
+  instead. Likewise, ``ipytone.transport`` is deprecated in favor of
+  :py:func:`get_transport` (:pull:`108`).
+
 Enhancements
 ~~~~~~~~~~~~
 
