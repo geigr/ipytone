@@ -16,6 +16,9 @@ class Transport(ToneObject, ScheduleObserveMixin):
     Note: the transport position is not updated until changing the playback state
     (play/pause/stop) or explicitly setting a new position.
 
+    Do not instanciate this class directly. Instead use :py:func:`get_transport`
+    to get the instance created for the main audio context.
+
     """
 
     _singleton = None
@@ -318,7 +321,16 @@ class Transport(ToneObject, ScheduleObserveMixin):
             yield "loop_end"
 
 
-transport = Transport()
+def get_transport():
+    """Return the :py:class:`~transport.Transport` instance created for the main
+    audio context.
+
+    """
+    return Transport()
+
+
+# TODO: remove (deprecated)
+transport = get_transport()
 
 
 @contextlib.contextmanager
@@ -334,6 +346,7 @@ def schedule(time):
     >>> ipytone.transport.start()
 
     """
+    transport = get_transport()
     time_arg = TimeCallbackArg(transport)
     event_id = transport._get_event_id_and_inc()
     yield time_arg, event_id
@@ -356,6 +369,7 @@ def schedule_repeat(interval, start_time=0, duration=None):
     >>> ipytone.transport.start()
 
     """
+    transport = get_transport()
     time_arg = TimeCallbackArg(transport)
     event_id = transport._get_event_id_and_inc()
     yield time_arg, event_id
@@ -386,6 +400,7 @@ def schedule_once(time):
     >>> ipytone.transport.start()
 
     """
+    transport = get_transport()
     time_arg = TimeCallbackArg(transport)
     event_id = transport._get_event_id_and_inc(append=False)
     yield time_arg, event_id

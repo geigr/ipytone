@@ -10,4 +10,6 @@
    :toctree: _api_generated/
    :template: ipytone-class-template.rst
 
+   core.Destination
    core.Listener
+   transport.Transport

@@ -37,9 +37,9 @@ Core
 .. autosummary::
    :toctree: _api_generated/
 
-   destination
    get_audio_graph
-   listener
+   get_destination
+   get_listener
 
 .. _api_source:
 
@@ -197,17 +197,11 @@ Transport
 
 .. autosummary::
    :toctree: _api_generated/
-   :template: ipytone-class-template.rst
 
-   transport.Transport
-
-.. autosummary::
-   :toctree: _api_generated/
-
+   get_transport
    schedule
    schedule_once
    schedule_repeat
-   transport
 
 Event
 -----

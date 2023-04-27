@@ -18,7 +18,16 @@ from .channel import (
     Solo,
     Split,
 )
-from .core import AudioBuffer, AudioBuffers, Gain, Param, Volume, destination, listener
+from .core import (
+    AudioBuffer,
+    AudioBuffers,
+    Gain,
+    Param,
+    Volume,
+    destination,
+    get_destination,
+    get_listener,
+)
 from .dynamics import Compressor, Limiter, MultibandCompressor
 from .effect import (
     Distortion,
@@ -81,7 +90,13 @@ from .source import (
     PulseOscillator,
     PWMOscillator,
 )
-from .transport import schedule, schedule_once, schedule_repeat, transport
+from .transport import (
+    get_transport,
+    schedule,
+    schedule_once,
+    schedule_repeat,
+    transport,
+)
 
 
 def _jupyter_labextension_paths():

@@ -365,7 +365,13 @@ class Volume(AudioNode):
 
 
 class Destination(AudioNode):
-    """Audio master node."""
+    """Main output node (speakers) of an audio context.
+
+    Ipytone does not support multiple audio contexts. Do not instantiate this
+    class directly, instead use :py:func:`get_destination` to get the instance
+    created for the main context.
+
+    """
 
     _singleton = None
 
@@ -399,8 +405,16 @@ class Destination(AudioNode):
         yield "mute"
 
 
-destination = Destination()
-"""Ipytone's audio main output node."""
+def get_destination():
+    """Returns the :py:class:`~core.Destination` instance created for the main
+    audio context.
+
+    """
+    return Destination()
+
+
+# TODO: remove (deprecated)
+destination = get_destination()
 
 
 class AudioBuffer(ToneObject):
@@ -554,7 +568,7 @@ class AudioBuffers(ToneObject):
 
 
 class Listener(AudioNode):
-    """Represents a listener navigating in a 3D audio envrionment.
+    """Represents a listener navigating in a 3D audio environment.
 
     A listener is characterized by its position and its direction in a
     right-hand x,y,z cartesian coordinate system where:
@@ -577,8 +591,8 @@ class Listener(AudioNode):
     that place sound sources in the 3D audio environment.
 
     There is only one listener per audio context and ipytone uses only the main
-    audio context. Do not instanciate this class directly, use instead the
-    :py:data:`listener` global instance.
+    audio context. Do not instanciate this class directly, use instead
+    :py:func:`get_listener` to get the instance created for the main context.
 
     """
 
@@ -679,8 +693,9 @@ class Listener(AudioNode):
         return self
 
 
-listener = Listener()
-"""Ipytone's instance (singleton) of :py:class:`~core.Listener` in the main audio
-context (3D environment).
+def get_listener():
+    """Returns the :py:class:`~core.Listener` instance created for the main
+    audio context.
 
-"""
+    """
+    return Listener()
