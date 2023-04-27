@@ -39,6 +39,7 @@ Core
 
    destination
    get_audio_graph
+   listener
 
 .. _api_source:
 

@@ -17,7 +17,7 @@ from .channel import (
     Solo,
     Split,
 )
-from .core import AudioBuffer, AudioBuffers, Gain, Param, Volume, destination
+from .core import AudioBuffer, AudioBuffers, Gain, Param, Volume, destination, listener
 from .dynamics import Compressor, Limiter, MultibandCompressor
 from .effect import (
     Distortion,
