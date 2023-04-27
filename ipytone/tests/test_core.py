@@ -13,6 +13,7 @@ from ipytone.core import (
     Param,
     Volume,
     destination,
+    listener,
 )
 from ipytone.signal import Signal
 
@@ -205,3 +206,28 @@ def test_audio_buffers():
     assert buffers.disposed is True
     assert bbuf.disposed is True
     assert buffers.buffers == {}
+
+
+def test_listener():
+    assert listener.position_x.value == 0
+    assert listener.position_y.value == 0
+    assert listener.position_z.value == 0
+
+    assert listener.forward_x.value == 0
+    assert listener.forward_y.value == 0
+    assert listener.forward_z.value == -1
+
+    assert listener.up_x.value == 0
+    assert listener.up_y.value == 1
+    assert listener.up_z.value == 0
+
+    listener.dispose()
+    assert listener.position_x.disposed is True
+    assert listener.position_y.disposed is True
+    assert listener.position_z.disposed is True
+    assert listener.forward_x.disposed is True
+    assert listener.forward_y.disposed is True
+    assert listener.forward_z.disposed is True
+    assert listener.up_x.disposed is True
+    assert listener.up_y.disposed is True
+    assert listener.up_z.disposed is True
