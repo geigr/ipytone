@@ -15,6 +15,8 @@ def test_transport():
     assert transport.bpm.value == 120
     assert transport.bpm.units == "bpm"
 
+    assert transport.state == "stopped"
+
     assert transport.time_signature == 4
 
     assert transport.loop is False
