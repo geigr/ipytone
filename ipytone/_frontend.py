@@ -8,4 +8,4 @@ Information about the frontend package of the widgets.
 """
 
 module_name = "ipytone"
-module_version = "^0.4.1"
+module_version = "^0.5.0"

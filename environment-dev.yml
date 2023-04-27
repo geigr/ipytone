@@ -13,6 +13,6 @@ dependencies:
   - ruff
   - traittypes
   - yarn
-  - wheel
+  - build
   - twine
   - traittypes

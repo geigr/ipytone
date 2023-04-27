@@ -5,8 +5,8 @@
 Release Notes
 =============
 
-v0.5.0 (Unreleased)
--------------------
+v0.5.0
+------
 
 Deprecated features
 ~~~~~~~~~~~~~~~~~~~
@@ -35,3 +35,9 @@ Bug fixes
 - Effects: fix ignored initial value for ``wet`` (:issue:`86`, :pull:`103`).
 - Add missing ``notes`` argument to :py:meth:`PolySynth.trigger_release()` and
   :py:meth:`Sampler.trigger_release` (:issue:`84`, :pull:`104`).
+
+Maintenance
+~~~~~~~~~~~
+
+- Ipywidgets 8 compatibility, use ruff for linting (Python), switch to Hatch
+  build backend and pyproject.toml, enable pre-commit, etc. (:pull:`94`).
