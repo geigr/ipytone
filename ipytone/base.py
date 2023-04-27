@@ -215,9 +215,9 @@ class AudioNode(NodeWithContext):
         to the master node.
 
         """
-        from .core import destination
+        from .core import get_destination
 
-        self.connect(destination)
+        self.connect(get_destination())
         return self
 
     @property

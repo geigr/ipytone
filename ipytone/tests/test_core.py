@@ -12,8 +12,8 @@ from ipytone.core import (
     InternalAudioNode,
     Param,
     Volume,
-    destination,
-    listener,
+    get_destination,
+    get_listener,
 )
 from ipytone.signal import Signal
 
@@ -146,6 +146,7 @@ def test_volume():
 
 
 def test_destination():
+    destination = get_destination()
     assert destination.mute is False
     assert isinstance(destination.input, Volume)
     assert isinstance(destination.output, Gain)
@@ -209,6 +210,8 @@ def test_audio_buffers():
 
 
 def test_listener():
+    listener = get_listener()
+
     assert listener.position_x.value == 0
     assert listener.position_y.value == 0
     assert listener.position_z.value == 0

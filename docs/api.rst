@@ -37,9 +37,9 @@ Core
 .. autosummary::
    :toctree: _api_generated/
 
-   destination
    get_audio_graph
-   listener
+   get_destination
+   get_listener
 
 .. _api_source:
 
