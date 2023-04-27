@@ -17,7 +17,7 @@ Enhancements
 - Added :py:meth:`Instrument.trigger_note` method that helps conditional
   scheduling of attack or release events within :py:class:`Part` callbacks.
   :py:class:`Note` has also a new ``trigger_type`` attribute (:pull:`105`).
-- Added :py:attr:`Transport.state` read-only attribute and use Tonejs' Transport
+- Added ``Transport.state`` read-only attribute and use Tonejs' Transport
   Emitter signals for syncing the state and position (:pull:`106`).
 
 Bug fixes
