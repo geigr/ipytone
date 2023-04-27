@@ -1,7 +1,7 @@
 import contextlib
 
 from ipywidgets import widget_serialization
-from traitlets import Bool, Float, Instance, Int, List, Unicode, Union
+from traitlets import Bool, Enum, Float, Instance, Int, List, Unicode, Union
 
 from .base import ToneObject
 from .callback import TimeCallbackArg, add_or_send_event
@@ -27,6 +27,13 @@ class Transport(ToneObject, ScheduleObserveMixin):
         [Int(), List(trait=Int(), minlen=2, maxlen=2)],
         default_value=4,
         help="transport time signature",
+    ).tag(sync=True)
+
+    state = Enum(
+        ["started", "paused", "stopped"],
+        default_value="stopped",
+        read_only=True,
+        help="current playback state",
     ).tag(sync=True)
 
     loop_start = Union(

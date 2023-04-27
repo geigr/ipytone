@@ -23,6 +23,7 @@ export class TransportModel extends ToneObjectModel implements ObservableModel {
       _model_name: TransportModel.model_name,
       _bpm: null,
       time_signature: 4,
+      state: 'stopped',
       loop_start: 0,
       loop_end: '4m',
       loop: false,
@@ -148,6 +149,11 @@ export class TransportModel extends ToneObjectModel implements ObservableModel {
     this.save_changes();
   }
 
+  private syncState(): void {
+    this.set('state', tone.Transport.state, { silent: true });
+    this.save_changes();
+  }
+
   private play(command: any): void {
     const argsArray = normalizeArguments(command.args, command.arg_keys);
     (tone.Transport as any)[command.method](...argsArray);
@@ -219,6 +225,22 @@ export class TransportModel extends ToneObjectModel implements ObservableModel {
       this.syncPosition();
     });
     this.on('msg:custom', this.handleMsg, this);
+
+    tone.Transport.on('start', () => {
+      this.syncState();
+    });
+    tone.Transport.on('pause', () => {
+      this.syncState();
+      this.syncPosition();
+    });
+    tone.Transport.on('stop', () => {
+      this.syncState();
+      this.syncPosition();
+    });
+    // TODO: this will be available in the next Tone.js release
+    // tone.Transport.on('ticks', () => {
+    //   this.syncPosition();
+    // });
   }
 
   static serializers: ISerializers = {
