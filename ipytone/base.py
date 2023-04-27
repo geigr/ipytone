@@ -212,7 +212,7 @@ class AudioNode(NodeWithContext):
 
     def to_destination(self):
         """Convenience method to directly connect the output of this audio node
-        to the master node.
+        to the main output (speakers) node.
 
         """
         from .core import get_destination
