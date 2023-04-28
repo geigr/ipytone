@@ -8,7 +8,7 @@ def _jupyter_nbextension_paths():
     return [
         {
             "section": "notebook",
-            "src": "nbextension/static",
+            "src": "nbextension",
             "dest": "ipytone",
             "require": "ipytone/extension",
         }
