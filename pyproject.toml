@@ -60,7 +60,7 @@ Homepage = "https://github.com/benbovy/ipytone"
 
 [tool.hatch.build]
 artifacts = [
-    "ipytone/nbextension/static/index.*",
+    "ipytone/nbextension/index.*",
     "ipytone/labextension/*.tgz",
     "ipytone/labextension",
 ]
@@ -79,11 +79,11 @@ exclude = [
 [tool.hatch.build.hooks.jupyter-builder]
 build-function = "hatch_jupyter_builder.npm_builder"
 ensured-targets = [
-    "ipytone/nbextension/static/index.js",
+    "ipytone/nbextension/index.js",
     "ipytone/labextension/package.json",
 ]
 skip-if-exists = [
-    "ipytone/nbextension/static/index.js",
+    "ipytone/nbextension/index.js",
     "ipytone/labextension/package.json",
 ]
 dependencies = [

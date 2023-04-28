@@ -27,7 +27,7 @@ module.exports = [
     entry: './src/extension.ts',
     output: {
       filename: 'index.js',
-      path: path.resolve(__dirname, 'ipytone', 'nbextension', 'static'),
+      path: path.resolve(__dirname, 'ipytone', 'nbextension'),
       libraryTarget: 'amd',
     },
     module: {

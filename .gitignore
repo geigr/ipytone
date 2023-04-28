@@ -147,7 +147,7 @@ $RECYCLE.BIN/
 # ----
 
 **/node_modules/
-ipytone/nbextension/static/index.*
+ipytone/nbextension/index.*
 ipytone/labextension/*.tgz
 .yarn/
 

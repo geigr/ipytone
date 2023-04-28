@@ -5,6 +5,15 @@
 Release Notes
 =============
 
+v0.5.1
+------
+
+Bug fixes
+~~~~~~~~~
+
+- Fixed installation issue with notebook "classic" version <7 (:issue:`109`,
+  :pull:`110`).
+
 v0.5.0
 ------
 
