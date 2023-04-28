@@ -4,4 +4,4 @@ channels:
   - https://repo.mamba.pm/conda-forge
 dependencies:
   - numpy
-  - ipytone
+  - ipytone>=0.5.1
