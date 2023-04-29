@@ -5,6 +5,14 @@
 Release Notes
 =============
 
+v0.6.0 (unreleased)
+-------------------
+
+Maintenance
+~~~~~~~~~~~
+
+- CI: update minimum Python version to 3.9 (:pull:`112`).
+
 v0.5.1
 ------
 
