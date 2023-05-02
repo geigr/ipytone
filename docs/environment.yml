@@ -10,7 +10,6 @@ dependencies:
   - matplotlib-base
   - myst-nb
   - yarn<=1
-  - xeus-python<=0.15.7
   - pip
   - pip:
     - jupyterlite-core
