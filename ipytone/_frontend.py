@@ -7,5 +7,7 @@
 Information about the frontend package of the widgets.
 """
 
+from ._version import __version__
+
 module_name = "ipytone"
-module_version = "^0.5.1"
+module_version = f"^{__version__}"
