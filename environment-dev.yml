@@ -16,3 +16,4 @@ dependencies:
   - build
   - twine
   - traittypes
+  - tbump

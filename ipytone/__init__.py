@@ -3,7 +3,7 @@
 # Copyright (c) Benoit Bovy.
 # Distributed under the terms of the Modified BSD License.
 
-from ._version import __version__, version_info
+from ._version import __version__
 from .analysis import FFT, Analyser, DCMeter, Follower, Meter, Waveform
 from .base import PyAudioNode
 from .channel import (
