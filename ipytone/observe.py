@@ -19,14 +19,18 @@ from .base import ToneObject, ToneWidgetBase
 from .serialization import data_array_serialization
 
 
+class DummyLink:
+    def unlink(self):
+        pass
+
+
 class ToneDirectionalLink:
     def __init__(self, observer, link):
         self.observer = observer
         self.link = link
 
     def unlink(self):
-        if self.link is not None:
-            self.link.unlink()
+        self.link.unlink()
         self.observer.schedule_cancel()
 
 
@@ -140,7 +144,7 @@ class ScheduleObserver(ToneWidgetBase):
         self.schedule_cancel()
         self.unobserve(handler, names=self._get_trait_name())
 
-    def schedule_dlink(self, update_interval, transport, js=False):
+    def schedule_dlink(self, target, update_interval, transport, js=False):
         if js and transport:
             # use Tone.js Draw for better synchronization
             # of sound and visuals
@@ -153,11 +157,9 @@ class ScheduleObserver(ToneWidgetBase):
         if js:
             # bypass ipywidget.jsdlink (target is updated directly by this
             # widget in the front-end)
-            link = None
+            link = DummyLink()
         else:
-            link = ipywidgets.dlink(
-                (self, self.observed_trait), (self.target_widget, self.target_trait)
-            )
+            link = ipywidgets.dlink((self, self.observed_trait), target)
 
         return ToneDirectionalLink(self, link)
 
@@ -302,7 +304,7 @@ class ScheduleObserveMixin(HasTraits):
             target_widget=target_widget,
             target_trait=target_trait,
         )
-        return observer.schedule_dlink(update_interval, transport, js=js)
+        return observer.schedule_dlink(target, update_interval, transport, js=js)
 
     def schedule_dlink(self, target, update_interval=1, transport=False, name=None):
         """Link a source attribute of this ipytone widget with a target widget
