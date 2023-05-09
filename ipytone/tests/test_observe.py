@@ -67,6 +67,7 @@ def test_schedule_observe(widget, trait_name, handler):
         observer = widget._observers[key]
         assert observer.observed_widget is widget
         assert observer.observed_trait == trait_name
+        assert observer.target_widget is None
 
         # test observe already observed with same handler
         with pytest.raises(ValueError, match="this handler is already used"):
@@ -97,6 +98,12 @@ def test_schedule_dlink(widget, trait_name, target_widget, mocker):
             assert link.observer.observed_widget is widget
             assert link.observer.observed_trait == trait_name
 
+            if method is widget.schedule_dlink:
+                assert link.observer.target_widget is None
+            elif method is widget.schedule_jsdlink:
+                assert link.observer.target_widget is target_widget
+                assert link.observer.target_trait == trait_name
+
             # test unlink
             mocker.patch.object(link.link, "unlink")
             mocker.patch.object(link.observer, "schedule_cancel")
@@ -111,6 +118,7 @@ def test_schedule_observer():
 
     assert observer.observed_widget is sig
     assert observer.observe_time is False
+    assert observer.target_widget is None
     assert observer.time == 0.0
     assert observer.value == 0
     assert observer.state == "stopped"
@@ -149,7 +157,6 @@ def test_schedule_observer_schedule_observe(mocker, handler):
 
 def test_schedule_observer_schedule_link(mocker, target_widget):
     dlink_patch = mocker.patch("ipywidgets.dlink")
-    jsdlink_patch = mocker.patch("ipywidgets.jsdlink")
 
     sig = Signal()
     observer = ScheduleObserver(observed_widget=sig)
@@ -168,4 +175,3 @@ def test_schedule_observer_schedule_link(mocker, target_widget):
     observer.send.assert_called_with(
         {"event": "scheduleRepeat", "update_interval": 1, "transport": True, "draw": True}
     )
-    jsdlink_patch.assert_called_with((observer, "value"), (target_widget, "value"))
