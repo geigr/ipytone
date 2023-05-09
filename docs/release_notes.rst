@@ -8,6 +8,13 @@ Release Notes
 v0.6.0 (unreleased)
 -------------------
 
+Bug fixes
+~~~~~~~~~
+
+- Fixed ``schedule_jsdlink`` so it doesn't synchronize state with the backend
+  and fix ``unlink`` / ``unobserve`` with ``transport=True`` (:issue:`116`,
+  :pull:`118`).
+
 Maintenance
 ~~~~~~~~~~~
 
