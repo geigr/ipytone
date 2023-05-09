@@ -172,7 +172,7 @@ export class ScheduleObserverModel extends ToneWidgetModel {
 
   private scheduleCancel(): void {
     if (this.event.transport) {
-      tone.Transport.cancel(this.event.id as number);
+      tone.Transport.clear(this.event.id as number);
     } else {
       clearInterval(this.event.id as ReturnType<typeof setInterval>);
     }
