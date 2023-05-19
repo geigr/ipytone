@@ -1,4 +1,8 @@
-import { ISerializers, unpack_models } from '@jupyter-widgets/base';
+import {
+  ISerializers,
+  unpack_models,
+  WidgetModel,
+} from '@jupyter-widgets/base';
 
 import * as tone from 'tone';
 
@@ -39,6 +43,8 @@ export class ScheduleObserverModel extends ToneWidgetModel {
       observed_widget: null,
       observed_trait: 'value',
       observe_time: false,
+      target_widget: null,
+      target_trait: 'value',
       time: 0.0,
       value: 0.0,
       state: 'stopped',
@@ -52,6 +58,8 @@ export class ScheduleObserverModel extends ToneWidgetModel {
   }
 
   private event: ObserveEvent;
+  private _observedWidget: ObservableModel;
+  private _targetWidget: WidgetModel;
 
   initialize(
     attributes: Backbone.ObjectHash,
@@ -60,10 +68,21 @@ export class ScheduleObserverModel extends ToneWidgetModel {
     super.initialize(attributes, options);
 
     this.event = { id: 0, transport: false };
+
+    // cache unserialized widget models for fast access in schedule loop
+    this._observedWidget = this.get('observed_widget');
+    this._targetWidget = this.get('target_widget');
+    if (this._targetWidget === null) {
+      this._targetWidget = this;
+    }
   }
 
+  /*
+   * Returns the observed ipytone widget model (e.g., audio node, signal, param
+   * or transport)
+   */
   get observedWidget(): ObservableModel {
-    return this.get('observed_widget');
+    return this._observedWidget;
   }
 
   get observedTrait(): string {
@@ -74,35 +93,52 @@ export class ScheduleObserverModel extends ToneWidgetModel {
     return this.get('observe_time');
   }
 
-  private setObservedTrait(time: tone.Unit.Seconds, transport: boolean): void {
-    const model = this.observedWidget;
-    const traitName = this.observedTrait;
-    let traitValue: TraitValue = 0;
+  /*
+   * Returns either this observer model instance (observe or dlink) or another
+   * widget model instance (jsdlink)
+   */
+  get targetWidget(): WidgetModel {
+    return this._targetWidget;
+  }
 
-    if (traitName === 'array') {
+  get targetTrait(): string {
+    return this.get('target_trait');
+  }
+
+  private setTargetTrait(time: tone.Unit.Seconds, transport: boolean): void {
+    const observedWidget = this.observedWidget;
+    const observedTrait = this.observedTrait;
+    const targetWidget = this.targetWidget;
+    const targetTrait = this.targetTrait;
+    let value: TraitValue = 0;
+
+    if (observedTrait === 'array') {
       // bug when array elements aren't changing, then it's never
       // synced again even if it gets updated again later?
       // -> reset array value silently
-      this.set('array', new Float32Array([0]), { silent: true });
+      targetWidget.set('array', new Float32Array([0]), { silent: true });
     }
 
-    if (traitName === 'time') {
-      traitValue = time;
+    if (observedTrait === 'time') {
+      value = time;
     } else {
       if (transport) {
-        traitValue = model.getValueAtTime(traitName, time);
+        value = observedWidget.getValueAtTime(observedTrait, time);
       } else {
-        traitValue = model.getValue(traitName);
+        value = observedWidget.getValue(observedTrait);
       }
     }
 
     if (this.observeTime) {
-      this.set('time_value', [time, traitValue]);
+      targetWidget.set('time_value', [time, value]);
     } else {
-      this.set(traitName, traitValue);
+      targetWidget.set(targetTrait, value);
     }
 
-    this.save_changes();
+    if (targetWidget === this) {
+      // sync with backend unless target is another widget (jsdlink).
+      targetWidget.save_changes();
+    }
   }
 
   private scheduleRepeat(
@@ -116,16 +152,16 @@ export class ScheduleObserverModel extends ToneWidgetModel {
       eid = tone.Transport.scheduleRepeat((time) => {
         if (draw) {
           tone.Draw.schedule(() => {
-            this.setObservedTrait(time, transport);
+            this.setTargetTrait(time, transport);
           }, time);
         } else {
-          this.setObservedTrait(time, transport);
+          this.setTargetTrait(time, transport);
         }
       }, updateInterval);
     } else {
       eid = setInterval(
         () => {
-          this.setObservedTrait(tone.now(), transport);
+          this.setTargetTrait(tone.now(), transport);
         },
         (updateInterval as number) * 1000,
       );
@@ -136,7 +172,7 @@ export class ScheduleObserverModel extends ToneWidgetModel {
 
   private scheduleCancel(): void {
     if (this.event.transport) {
-      tone.Transport.cancel(this.event.id as number);
+      tone.Transport.clear(this.event.id as number);
     } else {
       clearInterval(this.event.id as ReturnType<typeof setInterval>);
     }
@@ -161,6 +197,7 @@ export class ScheduleObserverModel extends ToneWidgetModel {
   static serializers: ISerializers = {
     ...ToneWidgetModel.serializers,
     observed_widget: { deserialize: unpack_models as any },
+    target_widget: { deserialize: unpack_models as any },
     array: dataarray_serialization,
   };
 

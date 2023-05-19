@@ -1,5 +1,5 @@
 import ipywidgets
-from ipywidgets import widget_serialization
+from ipywidgets import Widget, widget_serialization
 from traitlets import (
     Bool,
     Dict,
@@ -17,6 +17,11 @@ from traittypes import Array
 
 from .base import ToneObject, ToneWidgetBase
 from .serialization import data_array_serialization
+
+
+class DummyLink:
+    def unlink(self):
+        pass
 
 
 class ToneDirectionalLink:
@@ -63,6 +68,11 @@ class ScheduleObserver(ToneWidgetBase):
     observe_time = Bool(False, help="if True, observe time along with the observed trait").tag(
         sync=True
     )
+
+    target_widget = Instance(Widget, help="target widget instance (jsdlink)", allow_none=True).tag(
+        sync=True, **widget_serialization
+    )
+    target_trait = Unicode(allow_none=True).tag(sync=True)
 
     time = Float(0.0, help="current observed time", read_only=True).tag(sync=True)
 
@@ -145,7 +155,9 @@ class ScheduleObserver(ToneWidgetBase):
         self.schedule_repeat(update_interval, transport, draw=draw)
 
         if js:
-            link = ipywidgets.jsdlink((self, self.observed_trait), target)
+            # bypass ipywidget.jsdlink (target is updated directly by this
+            # widget in the front-end)
+            link = DummyLink()
         else:
             link = ipywidgets.dlink((self, self.observed_trait), target)
 
@@ -253,7 +265,7 @@ class ScheduleObserveMixin(HasTraits):
             )
 
         observer = ScheduleObserver(
-            observed_widget=self, observed_trait=name, observe_time=observe_time
+            observed_widget=self, observed_trait=name, observe_time=observe_time, target_trait=name
         )
         observer.schedule_observe(handler, update_interval, transport)
 
@@ -274,7 +286,24 @@ class ScheduleObserveMixin(HasTraits):
     def _schedule_dlink(self, target, update_interval, transport, name, js=False):
         name = self._validate_trait_name(name)
 
-        observer = ScheduleObserver(observed_widget=self, observed_trait=name)
+        if not isinstance(target, tuple) or len(target) != 2:
+            raise ValueError("target must be a (widget_obj, trait_name) 2-length tuple")
+
+        if js:
+            target_widget, target_trait = target
+        else:
+            # the target won't be used directly ; instead the observer instance
+            # created below will sync with the backend and be linked with the
+            # target.
+            target_widget = None
+            target_trait = name
+
+        observer = ScheduleObserver(
+            observed_widget=self,
+            observed_trait=name,
+            target_widget=target_widget,
+            target_trait=target_trait,
+        )
         return observer.schedule_dlink(target, update_interval, transport, js=js)
 
     def schedule_dlink(self, target, update_interval=1, transport=False, name=None):
