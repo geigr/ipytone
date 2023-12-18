@@ -13,8 +13,8 @@ extensions = [
 ]
 
 extlinks = {
-    "issue": ("https://github.com/geigr/ipytone/issues/%s", "#"),
-    "pull": ("https://github.com/geigr/ipytone/pull/%s", "#"),
+    "issue": ("https://github.com/geigr/ipytone/issues/%s", "#%s"),
+    "pull": ("https://github.com/geigr/ipytone/pull/%s", "#%s"),
 }
 
 jupyterlite_config = "jupyterlite_config.json"
