@@ -56,7 +56,7 @@ lint = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/benbovy/ipytone"
+Homepage = "https://github.com/geigr/ipytone"
 
 [tool.hatch.build]
 artifacts = [
