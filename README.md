@@ -1,4 +1,6 @@
-# ![Ipytone](docs/_static/ipytone_logo_dark.svg)
+![logo](https://user-images.githubusercontent.com/4160723/291225627-32c0b022-0492-474b-8dfb-0bf59796f44a.svg)
+
+# Ipytone
 
 *Interactive audio in Jupyter*
 
