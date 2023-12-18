@@ -10,7 +10,7 @@ Try Ipytone!
 ------------
 
 :ref:`Try ipytone now in your browser <demo>`, or check more advanced examples
-in this repository: https://github.com/benbovy/ipytone-examples
+in this repository: https://github.com/geigr/ipytone-examples
 
 Contents
 --------
@@ -32,4 +32,4 @@ Contents
 Get in touch
 ------------
 
-The source repository is on GitHub: https://github.com/benbovy/ipytone
+The source repository is on GitHub: https://github.com/geigr/ipytone

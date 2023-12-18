@@ -15,9 +15,9 @@
     "dist/*.d.ts",
     "css/*.css"
   ],
-  "homepage": "https://github.com/benbovy/ipytone",
+  "homepage": "https://github.com/geigr/ipytone",
   "bugs": {
-    "url": "https://github.com/benbovy/ipytone/issues"
+    "url": "https://github.com/geigr/ipytone/issues"
   },
   "license": "BSD-3-Clause",
   "author": {
@@ -28,7 +28,7 @@
   "types": "./lib/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/benbovy/ipytone.git"
+    "url": "https://github.com/geigr/ipytone.git"
   },
   "scripts": {
     "build": "yarn run build:lib && yarn run build:nbextension",

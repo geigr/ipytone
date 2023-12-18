@@ -13,8 +13,8 @@ extensions = [
 ]
 
 extlinks = {
-    "issue": ("https://github.com/benbovy/ipytone/issues/%s", "#"),
-    "pull": ("https://github.com/benbovy/ipytone/pull/%s", "#"),
+    "issue": ("https://github.com/geigr/ipytone/issues/%s", "#"),
+    "pull": ("https://github.com/geigr/ipytone/pull/%s", "#"),
 }
 
 jupyterlite_config = "jupyterlite_config.json"
@@ -59,7 +59,7 @@ html_theme = "pydata_sphinx_theme"
 # documentation.
 #
 html_theme_options = {
-    "github_url": "https://github.com/benbovy/ipytone",
+    "github_url": "https://github.com/geigr/ipytone",
     "logo": {
         "image_light": "_static/ipytone_logo_light.svg",
         "image_dark": "_static/ipytone_logo_dark.svg",

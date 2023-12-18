@@ -3,7 +3,7 @@
 *Interactive audio in Jupyter*
 
 [![JupyterLite](https://jupyterlite.rtfd.io/en/latest/_static/badge-launch.svg)](https://ipytone.readthedocs.io/en/latest/lite/retro/notebooks/?path=quick_demo.ipynb)
-[![Tests](https://github.com/benbovy/ipytone/workflows/Test/badge.svg)](https://github.com/benbovy/ipytone/actions)
+[![Tests](https://github.com/geigr/ipytone/workflows/Test/badge.svg)](https://github.com/geigr/ipytone/actions)
 
 Ipytone exposes many features of the [Tone.js](https://tonejs.github.io) library
 to Python as [Jupyter widgets](https://ipywidgets.readthedocs.io). It allows
@@ -20,7 +20,7 @@ https://user-images.githubusercontent.com/4160723/172623510-3423505f-cd27-4770-8
 Click [here](https://ipytone.readthedocs.io/en/latest/lite/retro/notebooks/?path=quick_demo.ipynb) or
 on the JupyterLite badge above to try ipytone in your browser without installing anything.
 
-For more advanced examples, check this repository: https://github.com/benbovy/ipytone-examples
+For more advanced examples, check this repository: https://github.com/geigr/ipytone-examples
 
 ## Documentation
 

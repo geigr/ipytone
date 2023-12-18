@@ -38,7 +38,7 @@ Development installation
 To install a developer version of ipytone, you will first need to clone
 the repository::
 
-  git clone https://github.com/benbovy/ipytone
+  git clone https://github.com/geigr/ipytone
   cd ipytone
 
 You can then install all the ipytone dependencies and developer tools using
