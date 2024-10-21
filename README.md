@@ -59,3 +59,16 @@ mamba install -c conda-forge ipytone
 ### From source
 
 For a development installation of ipytone, check the installation section in the documentation.
+
+
+## Building the docs
+
+```sh
+pip install .'[doc]' #quoting necessary for Mac ZSH
+cd docs
+make html
+cd  build/html
+python -m http.server
+#navigate to localhost:8000
+```
+
